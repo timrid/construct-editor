@@ -3,10 +3,12 @@ from __future__ import annotations
 import dataclasses
 import typing as t
 
+from pathlib import Path
 import construct as cs
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 
+import construct_editor.gallery.example_pe32coff
 import construct_editor.gallery.test_array
 import construct_editor.gallery.test_greedyrange
 import construct_editor.gallery.test_bits
@@ -36,6 +38,9 @@ class ConstructGallery(wx.Panel):
             "Test Array": GalleryItem(
                 construct=construct_editor.gallery.test_array.constr,
                 example_binarys=construct_editor.gallery.test_array.binarys,
+            ),
+            "Example pe32coff": GalleryItem(
+                construct=construct_editor.gallery.example_pe32coff.pe32file,
             ),
             "Test GreedyRange": GalleryItem(
                 construct=construct_editor.gallery.test_greedyrange.constr,
@@ -76,9 +81,6 @@ class ConstructGallery(wx.Panel):
         }
         default_gallery = list(self.construct_gallery.keys())[0]
         default_gallery_item = self.construct_gallery[default_gallery]
-        default_gallery_item_example = list(
-            default_gallery_item.example_binarys.keys()
-        )[0]
 
         # Define GUI elements #############################################
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -122,7 +124,10 @@ class ConstructGallery(wx.Panel):
             0,
             name="gallery_selector",
         )
-        self.example_selector_lbx.SetStringSelection(default_gallery_item_example)
+        if len(default_gallery_item.example_binarys) > 0:
+            self.example_selector_lbx.SetStringSelection(
+                list(default_gallery_item.example_binarys.keys())[0]
+            )
         vsizer.Add(self.example_selector_lbx, 0, wx.ALL | wx.EXPAND, 1)
 
         # load binary from file
@@ -176,15 +181,18 @@ class ConstructGallery(wx.Panel):
         gallery_item = self.construct_gallery[selection]
 
         self.example_selector_lbx.Clear()
-        self.example_selector_lbx.InsertItems(
-            list(gallery_item.example_binarys.keys()), 0
-        )
-        self.example_selector_lbx.SetStringSelection(
-            list(gallery_item.example_binarys.keys())[0]
-        )
+        if len(gallery_item.example_binarys) > 0:
+            self.example_selector_lbx.InsertItems(
+                list(gallery_item.example_binarys.keys()), 0
+            )
+            self.example_selector_lbx.SetStringSelection(
+                list(gallery_item.example_binarys.keys())[0]
+            )
 
-        example = self.example_selector_lbx.GetStringSelection()
-        example_binary = self.construct_gallery[selection].example_binarys[example]
+            example = self.example_selector_lbx.GetStringSelection()
+            example_binary = self.construct_gallery[selection].example_binarys[example]
+        else:
+            example_binary = bytes(0)
 
         self.Freeze()
         self.construct_hex_editor.binary = example_binary
@@ -209,7 +217,21 @@ class ConstructGallery(wx.Panel):
         self.construct_hex_editor.refresh()
 
     def on_load_binary_file_clicked(self, event):
-        pass  # TODO
+        with wx.FileDialog(
+            self,
+            "Open binary file",
+            wildcard="binary files (*.*)|*.*",
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+        ) as fileDialog:
+
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return  # the user changed their mind
+
+            # Proceed loading the file chosen by the user
+            pathname = Path(fileDialog.GetPath())
+            with open(pathname, "rb") as file:
+                self.construct_hex_editor.binary = file.read()
+                self.construct_hex_editor.refresh()
 
 
 icon = PyEmbeddedImage(

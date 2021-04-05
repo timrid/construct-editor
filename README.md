@@ -1,7 +1,8 @@
 # Construct Editor
+**!!! Work in progress !!!**
+
 This package provides a GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data. It can either be used standalone or embedded as a widget in another application.
 
-**This package is work in progress**
 
 
 
@@ -20,7 +21,7 @@ To start the standalone version, just execute the following in the command line:
 construct-editor
 ```
 
-## Getting started (Widgets)
+## Getting started (as Widgets)
 This is a simple example 
 ```python
 import wx
@@ -61,10 +62,3 @@ Just the left side of the `ConstructHexEditor`, but can be used also used as sta
 - Viewing Bytes in a Hexadecimal form
 - Callbacks when some value changed
 - Changeable format via `TableFormat`
-- [It is a Fork of ... (TODO: Check license)]
-
-
-
-## TODO
-- Wrap any action into a `wx.lib.docview.Command`, so that a Undo and Redo can be implemented
-- Showing changes of the data between two timestamps in HexEditor
