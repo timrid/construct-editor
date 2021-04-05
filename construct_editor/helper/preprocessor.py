@@ -172,6 +172,8 @@ def include_metadata(
             cs.Prefixed,
             cs.Pointer,
             cs.Peek,
+            cs.NullStripped,
+            cs.FixedSized,
             cst.TStruct,
             cst.TBitStruct,
         ),
