@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional, Type, Union
+import typing as t
 
 import construct as cs
 import construct_typed as cst
@@ -119,7 +120,10 @@ def create_obj_panel_enum_class_factory(entry: Union["EntryTEnum", "EntryEnum"])
             if isinstance(entry, EntryTEnum):
                 choices = [f"{e.value} ({str(e)})" for e in entry.construct.enum_type]
             elif isinstance(entry, EntryEnum):
-                choices = [f"{value} ({str(name)})" for value, name in entry.construct.decmapping.items()]
+                choices = [
+                    f"{value} ({str(name)})"
+                    for value, name in entry.construct.decmapping.items()
+                ]
 
             selection = entry.obj_str
             self.obj_combobox = wx.ComboBox(
@@ -160,6 +164,116 @@ def create_obj_panel_enum_class_factory(entry: Union["EntryTEnum", "EntryEnum"])
                 entry.obj = add_gui_metadata(new_value, metadata)
             else:
                 entry.obj = new_value
+
+            entry.model.ItemChanged(entry.dvc_item)
+            if entry.model._on_obj_changed is not None:
+                entry.model._on_obj_changed()
+
+    return ObjPanel
+
+
+class FlagsEnumComboPopup(wx.ComboPopup):
+    def __init__(self, entry: "EntryFlagsEnum", on_obj_changed: t.Callable[[], None]):
+        super().__init__()
+        self.entry = entry
+        self.on_obj_changed = on_obj_changed
+        self.clbx: Optional[wx.CheckListBox] = None
+
+    def on_motion(self, evt):
+        item = self.clbx.HitTest(evt.GetPosition())
+        if item != wx.NOT_FOUND:
+            # only select if not selected prevents flickering
+            if not self.clbx.IsSelected(item):
+                self.clbx.Select(item)
+
+    def on_left_down(self, evt):
+        item = self.clbx.HitTest(evt.GetPosition())
+        if item != wx.NOT_FOUND:
+            # select the new item in the gui
+            items = list(self.clbx.GetCheckedItems())
+            if item in items:
+                items.remove(item)
+            else:
+                items.append(item)
+            self.clbx.SetCheckedItems(items)
+
+            # remove unused characters from the checked items
+            items_str = []
+            for item_str in self.clbx.GetCheckedStrings():
+                items_str.append(item_str.split()[1].strip("()"))
+
+            # change the object of the entry
+            obj = self.entry.obj
+            for key in obj.keys():
+                if key.startswith("_"):
+                    continue
+                if key in items_str:
+                    obj[key] = True
+                else:
+                    obj[key] = False
+
+            # call callback
+            self.on_obj_changed()
+
+    def Create(self, parent):
+        self.clbx = wx.CheckListBox(parent)
+        self.clbx.Bind(wx.EVT_MOTION, self.on_motion)
+        self.clbx.Bind(wx.EVT_LEFT_DOWN, self.on_left_down)
+        return True
+
+    # Return the widget that is to be used for the popup
+    def GetControl(self):
+        return self.clbx
+
+    # Return final size of popup. Called on every popup, just prior to OnPopup.
+    # minWidth = preferred minimum width for window
+    # prefHeight = preferred height. Only applies if > 0,
+    # maxHeight = max height for window, as limited by screen size
+    #   and should only be rounded down, if necessary.
+    def GetAdjustedSize(self, minWidth, prefHeight, maxHeight):
+        return wx.ComboPopup.GetAdjustedSize(self, minWidth, 110, maxHeight)
+
+
+def create_obj_panel_flags_enum_class_factory(entry: "EntryFlagsEnum"):
+    class ObjPanel(wx.Panel):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+            obj = entry.obj
+
+            # Test if the obj of the entry is available
+            if obj is None:
+                return
+
+            # Obj
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+            choices = [
+                f"{value} ({str(name)})"
+                for name, value in entry.construct.flags.items()
+            ]
+            checked_items = []
+            for key in obj.keys():
+                if key.startswith("_"):
+                    continue
+                if obj[key]:
+                    checked_items.append(len(checked_items))
+
+            self.combo_ctrl = wx.ComboCtrl(self, style=wx.CB_READONLY)
+            self.popup_ctrl = FlagsEnumComboPopup(entry, self._on_obj_changed)
+            self.combo_ctrl.SetPopupControl(self.popup_ctrl)
+
+            self.popup_ctrl.clbx.InsertItems(choices, 0)
+            self.popup_ctrl.clbx.SetCheckedItems(checked_items)
+            self.combo_ctrl.SetValue(entry.obj_str)
+
+            hsizer.Add(self.combo_ctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+            self.SetSizer(hsizer)
+            self.Layout()
+
+        def _on_obj_changed(self):
+            self.combo_ctrl.SetValue(entry.obj_str)
 
             entry.model.ItemChanged(entry.dvc_item)
             if entry.model._on_obj_changed is not None:
@@ -1048,7 +1162,7 @@ class EntryTimestamp(EntrySubconstruct):
     @property
     def obj_str(self) -> str:
         if isinstance(self.obj, (arrow.Arrow)):
-            return self.obj.format('YYYY-MM-DD HH:mm:ss ZZ')
+            return self.obj.format("YYYY-MM-DD HH:mm:ss ZZ")
         else:
             return str(self.obj)
 
@@ -1164,6 +1278,10 @@ class EntryEnum(EntrySubconstruct):
         super().__init__(model, parent, construct, root_obj)
 
     @property
+    def typ_str(self) -> Any:
+        return super().typ_str + " as Enum"
+
+    @property
     def obj_str(self) -> str:
         try:
             return f"{int(self.obj)} ({str(self.obj)})"
@@ -1173,6 +1291,42 @@ class EntryEnum(EntrySubconstruct):
     @property
     def obj_panel_class(self) -> Type[wx.Panel]:
         return create_obj_panel_enum_class_factory(self)
+
+
+# EntryFlagsEnum ######################################################################################################
+class EntryFlagsEnum(EntrySubconstruct):
+    construct: "cs.FlagsEnum"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.FlagsEnum",
+        root_obj: Optional[Any],
+    ):
+        super().__init__(model, parent, construct, root_obj)
+
+    @property
+    def typ_str(self) -> Any:
+        return super().typ_str + " as Flags"
+
+    @property
+    def obj_str(self) -> str:
+        try:
+            obj = self.obj
+            flags = []
+            for key, value in obj.items():
+                if key.startswith("_"):
+                    continue
+                if obj[key]:
+                    flags.append(key)
+            return " | ".join(flags)
+        except Exception:
+            return str(self.obj)
+
+    @property
+    def obj_panel_class(self) -> Type[wx.Panel]:
+        return create_obj_panel_flags_enum_class_factory(self)
 
 
 # EntryTEnum ##########################################################################################################
@@ -1187,6 +1341,10 @@ class EntryTEnum(EntrySubconstruct):
         root_obj: Optional[Any],
     ):
         super().__init__(model, parent, construct, root_obj)
+
+    @property
+    def typ_str(self) -> Any:
+        return super().typ_str + " as Enum"
 
     @property
     def obj_str(self) -> str:
@@ -1226,6 +1384,7 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     cs.Computed: EntryComputed,
     cs.TimestampAdapter: EntryTimestamp,
     cs.Enum: EntryEnum,
+    cs.FlagsEnum: EntryFlagsEnum,
     # #########################################################################
     #
     #
