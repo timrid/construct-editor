@@ -1047,7 +1047,10 @@ class EntryTimestamp(EntrySubconstruct):
 
     @property
     def obj_str(self) -> str:
-        return str(self.obj)
+        if isinstance(self.obj, (arrow.Arrow)):
+            return self.obj.format('YYYY-MM-DD HH:mm:ss ZZ')
+        else:
+            return str(self.obj)
 
     @property
     def obj_panel_class(self) -> Type[wx.Panel]:

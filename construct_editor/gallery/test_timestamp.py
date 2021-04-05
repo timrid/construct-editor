@@ -21,7 +21,5 @@ class Timestamps(cst.TContainerMixin):
 constr = cst.TStruct(Timestamps)
 binarys = {
     "Zeros": bytes(constr.sizeof()),
-    "1": bytes([4, 4, 12]),
-    "2": bytes([4, 4, 13]),
-    "3": bytes([7, 2, 1]),
+    "1": bytes([4, 4, 12, 4, 4, 4, 4]),
 }
