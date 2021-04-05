@@ -10,6 +10,11 @@ setup(
     package_data={
         "construct_editor": ["py.typed"],
     },
+    entry_points={
+        "gui_scripts": [
+            "construct-editor=construct_editor.main:main"
+        ]
+    },
     include_package_data=True,
     license="MIT",
     description="GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data.",

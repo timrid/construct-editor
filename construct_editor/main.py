@@ -17,7 +17,7 @@ import construct_editor.gallery.test_tbitstruct
 import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
-from construct_editor.widgets import ConstructHexEditor
+from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
 @dataclasses.dataclass
