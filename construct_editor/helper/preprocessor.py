@@ -119,6 +119,7 @@ def include_metadata(
             cs.StopIf,
             cst.TEnum,
             cs.TimestampAdapter,
+            cs.Seek,
         ),
     ):
         return IncludeGuiMetaData(constr)
@@ -169,6 +170,7 @@ def include_metadata(
             cs.Aligned,
             cs.Prefixed,
             cs.Pointer,
+            cs.Peek,
             cst.TStruct,
             cst.TBitStruct,
         ),

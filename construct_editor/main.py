@@ -19,6 +19,7 @@ import construct_editor.gallery.test_tbitstruct
 import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
+import construct_editor.gallery.test_pointer_peek_seek_tell
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
@@ -77,6 +78,10 @@ class ConstructGallery(wx.Panel):
             "Test Computed": GalleryItem(
                 construct=construct_editor.gallery.test_computed.constr,
                 example_binarys=construct_editor.gallery.test_computed.binarys,
+            ),
+            "Test Pointer/Peek/Seek/Tell": GalleryItem(
+                construct=construct_editor.gallery.test_pointer_peek_seek_tell.constr,
+                example_binarys=construct_editor.gallery.test_pointer_peek_seek_tell.binarys,
             ),
         }
         default_gallery = list(self.construct_gallery.keys())[0]

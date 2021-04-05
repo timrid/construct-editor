@@ -343,7 +343,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
             if isinstance(parent_entry, EntryConstruct):
                 entries = []
                 for entry in parent_entry.subentries:
-                    if (self._hide_protected == True) and entry.name.startswith("_"):
+                    if (self._hide_protected == True) and (entry.name.startswith("_") or entry.name == ""):
                         continue
                     entries.append(entry)
 
@@ -515,23 +515,44 @@ class ConstructEditor(wx.Panel):
                         self._dvc.Expand(child)
                     self._expand_from_expansion_infos(child, info.subinfos)
 
+    def _get_selected_entry_path(self) -> List[str]:
+        """ Get the path to the selected entry """
+        if self._dvc.HasSelection():
+            selected_entry: EntryConstruct = self._model.ItemToObject(self._dvc.GetSelection())
+            return selected_entry.path
+        else:
+            return []
+
+    def _set_selection_from_path(self, path: List[str]):
+        """ Set the selected entry from path """
+        # TODO: Enhancement for cs.Peek
+
     def reload(self):
-        """ Reload the ConstructEditor, while remaining expaned elements """
+        """ Reload the ConstructEditor, while remaining expaned elements and selection """
         try:
             self.Freeze()
+
+            # save settings
             expansion_infos = self._get_expansion_infos(None)
+            selected_entry_path = self._get_selected_entry_path()
+
+            # clear everything
             self._model.Cleared()
             self._entry_details_viewer.clear()
             self._parse_error_info_bar.Dismiss()
             self._build_error_info_bar.Dismiss()
+
+            # restore settings
             self._expand_from_expansion_infos(None, expansion_infos)
+            selected_entry = self._set_selection_from_path(selected_entry_path)
+
         finally:
             self.Thaw()
 
-    def parse(self, data: bytes, **contextkw: Any):
+    def parse(self, binary: bytes, **contextkw: Any):
         """ Parse binary data to struct. """
         try:
-            self._model.root_obj = self._model.construct.parse(data, **contextkw)
+            self._model.root_obj = self._model.construct.parse(binary, **contextkw)
             self._parse_error_info_bar.Dismiss()
         except Exception as e:
             self._parse_error_info_bar.ShowMessage(f"Error while parsing binary data: {type(e).__name__}\n{str(e)}", wx.ICON_WARNING)
@@ -543,10 +564,12 @@ class ConstructEditor(wx.Panel):
         try:
             binary = self._model.construct.build(self.root_obj, **contextkw)
             self._build_error_info_bar.Dismiss()
-            return binary
         except Exception as e:
             self._build_error_info_bar.ShowMessage(f"Error while building binary data: {type(e).__name__}\n{str(e)}", wx.ICON_WARNING)
             raise e
+
+        # wx.CallAfter(lambda: self.parse(binary, **contextkw))  # TODO: Enhancement for cs.Peek
+        return binary
 
     # Property: construct #####################################################
     @property

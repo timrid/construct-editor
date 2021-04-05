@@ -320,12 +320,12 @@ class EntryConstruct(object):
         else:
             return ""
 
-    # default "name" ##########################################################
+    # default "docs" ##########################################################
     @property
     def docs(self) -> str:
         return self.construct.docs
 
-    # default "obj_str" #####################################################
+    # default "obj_str" #######################################################
     @property
     def obj_str(self) -> str:
         return str(self.obj)
@@ -349,7 +349,7 @@ class EntryConstruct(object):
     def dvc_item(self, val) -> Any:
         self._dvc_item = val
 
-    # default "obj_panel_class" #############################################
+    # default "obj_panel_class" ###############################################
     @property
     def obj_panel_class(self) -> Type[wx.Panel]:
         return create_obj_panel_default_class(self)
@@ -357,12 +357,14 @@ class EntryConstruct(object):
     # default "path" ##########################################################
     @property
     def path(self) -> List[str]:
-        if self.parent is not None:
-            path = self.parent.path
+        parent = self.parent
+        if parent is not None:
+            path = parent.path
 
             # Append name if available
-            if self.name != "":
-                path.append(self.name)
+            name = self.name
+            if name != "":
+                path.append(name)
         else:
             path = []
 
@@ -382,17 +384,17 @@ class EntrySubconstruct(EntryConstruct):
 
         self.subentry = model.create_construct_entry(self, construct.subcon, None)
 
-    # pass throught "obj_str" to subentry ###################################
+    # pass throught "obj_str" to subentry #####################################
     @property
     def obj_str(self) -> Any:
         return self.subentry.obj_str
 
-    # pass throught "typ_str" to subentry ###################################
+    # pass throught "typ_str" to subentry #####################################
     @property
     def typ_str(self) -> Any:
         return self.subentry.typ_str
 
-    # pass throught "subentries" to subentry ###################################
+    # pass throught "subentries" to subentry ##################################
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
         return self.subentry.subentries
@@ -406,7 +408,7 @@ class EntrySubconstruct(EntryConstruct):
     def dvc_item(self, val: Any):
         self.subentry.dvc_item = val
 
-    # default "obj_panel_class" #############################################
+    # default "obj_panel_class" ###############################################
     @property
     def obj_panel_class(self) -> Type[wx.Panel]:
         return self.subentry.obj_panel_class
@@ -974,6 +976,28 @@ class EntryTell(EntryConstruct):
         return "Tell"
 
 
+# EntrySeek ###########################################################################################################
+class EntrySeek(EntryConstruct):
+    construct: "cs.Seek"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Seek",
+        root_obj: Optional[Any],
+    ):
+        super().__init__(model, parent, construct, root_obj)
+
+    @property
+    def typ_str(self) -> str:
+        return "Seek"
+
+    @property
+    def obj_str(self) -> str:
+        return ""
+
+
 # EntryComputed ###########################################################################################################
 class EntryComputed(EntryConstruct):
     def __init__(
@@ -1024,6 +1048,20 @@ class EntryTransparentSubcon(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Subconstruct[Any, Any, Any, Any]",
+        root_obj: Optional[Any],
+    ):
+        super().__init__(model, parent, construct, root_obj)
+
+
+# EntryPeek ###########################################################################################################
+class EntryPeek(EntrySubconstruct):
+    construct: "cs.Peek"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Peek",
         root_obj: Optional[Any],
     ):
         super().__init__(model, parent, construct, root_obj)
@@ -1139,6 +1177,8 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     type(cs.Tell): EntryTell,
     cs.Default: EntryTransparentSubcon,
     cs.Pointer: EntryTransparentSubcon,
+    cs.Peek: EntryPeek,
+    cs.Seek: EntrySeek,
     cs.Transformed: EntryTransparentSubcon,
     cs.Restreamed: EntryTransparentSubcon,
     cs.RawCopy: EntryRawCopy,
