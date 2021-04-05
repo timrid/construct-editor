@@ -6,7 +6,12 @@ exec(open("./construct_editor/version.py").read())
 setup(
     name="construct-editor",
     version=version_string,  # type: ignore
-    packages=["construct_editor"],
+    packages=[
+        "construct_editor",
+        "construct_editor.gallery",
+        "construct_editor.helper",
+        "construct_editor.widgets",
+    ],
     package_data={
         "construct_editor": ["py.typed"],
     },
@@ -28,6 +33,7 @@ setup(
         "construct==2.10.66",
         "construct-typing==0.4.1",
         "wxPython>=4.1.1",
+        "arrow>=1.0.0"
     ],
     keywords=[
         "gui",
