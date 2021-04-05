@@ -1385,6 +1385,7 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     cs.TimestampAdapter: EntryTimestamp,
     cs.Enum: EntryEnum,
     cs.FlagsEnum: EntryFlagsEnum,
+    cs.Const: EntryTransparentSubcon,
     # #########################################################################
     #
     #
