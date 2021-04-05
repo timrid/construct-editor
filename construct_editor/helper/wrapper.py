@@ -81,6 +81,9 @@ def create_obj_panel_integer_class_factory(entry: "EntryConstruct"):
 
         def _on_obj_changed(self, event):
             val_str: str = self.obj_txtctrl.GetValue()
+            if len(val_str) == 0:
+                val_str = "0"
+
             try:
                 new_value = int(
                     val_str, base=0
@@ -101,7 +104,7 @@ def create_obj_panel_integer_class_factory(entry: "EntryConstruct"):
     return ObjPanel
 
 
-def create_obj_panel_enum_class_factory(entry: "EntryTEnum"):
+def create_obj_panel_enum_class_factory(entry: Union["EntryTEnum", "EntryEnum"]):
     class ObjPanel(wx.Panel):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -113,7 +116,11 @@ def create_obj_panel_enum_class_factory(entry: "EntryTEnum"):
             # Obj
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-            choices = [f"{e.value} ({str(e)})" for e in entry.construct.enum_type]
+            if isinstance(entry, EntryTEnum):
+                choices = [f"{e.value} ({str(e)})" for e in entry.construct.enum_type]
+            elif isinstance(entry, EntryEnum):
+                choices = [f"{value} ({str(name)})" for value, name in entry.construct.decmapping.items()]
+
             selection = entry.obj_str
             self.obj_combobox = wx.ComboBox(
                 self,
@@ -134,13 +141,19 @@ def create_obj_panel_enum_class_factory(entry: "EntryTEnum"):
             self.obj_combobox.Bind(wx.EVT_TEXT, self._on_obj_changed)
 
         def _on_obj_changed(self, event):
-            enum_type = entry.construct.enum_type
-
             val_str: str = self.obj_combobox.GetValue()
+            if len(val_str) == 0:
+                val_str = "0"
+
+            val_int = int(val_str.split()[0])
             try:
-                new_value = enum_type(int(val_str.split()[0]))
+                if isinstance(entry, EntryTEnum):
+                    enum_type = entry.construct.enum_type
+                    new_value = enum_type(val_int)
+                elif isinstance(entry, EntryEnum):
+                    new_value = entry.construct.decmapping[val_int]
             except Exception:
-                new_value = val_str  # this will probably result in a building error
+                new_value = val_int  # this will probably result in a building error
 
             metadata = get_gui_metadata(entry.obj)
             if metadata is not None:
@@ -1134,6 +1147,31 @@ class EntryTBitStruct(EntrySubconstruct):
         return "TBitStruct"
 
 
+# EntryEnum ###########################################################################################################
+class EntryEnum(EntrySubconstruct):
+    construct: "cs.Enum"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Enum",
+        root_obj: Optional[Any],
+    ):
+        super().__init__(model, parent, construct, root_obj)
+
+    @property
+    def obj_str(self) -> str:
+        try:
+            return f"{int(self.obj)} ({str(self.obj)})"
+        except Exception:
+            return str(self.obj)
+
+    @property
+    def obj_panel_class(self) -> Type[wx.Panel]:
+        return create_obj_panel_enum_class_factory(self)
+
+
 # EntryTEnum ##########################################################################################################
 class EntryTEnum(EntrySubconstruct):
     construct: "cst.TEnum[Any]"
@@ -1184,6 +1222,7 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     cs.RawCopy: EntryRawCopy,
     cs.Computed: EntryComputed,
     cs.TimestampAdapter: EntryTimestamp,
+    cs.Enum: EntryEnum,
     # #########################################################################
     #
     #

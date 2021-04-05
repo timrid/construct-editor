@@ -118,6 +118,7 @@ def include_metadata(
             cs.Check,
             cs.StopIf,
             cst.TEnum,
+            cs.Enum,
             cs.TimestampAdapter,
             cs.Seek,
         ),

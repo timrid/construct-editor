@@ -16,6 +16,7 @@ import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_tstruct
 import construct_editor.gallery.test_tbitstruct
+import construct_editor.gallery.test_enum
 import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
@@ -66,6 +67,10 @@ class ConstructGallery(wx.Panel):
             "Test TBitStruct": GalleryItem(
                 construct=construct_editor.gallery.test_tbitstruct.constr,
                 example_binarys=construct_editor.gallery.test_tbitstruct.binarys,
+            ),
+            "Test Enum": GalleryItem(
+                construct=construct_editor.gallery.test_enum.constr,
+                example_binarys=construct_editor.gallery.test_enum.binarys,
             ),
             "Test TEnum": GalleryItem(
                 construct=construct_editor.gallery.test_tenum.constr,
