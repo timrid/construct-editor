@@ -31,13 +31,13 @@ def int_to_str(val: int) -> str:
 # #####################################################################################################################
 # GUI Elements ########################################################################################################
 # #####################################################################################################################
-class ValuePanel(wx.Panel):
+class ObjPanel(wx.Panel):
     """ Base class for a panel that shows the value and allows modifications of it. """
     pass
 
 
 
-class ValuePanel_Default(ValuePanel):
+class ObjPanel_Default(ObjPanel):
     def __init__(self, parent, entry: "EntryConstruct"):
         super().__init__(parent)
         self.entry = entry
@@ -62,7 +62,7 @@ class ValuePanel_Default(ValuePanel):
         self.Layout()
 
 
-class ValuePanel_Integer(ValuePanel):
+class ObjPanel_Integer(ObjPanel):
     def __init__(self, parent, entry: "EntryConstruct"):
         super().__init__(parent)
         self.entry = entry
@@ -107,7 +107,7 @@ class ValuePanel_Integer(ValuePanel):
             self.entry.model._on_obj_changed()
 
 
-class ValuePanel_Enum(ValuePanel):
+class ObjPanel_Enum(ObjPanel):
     def __init__(self, parent, entry: Union["EntryTEnum", "EntryEnum"]):
         super().__init__(parent)
         self.entry = entry
@@ -238,7 +238,7 @@ class FlagsEnumComboPopup(wx.ComboPopup):
         return wx.ComboPopup.GetAdjustedSize(self, minWidth, 110, maxHeight)
 
 
-class ValuePanel_FlagsEnum(ValuePanel):
+class ObjPanel_FlagsEnum(ObjPanel):
     def __init__(self, parent, entry: "EntryFlagsEnum"):
         super().__init__(parent)
         self.entry = entry
@@ -284,7 +284,7 @@ class ValuePanel_FlagsEnum(ValuePanel):
             self.entry.model._on_obj_changed()
 
 
-class ValuePanel_Timestamp(ValuePanel):
+class ObjPanel_Timestamp(ObjPanel):
     def __init__(self, parent, entry: "EntryTimestamp"):
         super().__init__(parent)
         self.entry = entry
@@ -478,8 +478,8 @@ class EntryConstruct(object):
 
     # default "obj_panel_class" ###############################################
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_Default
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_Default
 
     # default "path" ##########################################################
     @property
@@ -537,7 +537,7 @@ class EntrySubconstruct(EntryConstruct):
 
     # default "obj_panel_class" ###############################################
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
+    def obj_panel_class(self) -> Type[ObjPanel]:
         return self.subentry.obj_panel_class
 
 
@@ -579,8 +579,8 @@ class EntryStruct(EntryConstruct):
         return ""
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_Default  # TODO: create panel for cs.Struct
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_Default  # TODO: create panel for cs.Struct
 
 
 # EntryArray ##########################################################################################################
@@ -637,8 +637,8 @@ class EntryArray(EntrySubconstruct):
         return ""
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_Default  # TODO: create panel for cs.Array
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_Default  # TODO: create panel for cs.Array
 
 
 # EntryGreedyRange ####################################################################################################
@@ -692,8 +692,8 @@ class EntryGreedyRange(EntrySubconstruct):
         return ""
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_Default  # TODO: create panel for cs.Array
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_Default  # TODO: create panel for cs.Array
 
 
 # EntryIfThenElse #####################################################################################################
@@ -770,10 +770,10 @@ class EntryIfThenElse(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
+    def obj_panel_class(self) -> Type[ObjPanel]:
         subentry = self._get_subentry()
         if subentry is None:
-            return ValuePanel_Default
+            return ObjPanel_Default
         else:
             return subentry.obj_panel_class
 
@@ -858,10 +858,10 @@ class EntrySwitch(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
+    def obj_panel_class(self) -> Type[ObjPanel]:
         subentry = self._get_subentry()
         if subentry is None:
-            return ValuePanel_Default
+            return ObjPanel_Default
         else:
             return subentry.obj_panel_class
 
@@ -921,11 +921,11 @@ class EntryFormatField(EntryConstruct):
             self.type_infos = type_mapping[construct.fmtstr]
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
+    def obj_panel_class(self) -> Type[ObjPanel]:
         if self.type_infos[1] is int:
-            return ValuePanel_Integer
+            return ObjPanel_Integer
         else:
-            return ValuePanel_Default  # TODO: float
+            return ObjPanel_Default  # TODO: float
 
     @property
     def obj_str(self) -> str:
@@ -981,11 +981,11 @@ class EntryBytesInteger(EntryConstruct):
             return int_to_str(obj)
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
+    def obj_panel_class(self) -> Type[ObjPanel]:
         if isinstance(self.construct.length, int):
-            return ValuePanel_Integer
+            return ObjPanel_Integer
         else:
-            return ValuePanel_Default
+            return ObjPanel_Default
 
 
 # EntryBitsInteger ####################################################################################################
@@ -1018,11 +1018,11 @@ class EntryBitsInteger(EntryConstruct):
             return int_to_str(obj)
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
+    def obj_panel_class(self) -> Type[ObjPanel]:
         if isinstance(self.construct.length, int):
-            return ValuePanel_Integer
+            return ObjPanel_Integer
         else:
-            return ValuePanel_Default
+            return ObjPanel_Default
 
 
 # EntryBytes ##########################################################################################################
@@ -1167,8 +1167,8 @@ class EntryTimestamp(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_Timestamp
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_Timestamp
 
 
 # EntryTransparentSubcon ##############################################################################################
@@ -1289,8 +1289,8 @@ class EntryEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_Enum
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_Enum
 
 
 # EntryFlagsEnum ######################################################################################################
@@ -1325,8 +1325,8 @@ class EntryFlagsEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_FlagsEnum
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_FlagsEnum
 
 # EntryTEnum ##########################################################################################################
 class EntryTEnum(EntrySubconstruct):
@@ -1353,8 +1353,8 @@ class EntryTEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[ValuePanel]:
-        return ValuePanel_Enum
+    def obj_panel_class(self) -> Type[ObjPanel]:
+        return ObjPanel_Enum
     
 
 
@@ -1383,10 +1383,7 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
 
     # mappings ##################################
     # cs.Flag
-    # cs.EnumInteger
-    # cs.EnumIntegerString
     cs.Enum: EntryEnum,
-    # cs.BitwisableString
     cs.FlagsEnum: EntryFlagsEnum,
     # cs.Mapping
 

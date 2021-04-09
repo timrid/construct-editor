@@ -14,8 +14,8 @@ from construct_editor.helper.wrapper import EntryConstruct, entry_mapping_constr
 
 
 class EmptyObjPanel(wx.Panel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent, entry):
+        super().__init__(parent)
 
         # Obj
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -114,9 +114,7 @@ class EntryDetailsViewer(wx.Panel):
         hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         self.obj_panel = EmptyObjPanel(
             self,
-            wx.ID_ANY,
-            wx.DefaultPosition,
-            wx.Size(-1, -1),
+            None
         )
         hsizer.Add(self.obj_panel, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         self.obj_sizer = hsizer
@@ -143,13 +141,15 @@ class EntryDetailsViewer(wx.Panel):
         self.SetSizer(vsizer)
         self.Layout()
 
-    def _replace_obj_panel(self, new_panel_class: Type[wx.Panel]):
+    def _replace_obj_panel(self, entry: Optional["EntryConstruct"]):
         self.Freeze()
+        if entry is None:
+            new_panel_class = EmptyObjPanel
+        else:
+            new_panel_class = entry.obj_panel_class
         new_panel = new_panel_class(
             self,
-            wx.ID_ANY,
-            wx.DefaultPosition,
-            wx.Size(-1, -1),
+            entry
         )
         self.obj_sizer.Replace(self.obj_panel, new_panel)
         self.obj_panel.Destroy()
@@ -174,7 +174,7 @@ class EntryDetailsViewer(wx.Panel):
             self.length_txt.SetValue("")
 
         # set obj panel
-        self._replace_obj_panel(entry.obj_panel_class)
+        self._replace_obj_panel(entry)
 
     def clear(self):
         self.name_txt.SetValue("")
@@ -182,7 +182,7 @@ class EntryDetailsViewer(wx.Panel):
         self.docs_txt.SetValue("")
         self.length_txt.SetValue("")
         self.offset_txt.SetValue("")
-        self._replace_obj_panel(EmptyObjPanel)
+        self._replace_obj_panel(None)
 
 
 # #####################################################################################################################
