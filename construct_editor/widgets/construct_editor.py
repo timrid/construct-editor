@@ -14,7 +14,7 @@ from construct_editor.helper.wrapper import EntryConstruct, entry_mapping_constr
 
 
 class EmptyObjPanel(wx.Panel):
-    def __init__(self, parent, entry):
+    def __init__(self, parent):
         super().__init__(parent)
 
         # Obj
@@ -113,8 +113,7 @@ class EntryDetailsViewer(wx.Panel):
         )
         hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         self.obj_panel = EmptyObjPanel(
-            self,
-            None
+            self
         )
         hsizer.Add(self.obj_panel, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         self.obj_sizer = hsizer
@@ -144,13 +143,9 @@ class EntryDetailsViewer(wx.Panel):
     def _replace_obj_panel(self, entry: Optional["EntryConstruct"]):
         self.Freeze()
         if entry is None:
-            new_panel_class = EmptyObjPanel
+            new_panel = EmptyObjPanel(self)
         else:
-            new_panel_class = entry.obj_panel_class
-        new_panel = new_panel_class(
-            self,
-            entry
-        )
+            new_panel = entry.create_obj_panel(self)
         self.obj_sizer.Replace(self.obj_panel, new_panel)
         self.obj_panel.Destroy()
         self.obj_panel = new_panel

@@ -476,10 +476,9 @@ class EntryConstruct(object):
     def dvc_item(self, val) -> Any:
         self._dvc_item = val
 
-    # default "obj_panel_class" ###############################################
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_Default
+    # default "create_obj_panel" ##############################################
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Default(parent, self)
 
     # default "path" ##########################################################
     @property
@@ -535,10 +534,9 @@ class EntrySubconstruct(EntryConstruct):
     def dvc_item(self, val: Any):
         self.subentry.dvc_item = val
 
-    # default "obj_panel_class" ###############################################
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return self.subentry.obj_panel_class
+    # default "create_obj_panel" ##############################################
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return self.subentry.create_obj_panel(parent)
 
 
 # EntryStruct #########################################################################################################
@@ -578,9 +576,8 @@ class EntryStruct(EntryConstruct):
     def obj_str(self) -> str:
         return ""
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_Default  # TODO: create panel for cs.Struct
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Struct
 
 
 # EntryArray ##########################################################################################################
@@ -636,9 +633,8 @@ class EntryArray(EntrySubconstruct):
     def obj_str(self) -> str:
         return ""
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_Default  # TODO: create panel for cs.Array
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
 
 
 # EntryGreedyRange ####################################################################################################
@@ -691,9 +687,8 @@ class EntryGreedyRange(EntrySubconstruct):
     def obj_str(self) -> str:
         return ""
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_Default  # TODO: create panel for cs.Array
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
 
 
 # EntryIfThenElse #####################################################################################################
@@ -769,13 +764,12 @@ class EntryIfThenElse(EntryConstruct):
         else:
             return subentry.subentries
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
+    def create_obj_panel(self, parent) -> ObjPanel:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjPanel_Default
+            return ObjPanel_Default(parent, self)
         else:
-            return subentry.obj_panel_class
+            return subentry.create_obj_panel(parent)
 
 
 # EntrySwitch #########################################################################################################
@@ -857,13 +851,12 @@ class EntrySwitch(EntryConstruct):
         else:
             return subentry.subentries
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
+    def create_obj_panel(self, parent) -> ObjPanel:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjPanel_Default
+            return ObjPanel_Default(parent, self)
         else:
-            return subentry.obj_panel_class
+            return subentry.create_obj_panel(parent)
 
 
 # EntryFormatField ####################################################################################################
@@ -920,12 +913,11 @@ class EntryFormatField(EntryConstruct):
         if construct.fmtstr in type_mapping:
             self.type_infos = type_mapping[construct.fmtstr]
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
+    def create_obj_panel(self, parent) -> ObjPanel:
         if self.type_infos[1] is int:
-            return ObjPanel_Integer
+            return ObjPanel_Integer(parent, self)
         else:
-            return ObjPanel_Default  # TODO: float
+            return ObjPanel_Default(parent, self)  # TODO: float
 
     @property
     def obj_str(self) -> str:
@@ -980,12 +972,11 @@ class EntryBytesInteger(EntryConstruct):
         else:
             return int_to_str(obj)
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
+    def create_obj_panel(self, parent) -> ObjPanel:
         if isinstance(self.construct.length, int):
-            return ObjPanel_Integer
+            return ObjPanel_Integer(parent, self)
         else:
-            return ObjPanel_Default
+            return ObjPanel_Default(parent, self)
 
 
 # EntryBitsInteger ####################################################################################################
@@ -1017,12 +1008,11 @@ class EntryBitsInteger(EntryConstruct):
         else:
             return int_to_str(obj)
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
+    def create_obj_panel(self, parent) -> ObjPanel:
         if isinstance(self.construct.length, int):
-            return ObjPanel_Integer
+            return ObjPanel_Integer(parent, self)
         else:
-            return ObjPanel_Default
+            return ObjPanel_Default(parent, self)
 
 
 # EntryBytes ##########################################################################################################
@@ -1166,9 +1156,8 @@ class EntryTimestamp(EntrySubconstruct):
         else:
             return str(self.obj)
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_Timestamp
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Timestamp(parent, self)
 
 
 # EntryTransparentSubcon ##############################################################################################
@@ -1288,9 +1277,8 @@ class EntryEnum(EntrySubconstruct):
         except Exception:
             return str(self.obj)
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_Enum
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Enum(parent, self)
 
 
 # EntryFlagsEnum ######################################################################################################
@@ -1324,9 +1312,8 @@ class EntryFlagsEnum(EntrySubconstruct):
         except Exception:
             return str(self.obj)
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_FlagsEnum
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_FlagsEnum(parent, self)
 
 # EntryTEnum ##########################################################################################################
 class EntryTEnum(EntrySubconstruct):
@@ -1352,9 +1339,8 @@ class EntryTEnum(EntrySubconstruct):
         except Exception:
             return str(self.obj)
 
-    @property
-    def obj_panel_class(self) -> Type[ObjPanel]:
-        return ObjPanel_Enum
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Enum(parent, self)
     
 
 
