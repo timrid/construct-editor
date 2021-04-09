@@ -106,8 +106,8 @@ class ConstructHexEditor(wx.Panel):
     def _on_entry_selected(self, start: Optional[int], end: Optional[int]):
         if start is not None and end is not None:
             self.hex_editor.colorise(start, end, refresh=False)
-            self.hex_editor.scroll_to_pos(end - 1, refresh=False)
-            self.hex_editor.scroll_to_pos(start, refresh=False)
+            self.hex_editor.scroll_to_idx(end - 1, refresh=False)
+            self.hex_editor.scroll_to_idx(start, refresh=False)
             self.hex_editor.refresh()
         else:
             self.hex_editor.colorise(0, 0)

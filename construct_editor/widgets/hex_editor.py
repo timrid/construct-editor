@@ -65,13 +65,13 @@ class HexEditorTable(Grid.GridTableBase):
         self.selections: t.List[t.Tuple[int, int]] = []
 
     def get_next_cursor_rowcol(self, row: int, col: int):
-        idx = self.get_byte_index(row, col)
-        if idx < len(self.binary):  # one pos further than len(binary) is okay.
+        idx = self.get_byte_idx(row, col)
+        if idx < len(self.binary):  # one index further than len(binary) is okay.
             idx += 1
         return self.get_byte_rowcol(idx)
 
     def get_prev_cursor_rowcol(self, row: int, col: int):
-        idx = self.get_byte_index(row, col)
+        idx = self.get_byte_idx(row, col)
         if idx > 0:
             idx -= 1
         return self.get_byte_rowcol(idx)
@@ -81,7 +81,7 @@ class HexEditorTable(Grid.GridTableBase):
         row = math.floor(idx / self._cols)
         return (row, col)
 
-    def get_byte_index(self, row: int, col: int):
+    def get_byte_idx(self, row: int, col: int):
         idx = (row * self._cols) + col
         return idx
 
@@ -149,21 +149,21 @@ class HexEditorTable(Grid.GridTableBase):
 
     # ############################################ GridTableBase Interface ############################################
     def SetValue(self, row: int, col: int, value: str):
-        byte_index = self.get_byte_index(row, col)
-        self.binary[byte_index] = int(value, 16)
+        byte_idx = self.get_byte_idx(row, col)
+        self.binary[byte_idx] = int(value, 16)
         if self.on_binary_changed:
-            self.on_binary_changed(byte_index, 1)
+            self.on_binary_changed(byte_idx, 1)
 
     def GetValue(self, row: int, col: int):
-        byte_index = self.get_byte_index(row, col)
-        if byte_index < len(self.binary):
-            return f"{self.binary[byte_index]:02x}"
+        byte_idx = self.get_byte_idx(row, col)
+        if byte_idx < len(self.binary):
+            return f"{self.binary[byte_idx]:02x}"
         else:
             return ""
 
     def IsEmptyCell(self, row: int, col: int):
-        byte_index = self.get_byte_index(row, col)
-        if byte_index >= len(self.binary):
+        byte_idx = self.get_byte_idx(row, col)
+        if byte_idx >= len(self.binary):
             return True
         else:
             return False
@@ -185,11 +185,11 @@ class HexEditorTable(Grid.GridTableBase):
         raise ValueError("SetAttr is not supported")
 
     def GetAttr(self, row, col, kind):
-        byte_pos = (row * self._cols) + col
+        byte_idx = self.get_byte_idx(row, col)
         
         selected = False
         for sel in self.selections:
-            if sel[0] <= byte_pos < sel[1]:
+            if sel[0] <= byte_idx < sel[1]:
                 selected = True
                 break
 
@@ -603,7 +603,7 @@ class HexEditorGrid(Grid.Grid):
         col = self.XToCol(x)
         # print(f"row{row} col{col}")
         if (row >= 0) and (col >= 0) and ((row, col) != self._prev_motion_rowcol):
-            idx = self._table.get_byte_index(row, col)
+            idx = self._table.get_byte_idx(row, col)
             self.GetGridWindow().SetToolTip(f"Index={idx}")
         event.Skip()
 
@@ -635,9 +635,9 @@ class HexEditorGrid(Grid.Grid):
         if refresh:
             self.refresh()
 
-    def scroll_to_pos(self, pos: int, refresh: bool = True):
-        """ Scroll to a specific byte position in the Hex Editor """
-        row, col = self._table.get_byte_rowcol(pos)
+    def scroll_to_idx(self, idx: int, refresh: bool = True):
+        """ Scroll to a specific byte index in the Hex Editor """
+        row, col = self._table.get_byte_rowcol(idx)
 
         self.MakeCellVisible(row, col)
 
