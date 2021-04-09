@@ -31,145 +31,149 @@ def int_to_str(val: int) -> str:
 # #####################################################################################################################
 # GUI Elements ########################################################################################################
 # #####################################################################################################################
-def create_obj_panel_default_class(entry: "EntryConstruct") -> Type[wx.Panel]:
-    class ObjPanel(wx.Panel):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-            # Test if the obj of the entry is available
-            if entry.obj is None:
-                return
-
-            # Obj
-            hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            self.obj_txt = wx.TextCtrl(
-                self,
-                wx.ID_ANY,
-                entry.obj_str,
-                wx.DefaultPosition,
-                wx.Size(-1, -1),
-                wx.TE_READONLY,
-            )
-            hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
-
-            self.SetSizer(hsizer)
-            self.Layout()
-
-    return ObjPanel
+class ValuePanel(wx.Panel):
+    """ Base class for a panel that shows the value and allows modifications of it. """
+    pass
 
 
-def create_obj_panel_integer_class_factory(entry: "EntryConstruct"):
-    class ObjPanel(wx.Panel):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
 
-            # Test if the obj of the entry is available
-            if entry.obj is None:
-                return
+class ValuePanel_Default(ValuePanel):
+    def __init__(self, parent, entry: "EntryConstruct"):
+        super().__init__(parent)
+        self.entry = entry
 
-            # Obj
-            hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            self.obj_txtctrl = wx.TextCtrl(
-                self, wx.ID_ANY, entry.obj_str, wx.DefaultPosition, wx.DefaultSize, 0
-            )
-            hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+        # Test if the obj of the entry is available
+        if self.entry.obj is None:
+            return
 
-            self.SetSizer(hsizer)
-            self.Layout()
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.obj_txt = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            self.entry.obj_str,
+            wx.DefaultPosition,
+            wx.Size(-1, -1),
+            wx.TE_READONLY,
+        )
+        hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
-            # Connect Events
-            self.obj_txtctrl.Bind(wx.EVT_TEXT, self._on_obj_changed)
+        self.SetSizer(hsizer)
+        self.Layout()
 
-        def _on_obj_changed(self, event):
-            val_str: str = self.obj_txtctrl.GetValue()
-            if len(val_str) == 0:
-                val_str = "0"
 
-            try:
-                new_value = int(
-                    val_str, base=0
-                )  # base=0 means, that eg. 0x, 0b prefixes are allowed
-            except Exception:
-                new_value = val_str  # this will probably result in a building error
+class ValuePanel_Integer(ValuePanel):
+    def __init__(self, parent, entry: "EntryConstruct"):
+        super().__init__(parent)
+        self.entry = entry
 
-            metadata = get_gui_metadata(entry.obj)
-            if metadata is not None:
-                entry.obj = add_gui_metadata(new_value, metadata)
+        # Test if the obj of the entry is available
+        if self.entry.obj is None:
+            return
+
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.obj_txtctrl = wx.TextCtrl(
+            self, wx.ID_ANY, self.entry.obj_str, wx.DefaultPosition, wx.DefaultSize, 0
+        )
+        hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(hsizer)
+        self.Layout()
+
+        # Connect Events
+        self.obj_txtctrl.Bind(wx.EVT_TEXT, self._on_obj_changed)
+
+    def _on_obj_changed(self, event):
+        val_str: str = self.obj_txtctrl.GetValue()
+        if len(val_str) == 0:
+            val_str = "0"
+
+        try:
+            new_value = int(
+                val_str, base=0
+            )  # base=0 means, that eg. 0x, 0b prefixes are allowed
+        except Exception:
+            new_value = val_str  # this will probably result in a building error
+
+        metadata = get_gui_metadata(self.entry.obj)
+        if metadata is not None:
+            self.entry.obj = add_gui_metadata(new_value, metadata)
+        else:
+            self.entry.obj = new_value
+
+        self.entry.model.ItemChanged(self.entry.dvc_item)
+        if self.entry.model._on_obj_changed is not None:
+            self.entry.model._on_obj_changed()
+
+
+class ValuePanel_Enum(ValuePanel):
+    def __init__(self, parent, entry: Union["EntryTEnum", "EntryEnum"]):
+        super().__init__(parent)
+        self.entry = entry
+
+        # Test if the obj of the entry is available
+        if self.entry.obj is None:
+            return
+
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        if isinstance(self.entry, EntryTEnum):
+            choices = [f"{e.value} ({str(e)})" for e in self.entry.construct.enum_type]
+        elif isinstance(self.entry, EntryEnum):
+            choices = [
+                f"{value} ({str(name)})"
+                for value, name in self.entry.construct.decmapping.items()
+            ]
+        else:
+            raise TypeError("type not supported")
+
+        selection = self.entry.obj_str
+        self.obj_combobox = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            selection,
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            choices,
+            wx.CB_DROPDOWN,
+        )
+        hsizer.Add(self.obj_combobox, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(hsizer)
+        self.Layout()
+
+        # Connect Events
+        self.obj_combobox.Bind(wx.EVT_COMBOBOX, self._on_obj_changed)
+        self.obj_combobox.Bind(wx.EVT_TEXT, self._on_obj_changed)
+
+    def _on_obj_changed(self, event):
+        val_str: str = self.obj_combobox.GetValue()
+        if len(val_str) == 0:
+            val_str = "0"
+
+        val_int = int(val_str.split()[0])
+        try:
+            if isinstance(self.entry, EntryTEnum):
+                enum_type = self.entry.construct.enum_type
+                new_value = enum_type(val_int)
+            elif isinstance(self.entry, EntryEnum):
+                new_value = self.entry.construct.decmapping[val_int]
             else:
-                entry.obj = new_value
+                raise TypeError("type not supported")
+        except Exception:
+            new_value = val_int  # this will probably result in a building error
 
-            entry.model.ItemChanged(entry.dvc_item)
-            if entry.model._on_obj_changed is not None:
-                entry.model._on_obj_changed()
+        metadata = get_gui_metadata(self.entry.obj)
+        if metadata is not None:
+            self.entry.obj = add_gui_metadata(new_value, metadata)
+        else:
+            self.entry.obj = new_value
 
-    return ObjPanel
-
-
-def create_obj_panel_enum_class_factory(entry: Union["EntryTEnum", "EntryEnum"]):
-    class ObjPanel(wx.Panel):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-            # Test if the obj of the entry is available
-            if entry.obj is None:
-                return
-
-            # Obj
-            hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-            if isinstance(entry, EntryTEnum):
-                choices = [f"{e.value} ({str(e)})" for e in entry.construct.enum_type]
-            elif isinstance(entry, EntryEnum):
-                choices = [
-                    f"{value} ({str(name)})"
-                    for value, name in entry.construct.decmapping.items()
-                ]
-
-            selection = entry.obj_str
-            self.obj_combobox = wx.ComboBox(
-                self,
-                wx.ID_ANY,
-                selection,
-                wx.DefaultPosition,
-                wx.DefaultSize,
-                choices,
-                wx.CB_DROPDOWN,
-            )
-            hsizer.Add(self.obj_combobox, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
-
-            self.SetSizer(hsizer)
-            self.Layout()
-
-            # Connect Events
-            self.obj_combobox.Bind(wx.EVT_COMBOBOX, self._on_obj_changed)
-            self.obj_combobox.Bind(wx.EVT_TEXT, self._on_obj_changed)
-
-        def _on_obj_changed(self, event):
-            val_str: str = self.obj_combobox.GetValue()
-            if len(val_str) == 0:
-                val_str = "0"
-
-            val_int = int(val_str.split()[0])
-            try:
-                if isinstance(entry, EntryTEnum):
-                    enum_type = entry.construct.enum_type
-                    new_value = enum_type(val_int)
-                elif isinstance(entry, EntryEnum):
-                    new_value = entry.construct.decmapping[val_int]
-            except Exception:
-                new_value = val_int  # this will probably result in a building error
-
-            metadata = get_gui_metadata(entry.obj)
-            if metadata is not None:
-                entry.obj = add_gui_metadata(new_value, metadata)
-            else:
-                entry.obj = new_value
-
-            entry.model.ItemChanged(entry.dvc_item)
-            if entry.model._on_obj_changed is not None:
-                entry.model._on_obj_changed()
-
-    return ObjPanel
+        self.entry.model.ItemChanged(self.entry.dvc_item)
+        if self.entry.model._on_obj_changed is not None:
+            self.entry.model._on_obj_changed()
 
 
 class FlagsEnumComboPopup(wx.ComboPopup):
@@ -234,140 +238,136 @@ class FlagsEnumComboPopup(wx.ComboPopup):
         return wx.ComboPopup.GetAdjustedSize(self, minWidth, 110, maxHeight)
 
 
-def create_obj_panel_flags_enum_class_factory(entry: "EntryFlagsEnum"):
-    class ObjPanel(wx.Panel):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+class ValuePanel_FlagsEnum(ValuePanel):
+    def __init__(self, parent, entry: "EntryFlagsEnum"):
+        super().__init__(parent)
+        self.entry = entry
 
-            obj = entry.obj
+        obj = self.entry.obj
 
-            # Test if the obj of the entry is available
-            if obj is None:
-                return
+        # Test if the obj of the entry is available
+        if obj is None:
+            return
 
-            # Obj
-            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-            choices = [
-                f"{value} ({str(name)})"
-                for name, value in entry.construct.flags.items()
-            ]
-            checked_items = []
-            for key in obj.keys():
-                if key.startswith("_"):
-                    continue
-                if obj[key]:
-                    checked_items.append(len(checked_items))
+        choices = [
+            f"{value} ({str(name)})"
+            for name, value in self.entry.construct.flags.items()
+        ]
+        checked_items = []
+        for key in obj.keys():
+            if key.startswith("_"):
+                continue
+            if obj[key]:
+                checked_items.append(len(checked_items))
 
-            self.combo_ctrl = wx.ComboCtrl(self, style=wx.CB_READONLY)
-            self.popup_ctrl = FlagsEnumComboPopup(entry, self._on_obj_changed)
-            self.combo_ctrl.SetPopupControl(self.popup_ctrl)
+        self.combo_ctrl = wx.ComboCtrl(self, style=wx.CB_READONLY)
+        self.popup_ctrl = FlagsEnumComboPopup(self.entry, self._on_obj_changed)
+        self.combo_ctrl.SetPopupControl(self.popup_ctrl)
 
-            self.popup_ctrl.clbx.InsertItems(choices, 0)
-            self.popup_ctrl.clbx.SetCheckedItems(checked_items)
-            self.combo_ctrl.SetValue(entry.obj_str)
+        self.popup_ctrl.clbx.InsertItems(choices, 0)
+        self.popup_ctrl.clbx.SetCheckedItems(checked_items)
+        self.combo_ctrl.SetValue(self.entry.obj_str)
 
-            hsizer.Add(self.combo_ctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer.Add(self.combo_ctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
-            self.SetSizer(hsizer)
-            self.Layout()
+        self.SetSizer(hsizer)
+        self.Layout()
 
-        def _on_obj_changed(self):
-            self.combo_ctrl.SetValue(entry.obj_str)
+    def _on_obj_changed(self):
+        self.combo_ctrl.SetValue(self.entry.obj_str)
 
-            entry.model.ItemChanged(entry.dvc_item)
-            if entry.model._on_obj_changed is not None:
-                entry.model._on_obj_changed()
-
-    return ObjPanel
+        self.entry.model.ItemChanged(self.entry.dvc_item)
+        if self.entry.model._on_obj_changed is not None:
+            self.entry.model._on_obj_changed()
 
 
-def create_obj_panel_timestamp_class_factory(entry: "EntryTimestamp"):
-    class ObjPanel(wx.Panel):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+class ValuePanel_Timestamp(ValuePanel):
+    def __init__(self, parent, entry: "EntryTimestamp"):
+        super().__init__(parent)
+        self.entry = entry
 
-            # Test if the obj of the entry is available
-            if entry.obj is None:
-                return
-            if not isinstance(entry.obj, arrow.Arrow):
-                return
+        # Test if the obj of the entry is available
+        if entry.obj is None:
+            return
+        if not isinstance(entry.obj, arrow.Arrow):
+            return
 
-            # Obj
-            hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            dt = entry.obj.datetime
-            wx_datetime = wx.DateTime(
-                day=dt.day,
-                month=dt.month - 1,  # in wx.adc.DatePickerCtrl the month start with 0
-                year=dt.year,
-                hour=dt.hour,
-                minute=dt.minute,
-                second=dt.second,
-                millisec=dt.microsecond // 1000,
-            )
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        dt = self.entry.obj.datetime
+        wx_datetime = wx.DateTime(
+            day=dt.day,
+            month=dt.month - 1,  # in wx.adc.DatePickerCtrl the month start with 0
+            year=dt.year,
+            hour=dt.hour,
+            minute=dt.minute,
+            second=dt.second,
+            millisec=dt.microsecond // 1000,
+        )
 
-            self.date_picker = wx.adv.DatePickerCtrl(
-                self,
-                wx.ID_ANY,
-                wx_datetime,
-                wx.DefaultPosition,
-                wx.DefaultSize,
-                wx.adv.DP_DROPDOWN | wx.adv.DP_SHOWCENTURY,
-            )
-            hsizer.Add(self.date_picker, 0, wx.LEFT, 0)
+        self.date_picker = wx.adv.DatePickerCtrl(
+            self,
+            wx.ID_ANY,
+            wx_datetime,
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            wx.adv.DP_DROPDOWN | wx.adv.DP_SHOWCENTURY,
+        )
+        hsizer.Add(self.date_picker, 0, wx.LEFT, 0)
 
-            self.time_picker = wx.adv.TimePickerCtrl(
-                self,
-                wx.ID_ANY,
-                wx_datetime,
-                wx.DefaultPosition,
-                wx.DefaultSize,
-                wx.adv.TP_DEFAULT,
-            )
-            hsizer.Add(self.time_picker, 0, wx.LEFT, 5)
+        self.time_picker = wx.adv.TimePickerCtrl(
+            self,
+            wx.ID_ANY,
+            wx_datetime,
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            wx.adv.TP_DEFAULT,
+        )
+        hsizer.Add(self.time_picker, 0, wx.LEFT, 5)
 
-            self.obj_txtctrl = wx.TextCtrl(
-                self,
-                wx.ID_ANY,
-                entry.obj_str,
-                wx.DefaultPosition,
-                wx.DefaultSize,
-                wx.TE_READONLY,
-            )
-            hsizer.Add(self.obj_txtctrl, 1, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.obj_txtctrl = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            self.entry.obj_str,
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            wx.TE_READONLY,
+        )
+        hsizer.Add(self.obj_txtctrl, 1, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
 
-            self.SetSizer(hsizer)
-            self.Layout()
+        self.SetSizer(hsizer)
+        self.Layout()
 
-            # Connect Events
-            self.date_picker.Bind(wx.adv.EVT_DATE_CHANGED, self._on_obj_changed)
-            self.time_picker.Bind(wx.adv.EVT_TIME_CHANGED, self._on_obj_changed)
+        # Connect Events
+        self.date_picker.Bind(wx.adv.EVT_DATE_CHANGED, self._on_obj_changed)
+        self.time_picker.Bind(wx.adv.EVT_TIME_CHANGED, self._on_obj_changed)
 
-        def _on_obj_changed(self, event):
-            date: wx.DateTime = self.date_picker.GetValue()
-            time: wx.DateTime = self.time_picker.GetValue()
-            new_value = arrow.Arrow(
-                year=date.year,
-                month=date.month + 1,  # in wx.adc.DatePickerCtrl the month start with 0
-                day=date.day,
-                hour=time.hour,
-                minute=time.minute,
-                second=time.second,
-            )
+    def _on_obj_changed(self, event):
+        date: wx.DateTime = self.date_picker.GetValue()
+        time: wx.DateTime = self.time_picker.GetValue()
+        new_value = arrow.Arrow(
+            year=date.year,
+            month=date.month + 1,  # in wx.adc.DatePickerCtrl the month start with 0
+            day=date.day,
+            hour=time.hour,
+            minute=time.minute,
+            second=time.second,
+        )
 
-            metadata = get_gui_metadata(entry.obj)
-            if metadata is not None:
-                entry.obj = add_gui_metadata(new_value, metadata)
-            else:
-                entry.obj = new_value
+        metadata = get_gui_metadata(self.entry.obj)
+        if metadata is not None:
+            self.entry.obj = add_gui_metadata(new_value, metadata)
+        else:
+            self.entry.obj = new_value
 
-            self.obj_txtctrl.SetValue(entry.obj_str)
+        self.obj_txtctrl.SetValue(self.entry.obj_str)
 
-            entry.model.ItemChanged(entry.dvc_item)
-            if entry.model._on_obj_changed is not None:
-                entry.model._on_obj_changed()
-
-    return ObjPanel
+        self.entry.model.ItemChanged(self.entry.dvc_item)
+        if self.entry.model._on_obj_changed is not None:
+            self.entry.model._on_obj_changed()
 
 
 # #####################################################################################################################
@@ -478,8 +478,8 @@ class EntryConstruct(object):
 
     # default "obj_panel_class" ###############################################
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_default_class(self)
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_Default
 
     # default "path" ##########################################################
     @property
@@ -537,7 +537,7 @@ class EntrySubconstruct(EntryConstruct):
 
     # default "obj_panel_class" ###############################################
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
+    def obj_panel_class(self) -> Type[ValuePanel]:
         return self.subentry.obj_panel_class
 
 
@@ -579,8 +579,8 @@ class EntryStruct(EntryConstruct):
         return ""
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_default_class(self)  # TODO: create panel for cs.Struct
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_Default  # TODO: create panel for cs.Struct
 
 
 # EntryArray ##########################################################################################################
@@ -637,8 +637,8 @@ class EntryArray(EntrySubconstruct):
         return ""
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_default_class(self)  # TODO: create panel for cs.Array
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_Default  # TODO: create panel for cs.Array
 
 
 # EntryGreedyRange ####################################################################################################
@@ -692,8 +692,8 @@ class EntryGreedyRange(EntrySubconstruct):
         return ""
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_default_class(self)  # TODO: create panel for cs.Array
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_Default  # TODO: create panel for cs.Array
 
 
 # EntryIfThenElse #####################################################################################################
@@ -770,10 +770,10 @@ class EntryIfThenElse(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
+    def obj_panel_class(self) -> Type[ValuePanel]:
         subentry = self._get_subentry()
         if subentry is None:
-            return create_obj_panel_default_class(self)
+            return ValuePanel_Default
         else:
             return subentry.obj_panel_class
 
@@ -858,10 +858,10 @@ class EntrySwitch(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
+    def obj_panel_class(self) -> Type[ValuePanel]:
         subentry = self._get_subentry()
         if subentry is None:
-            return create_obj_panel_default_class(self)
+            return ValuePanel_Default
         else:
             return subentry.obj_panel_class
 
@@ -921,11 +921,11 @@ class EntryFormatField(EntryConstruct):
             self.type_infos = type_mapping[construct.fmtstr]
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
+    def obj_panel_class(self) -> Type[ValuePanel]:
         if self.type_infos[1] is int:
-            return create_obj_panel_integer_class_factory(self)
+            return ValuePanel_Integer
         else:
-            return create_obj_panel_default_class(self)  # TODO: float
+            return ValuePanel_Default  # TODO: float
 
     @property
     def obj_str(self) -> str:
@@ -981,11 +981,11 @@ class EntryBytesInteger(EntryConstruct):
             return int_to_str(obj)
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
+    def obj_panel_class(self) -> Type[ValuePanel]:
         if isinstance(self.construct.length, int):
-            return create_obj_panel_integer_class_factory(self)
+            return ValuePanel_Integer
         else:
-            return create_obj_panel_default_class(self)
+            return ValuePanel_Default
 
 
 # EntryBitsInteger ####################################################################################################
@@ -1018,11 +1018,11 @@ class EntryBitsInteger(EntryConstruct):
             return int_to_str(obj)
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
+    def obj_panel_class(self) -> Type[ValuePanel]:
         if isinstance(self.construct.length, int):
-            return create_obj_panel_integer_class_factory(self)
+            return ValuePanel_Integer
         else:
-            return create_obj_panel_default_class(self)
+            return ValuePanel_Default
 
 
 # EntryBytes ##########################################################################################################
@@ -1167,8 +1167,8 @@ class EntryTimestamp(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_timestamp_class_factory(self)
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_Timestamp
 
 
 # EntryTransparentSubcon ##############################################################################################
@@ -1289,8 +1289,8 @@ class EntryEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_enum_class_factory(self)
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_Enum
 
 
 # EntryFlagsEnum ######################################################################################################
@@ -1325,9 +1325,8 @@ class EntryFlagsEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_flags_enum_class_factory(self)
-
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_FlagsEnum
 
 # EntryTEnum ##########################################################################################################
 class EntryTEnum(EntrySubconstruct):
@@ -1354,8 +1353,11 @@ class EntryTEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_panel_class(self) -> Type[wx.Panel]:
-        return create_obj_panel_enum_class_factory(self)
+    def obj_panel_class(self) -> Type[ValuePanel]:
+        return ValuePanel_Enum
+    
+
+
 
 
 # #####################################################################################################################
