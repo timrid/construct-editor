@@ -10,6 +10,7 @@ import wx.grid as Grid
 import wx.lib.newevent
 from typing import Optional, Callable
 import math
+import typing as t
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False
@@ -49,6 +50,19 @@ class HexEditorTable(Grid.GridTableBase):
 
         self._rows = 0
         self._cols = self.table_format.width
+
+        self._font = wx.Font(
+            10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self._attr_default = Grid.GridCellAttr()
+        self._attr_default.SetFont(self._font)
+        self._attr_default.SetBackgroundColour("white")
+
+        self._attr_selected = Grid.GridCellAttr()
+        self._attr_selected.SetFont(self._font)
+        self._attr_selected.SetBackgroundColour(wx.Colour(200, 200, 200))
+
+        self.selections: t.List[t.Tuple[int, int]] = []
 
     def getNextCursorPosition(self, row: int, col: int):
         col += 1
@@ -115,13 +129,11 @@ class HexEditorTable(Grid.GridTableBase):
 
         # update the scrollbars and the displayed part of the grid
         self.grid.SetColMinimalAcceptableWidth(0)
-        font = wx.Font(
-            10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
+        
 
         # get height of a the biggest char of the font
         dc = wx.MemoryDC()
-        dc.SetFont(font)
+        dc.SetFont(self._font)
         (char_width, char_height) = dc.GetTextExtent("M")
         self.grid.SetDefaultRowSize(char_height + 2)
 
@@ -131,13 +143,9 @@ class HexEditorTable(Grid.GridTableBase):
             # Can't share GridCellAttrs among columns; causes crash when
             # freeing them.  So, have to individually allocate the attrs for
             # each column
-            hexattr = Grid.GridCellAttr()
-            hexattr.SetFont(font)
-            hexattr.SetBackgroundColour("white")
             logger.debug("hexcol %d width=%d" % (col, hexcol_width))
             self.grid.SetColMinimalWidth(col, 0)
             self.grid.SetColSize(col, hexcol_width)
-            self.grid.SetColAttr(col, hexattr)
 
         self.grid.AdjustScrollbars()
         self.grid.ForceRefresh()
@@ -184,6 +192,27 @@ class HexEditorTable(Grid.GridTableBase):
 
     def GetRowLabelValue(self, row: int):
         return f"{row * self._cols:04X}"
+
+    def SetAttr(self, attr, row, col):
+        # SetAttr not supported
+        raise ValueError("SetAttr is not supported")
+
+    def GetAttr(self, row, col, kind):
+        byte_pos = (row * self._cols) + col
+        
+        selected = False
+        for sel in self.selections:
+            if sel[0] <= byte_pos < sel[1]:
+                selected = True
+                break
+
+        if selected:
+            attr = self._attr_selected
+        else:
+            attr = self._attr_default
+
+        attr.IncRef() # increment reference count (https://stackoverflow.com/a/14213641)
+        return attr
 
 
 class HexDigitMixin(object):
@@ -600,15 +629,7 @@ class HexEditorGrid(Grid.Grid):
 
     def colorise(self, start: int, end: int, refresh: bool = True):
         """ Colorize a byte range in the Hex Editor. Only a singe range can be colorized """
-        # reset old colors
-        if self._colorised_range:
-            old_start = self._colorised_range[0]
-            old_end = self._colorised_range[1]
-            self._colorise(old_start, old_end, wx.WHITE)
-
-        # set new colors
-        self._colorised_range = (start, end)
-        self._colorise(start, end, wx.Colour(200, 200, 200))
+        self._table.selections = [(start, end)]
 
         if refresh:
             self.refresh()
@@ -621,11 +642,6 @@ class HexEditorGrid(Grid.Grid):
 
         if refresh:
             self.refresh()
-
-    def _colorise(self, start: int, end: int, colour: wx.Colour):
-        for idx in range(start, end, 1):
-            row, col = self._table.get_bytes_position(idx)
-            self.SetCellBackgroundColour(row, col, colour)
 
     def refresh(self):
         """ Refresh the Grid, when some values have canged """
