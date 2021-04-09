@@ -180,7 +180,7 @@ def include_metadata(
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = include_metadata(constr.subcon)
+        constr.subcon = include_metadata(constr.subcon)  # type: ignore
         return constr
 
     elif isinstance(

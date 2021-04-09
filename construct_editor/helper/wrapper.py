@@ -1362,41 +1362,109 @@ class EntryTEnum(EntrySubconstruct):
 # Entry Mapping #######################################################################################################
 # #####################################################################################################################
 entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruct]] = {
+    # #########################################################################
     # wrapper from: construct #################################################
+    # #########################################################################
+    # bytes and bits ############################
+    cs.Bytes: EntryBytes,
+    # cs.GreedyBytes
+    # cs.Bitwise
+    # cs.Bytewise
+
+    # integers and floats #######################
+    cs.FormatField: EntryFormatField,
+    cs.BytesInteger: EntryBytesInteger,
+    cs.BitsInteger: EntryBitsInteger,
+
+    # strings ###################################
+    # cs.StringEncoded
+
+    # mappings ##################################
+    # cs.Flag
+    # cs.EnumInteger
+    # cs.EnumIntegerString
+    cs.Enum: EntryEnum,
+    # cs.BitwisableString
+    cs.FlagsEnum: EntryFlagsEnum,
+    # cs.Mapping
+
+    # structures and sequences ##################
+    cs.Struct: EntryStruct,
+    # cs.Sequence
+
+    # arrays ranges and repeaters ###############
     cs.Array: EntryArray,
     cs.GreedyRange: EntryGreedyRange,
-    cs.Struct: EntryStruct,
+    # cs.RepeatUntil
+
+    # specials ##################################
+    cs.Renamed: EntryRenamed,
+
+    # miscellaneous #############################
+    cs.Const: EntryTransparentSubcon,
+    cs.Computed: EntryComputed,
+    # cs.Index
+    # cs.Rebuild
+    cs.Default: EntryTransparentSubcon,
+    # cs.Check
+    # cs.Error
+    # cs.FocusedSeq
+    # cs.Pickled
+    # cs.Numpy
+    # cs.NamedTuple
+    cs.TimestampAdapter: EntryTimestamp,
+    # cs.Hex
+    # cs.HexDump
+
+    # conditional ###############################
+    # cs.Union
+    # cs.Select
     cs.IfThenElse: EntryIfThenElse,
     cs.Switch: EntrySwitch,
-    cs.FormatField: EntryFormatField,
-    cs.BitsInteger: EntryBitsInteger,
-    cs.BytesInteger: EntryBytesInteger,
-    cs.Bytes: EntryBytes,
-    cs.Renamed: EntryRenamed,
-    type(cs.Tell): EntryTell,
-    cs.Default: EntryTransparentSubcon,
+    # cs.StopIf
+
+    # alignment and padding #####################
+    # cs.Padded
+    # cs.Aligned
+
+    # stream manipulation #######################
     cs.Pointer: EntryTransparentSubcon,
     cs.Peek: EntryPeek,
     cs.Seek: EntrySeek,
+    type(cs.Tell): EntryTell,
+    # cs.Pass
+    # cs.Terminated
+
+    # tunneling and byte/bit swapping ###########
+    cs.RawCopy: EntryRawCopy,
+    # cs.Prefixed
+    # cs.FixedSized
+    # cs.NullTerminated
+    # cs.NullStripped
+    # cs.RestreamData
     cs.Transformed: EntryTransparentSubcon,
     cs.Restreamed: EntryTransparentSubcon,
-    cs.RawCopy: EntryRawCopy,
-    cs.Computed: EntryComputed,
-    cs.TimestampAdapter: EntryTimestamp,
-    cs.Enum: EntryEnum,
-    cs.FlagsEnum: EntryFlagsEnum,
-    cs.Const: EntryTransparentSubcon,
+    # cs.ProcessXor
+    # cs.ProcessRotateLeft
+    # cs.Checksum
+    # cs.Compressed
+    # cs.CompressedLZ4
+    # cs.Rebuffered
     # #########################################################################
     #
     #
+    # #########################################################################
     # wrapper from: construct_typing ##########################################
+    # #########################################################################
     cst.TStruct: EntryTStruct,
     cst.TBitStruct: EntryTBitStruct,
     cst.TEnum: EntryTEnum,
     # #########################################################################
     #
     #
-    # wrapper from: construct_wxpython #########################################
+    # #########################################################################
+    # wrapper from: construct_editor ##########################################
+    # #########################################################################
     IncludeGuiMetaData: EntryTransparentSubcon,
     # #########################################################################
 }
