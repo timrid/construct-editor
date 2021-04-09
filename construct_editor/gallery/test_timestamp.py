@@ -3,6 +3,7 @@ import construct_typed as cst
 import dataclasses
 import typing as t
 import arrow
+from . import GalleryItem
 
 
 @dataclasses.dataclass
@@ -19,7 +20,11 @@ class Timestamps(cst.TContainerMixin):
 
 
 constr = cst.TStruct(Timestamps)
-binarys = {
-    "Zeros": bytes(constr.sizeof()),
-    "1": bytes([4, 4, 12, 4, 4, 4, 4]),
-}
+
+gallery_item = GalleryItem(
+    construct=constr,
+    example_binarys={
+        "Zeros": bytes(constr.sizeof()),
+        "1": bytes([4, 4, 12, 4, 4, 4, 4]),
+    },
+)

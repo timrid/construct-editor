@@ -1,4 +1,5 @@
 from construct import *
+from . import GalleryItem
 
 docs = """
 PE/COFF format as used on Windows to store EXE DLL SYS files. This includes 64-bit and .NET code.
@@ -241,4 +242,8 @@ pe32file = docs * Struct(
     "optionalheader" / If(this.coffheader.optionalheader_size > 0, optionalheader),
     "sections_count" / Computed(this.coffheader.sections_count),
     "sections" / Array(this.sections_count, section),
+)
+
+gallery_item = GalleryItem(
+    construct=pe32file,
 )

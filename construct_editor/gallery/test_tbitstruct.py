@@ -1,24 +1,29 @@
 import construct as cs
 import construct_typed as cst
 import dataclasses
+from . import GalleryItem
 
 
 @dataclasses.dataclass
 class TBitsStructTest(cst.TContainerMixin):
     @dataclasses.dataclass
     class Nested(cst.TContainerMixin):
-        bit: int = cst.sfield(cs.Bit)
-        bits_integer_1: int = cst.sfield(cs.BitsInteger(2))
-        bits_integer_2: int = cst.sfield(cs.BitsInteger(5))
+        test_bit: int = cst.sfield(cs.Bit)
+        test_nibble: int = cst.sfield(cs.Nibble)
+        test_bits_1: int = cst.sfield(cs.BitsInteger(3))
+        test_bits_2: int = cst.sfield(cs.BitsInteger(6))
+        test_bits_3: int = cst.sfield(cs.BitsInteger(2))
 
     nested: Nested = cst.sfield(cs.ByteSwapped(cst.TBitStruct(Nested)))
 
-    nested_reverse: Nested = cst.sfield(
-        cst.TBitStruct(Nested, reverse=True)
-    )
+    nested_reverse: Nested = cst.sfield(cst.TBitStruct(Nested, reverse=True))
 
 
 constr = cst.TStruct(TBitsStructTest)
-binarys = {
-    "Zeros": bytes(2),
-}
+
+gallery_item = GalleryItem(
+    construct=constr,
+    example_binarys={
+        "Zeros": bytes(constr.sizeof()),
+    },
+)

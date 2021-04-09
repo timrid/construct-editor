@@ -2,6 +2,7 @@ import construct as cs
 import construct_typed as cst
 import dataclasses
 import typing as t
+from . import GalleryItem
 
 
 @dataclasses.dataclass
@@ -12,8 +13,12 @@ class TStructTest(cst.TContainerMixin):
 
 
 constr = cst.TStruct(TStructTest)
-binarys = {
-    "Zeros": bytes([0, 0, 0, 0, 0, 0]),
-    "1": bytes([1, 2, 3, 4, 5, 4, 1, 2, 3, 4]),
-    "2": bytes([1, 2, 3, 4, 5, 8, 7, 6, 5, 4, 3, 2, 1, 0]),
-}
+
+gallery_item = GalleryItem(
+    construct=constr,
+    example_binarys={
+        "Zeros": bytes([0, 0, 0, 0, 0, 0]),
+        "1": bytes([1, 2, 3, 4, 5, 4, 1, 2, 3, 4]),
+        "2": bytes([1, 2, 3, 4, 5, 8, 7, 6, 5, 4, 3, 2, 1, 0]),
+    },
+)

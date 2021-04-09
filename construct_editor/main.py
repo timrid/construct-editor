@@ -11,7 +11,7 @@ from wx.lib.embeddedimage import PyEmbeddedImage
 import construct_editor.gallery.example_pe32coff
 import construct_editor.gallery.test_array
 import construct_editor.gallery.test_greedyrange
-import construct_editor.gallery.test_bits
+import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_tstruct
@@ -25,11 +25,6 @@ import construct_editor.gallery.test_pointer_peek_seek_tell
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
-@dataclasses.dataclass
-class GalleryItem:
-    construct: cs.Construct[t.Any, t.Any]
-    contextkw: t.Dict[str, t.Any] = dataclasses.field(default_factory=dict)
-    example_binarys: t.Dict[str, bytes] = dataclasses.field(default_factory=dict)
 
 
 class ConstructGallery(wx.Panel):
@@ -38,63 +33,107 @@ class ConstructGallery(wx.Panel):
 
         # Define all galleries ############################################
         self.construct_gallery = {
-            "Test Array": GalleryItem(
-                construct=construct_editor.gallery.test_array.constr,
-                example_binarys=construct_editor.gallery.test_array.binarys,
-            ),
-            "Example pe32coff": GalleryItem(
-                construct=construct_editor.gallery.example_pe32coff.pe32file,
-            ),
-            "Test GreedyRange": GalleryItem(
-                construct=construct_editor.gallery.test_greedyrange.constr,
-                example_binarys=construct_editor.gallery.test_greedyrange.binarys,
-            ),
-            "Test Bits": GalleryItem(
-                construct=construct_editor.gallery.test_bits.constr,
-                example_binarys=construct_editor.gallery.test_bits.binarys,
-            ),
-            "Test IfThenElse": GalleryItem(
-                construct=construct_editor.gallery.test_ifthenelse.constr,
-                example_binarys=construct_editor.gallery.test_ifthenelse.binarys,
-            ),
-            "Test Switch": GalleryItem(
-                construct=construct_editor.gallery.test_switch.constr,
-                example_binarys=construct_editor.gallery.test_switch.binarys,
-            ),
-            "Test TStruct": GalleryItem(
-                construct=construct_editor.gallery.test_tstruct.constr,
-                example_binarys=construct_editor.gallery.test_tstruct.binarys,
-            ),
-            "Test TBitStruct": GalleryItem(
-                construct=construct_editor.gallery.test_tbitstruct.constr,
-                example_binarys=construct_editor.gallery.test_tbitstruct.binarys,
-            ),
-            "Test Enum": GalleryItem(
-                construct=construct_editor.gallery.test_enum.constr,
-                example_binarys=construct_editor.gallery.test_enum.binarys,
-            ),
-            "Test Flags Enum": GalleryItem(
-                construct=construct_editor.gallery.test_flags_enum.constr,
-                example_binarys=construct_editor.gallery.test_flags_enum.binarys,
-            ),
-            "Test TEnum": GalleryItem(
-                construct=construct_editor.gallery.test_tenum.constr,
-                example_binarys=construct_editor.gallery.test_tenum.binarys,
-            ),
-            "Test Timestamp": GalleryItem(
-                construct=construct_editor.gallery.test_timestamp.constr,
-                example_binarys=construct_editor.gallery.test_timestamp.binarys,
-            ),
-            "Test Computed": GalleryItem(
-                construct=construct_editor.gallery.test_computed.constr,
-                example_binarys=construct_editor.gallery.test_computed.binarys,
-            ),
-            "Test Pointer/Peek/Seek/Tell": GalleryItem(
-                construct=construct_editor.gallery.test_pointer_peek_seek_tell.constr,
-                example_binarys=construct_editor.gallery.test_pointer_peek_seek_tell.binarys,
-            ),
+            "################ EXAMPLES ################": None,
+            "Example: pe32coff": construct_editor.gallery.example_pe32coff.gallery_item,
+            "################ TESTS ####################": None,
+            "## bytes and bits ################": None,
+            "Test: Bytes (TODO)": None,
+            "Test: GreedyBytes (TODO)": None,
+
+            "## integers and floats ###########": None,
+            "Test: FormatField (TODO)": None,
+            "Test: BytesInteger (TODO)": None,
+            "Test: BitsInteger (TODO)": None,
+
+            "## strings #######################": None,
+            "Test: StringEncoded (TODO)": None,
+
+            "## mappings ######################": None,
+            "Test: Flag (TODO)": None,
+            "Test: Enum": construct_editor.gallery.test_enum.gallery_item,
+            "Test: FlagsEnum": construct_editor.gallery.test_flags_enum.gallery_item,
+            "Test: TEnum": construct_editor.gallery.test_tenum.gallery_item,
+            "Test: Mapping (TODO)": None,
+
+            "## structures and sequences ######": None,
+            "Test: Struct (TODO)": None,
+            "Test: Sequence (TODO)": None,
+            "Test: TStruct": construct_editor.gallery.test_tstruct.gallery_item,
+            "Test: TBitStruct": construct_editor.gallery.test_tbitstruct.gallery_item,
+
+
+            "## arrays ranges and repeaters ######": None,
+            "Test: Array": construct_editor.gallery.test_array.gallery_item,
+            "Test: GreedyRange": construct_editor.gallery.test_greedyrange.gallery_item,
+            "Test: RepeatUntil (TODO)": None,
+
+
+            "## specials ##########################": None,
+            "Test: Renamed": construct_editor.gallery.test_renamed.gallery_item,
+
+            "## miscellaneous ##########################": None,
+            "Test: Const (TODO)": None,
+            "Test: Computed": construct_editor.gallery.test_computed.gallery_item,
+            "Test: Index (TODO)": None,
+            "Test: Rebuild (TODO)": None,
+            "Test: Default (TODO)": None,
+            "Test: Check (TODO)": None,
+            "Test: Error (TODO)": None,
+            "Test: FocusedSeq (TODO)": None,
+            "Test: Pickled (TODO)": None,
+            "Test: Numpy (TODO)": None,
+            "Test: NamedTuple (TODO)": None,
+            "Test: TimestampAdapter": construct_editor.gallery.test_timestamp.gallery_item,
+            "Test: Hex (TODO)": None,
+            "Test: HexDump (TODO)": None,
+
+            "## conditional ##########################": None,
+            "Test: Union (TODO)": None,
+            "Test: Select (TODO)": None,
+            "Test: IfThenElse": construct_editor.gallery.test_ifthenelse.gallery_item,
+            "Test: Switch": construct_editor.gallery.test_switch.gallery_item,
+            "Test: StopIf (TODO)": None,
+
+            "## alignment and padding ##########################": None,
+            "Test: Padded (TODO)": None,
+            "Test: Aligned (TODO)": None,
+
+            "## stream manipulation ##########################": None,
+            "Test: Pointer/Peek/Seek/Tell": construct_editor.gallery.test_pointer_peek_seek_tell.gallery_item,
+            "Test: Pass (TODO)": None,
+            "Test: Terminated (TODO)": None,
+
+            "## tunneling and byte/bit swapping ##########################": None,
+            "Test: RawCopy (TODO)": None,
+            "Test: Prefixed (TODO)": None,
+            "Test: FixedSized (TODO)": None,
+            "Test: NullTerminated (TODO)": None,
+            "Test: NullStripped (TODO)": None,
+            "Test: RestreamData (TODO)": None,
+            "Test: Transformed (TODO)": None,
+            "Test: Restreamed (TODO)": None,
+            "Test: ProcessXor (TODO)": None,
+            "Test: ProcessRotateLeft (TODO)": None,
+            "Test: Checksum (TODO)": None,
+            "Test: Compressed (TODO)": None,
+            "Test: CompressedLZ4 (TODO)": None,
+            "Test: Rebuffered (TODO)": None,
+
+
+
+
+
+
+            
+            
+            
+
+
+            
+            
+            
         }
-        default_gallery = list(self.construct_gallery.keys())[0]
+        default_gallery = list(self.construct_gallery.keys())[1]
         default_gallery_item = self.construct_gallery[default_gallery]
 
         # Define GUI elements #############################################

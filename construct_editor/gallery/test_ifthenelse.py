@@ -2,6 +2,7 @@ import construct as cs
 import construct_typed as cst
 import dataclasses
 import typing as t
+from . import GalleryItem
 
 
 @dataclasses.dataclass
@@ -25,7 +26,11 @@ class IfThenElse(cst.TContainerMixin):
 
 
 constr = cst.TStruct(IfThenElse)
-binarys = {
-    "Zeros": bytes([0, 0, 0, 0, 0]),
-    "1": bytes([0, 1, 2, 1, 2]),
-}
+
+gallery_item = GalleryItem(
+    construct=constr,
+    example_binarys={
+        "Zeros": bytes([0, 0, 0, 0, 0]),
+        "1": bytes([0, 1, 2, 1, 2]),
+    },
+)
