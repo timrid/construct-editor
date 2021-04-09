@@ -64,32 +64,26 @@ class HexEditorTable(Grid.GridTableBase):
 
         self.selections: t.List[t.Tuple[int, int]] = []
 
-    def getNextCursorPosition(self, row: int, col: int):
-        col += 1
-        if col >= self._cols:
-            if row < self._rows - 1:
-                row += 1
-                col = 0
-            else:
-                col = self._cols - 1
+    def get_next_cursor_rowcol(self, row: int, col: int):
+        idx = self.get_byte_index(row, col)
+        if idx < len(self.binary):  # one pos further than len(binary) is okay.
+            idx += 1
+        return self.get_byte_rowcol(idx)
 
-        return (row, col)
+    def get_prev_cursor_rowcol(self, row: int, col: int):
+        idx = self.get_byte_index(row, col)
+        if idx > 0:
+            idx -= 1
+        return self.get_byte_rowcol(idx)
 
-    def getPrevCursorPosition(self, row: int, col: int):
-        col -= 1
-        if col < 0:
-            if row > 0:
-                row -= 1
-                col = self._cols - 1
-            else:
-                col = 0
-
-        return (row, col)
-
-    def get_bytes_position(self, idx: int):
+    def get_byte_rowcol(self, idx: int):
         col = idx % self._cols
         row = math.floor(idx / self._cols)
         return (row, col)
+
+    def get_byte_index(self, row: int, col: int):
+        idx = (row * self._cols) + col
+        return idx
 
     # def ResetView(self, grid: Grid.Grid):
     def refresh(self):
@@ -140,9 +134,6 @@ class HexEditorTable(Grid.GridTableBase):
         # settings for each column
         hexcol_width = (char_width * 2) + 5
         for col in range(self._cols):
-            # Can't share GridCellAttrs among columns; causes crash when
-            # freeing them.  So, have to individually allocate the attrs for
-            # each column
             logger.debug("hexcol %d width=%d" % (col, hexcol_width))
             self.grid.SetColMinimalWidth(col, 0)
             self.grid.SetColSize(col, hexcol_width)
@@ -158,25 +149,21 @@ class HexEditorTable(Grid.GridTableBase):
 
     # ############################################ GridTableBase Interface ############################################
     def SetValue(self, row: int, col: int, value: str):
-        byte_pos = (row * self._cols) + col
-        self.binary[byte_pos] = int(value, 16)
+        byte_index = self.get_byte_index(row, col)
+        self.binary[byte_index] = int(value, 16)
         if self.on_binary_changed:
-            self.on_binary_changed(byte_pos, 1)
+            self.on_binary_changed(byte_index, 1)
 
     def GetValue(self, row: int, col: int):
-        byte_pos = (row * self._cols) + col
-        logger.debug(
-            f"GetValue row={row} col={col} byte_pos={byte_pos} binary_len={len(self.binary)}"
-        )
-        if byte_pos < len(self.binary):
-            return "%02x" % self.binary[byte_pos]
+        byte_index = self.get_byte_index(row, col)
+        if byte_index < len(self.binary):
+            return f"{self.binary[byte_index]:02x}"
         else:
             return ""
 
     def IsEmptyCell(self, row: int, col: int):
-        byte_pos = (row * self._cols) + col
-
-        if byte_pos >= len(self.binary):
+        byte_index = self.get_byte_index(row, col)
+        if byte_index >= len(self.binary):
             return True
         else:
             return False
@@ -215,45 +202,46 @@ class HexEditorTable(Grid.GridTableBase):
         return attr
 
 
-class HexDigitMixin(object):
-    keypad = [
-        wx.WXK_NUMPAD0,
-        wx.WXK_NUMPAD1,
-        wx.WXK_NUMPAD2,
-        wx.WXK_NUMPAD3,
-        wx.WXK_NUMPAD4,
-        wx.WXK_NUMPAD5,
-        wx.WXK_NUMPAD6,
-        wx.WXK_NUMPAD7,
-        wx.WXK_NUMPAD8,
-        wx.WXK_NUMPAD9,
-    ]
+_KEYPAD = [
+    wx.WXK_NUMPAD0,
+    wx.WXK_NUMPAD1,
+    wx.WXK_NUMPAD2,
+    wx.WXK_NUMPAD3,
+    wx.WXK_NUMPAD4,
+    wx.WXK_NUMPAD5,
+    wx.WXK_NUMPAD6,
+    wx.WXK_NUMPAD7,
+    wx.WXK_NUMPAD8,
+    wx.WXK_NUMPAD9,
+]
 
-    def isValidHexDigit(self, key):
-        return (
-            key in HexDigitMixin.keypad
-            or (key >= ord("0") and key <= ord("9"))
-            or (key >= ord("A") and key <= ord("F"))
-            or (key >= ord("a") and key <= ord("f"))
-        )
 
-    def getValidHexDigit(self, key):
-        if key in HexDigitMixin.keypad:
-            return chr(ord("0") + key - wx.WXK_NUMPAD0)
-        elif (
-            (key >= ord("0") and key <= ord("9"))
-            or (key >= ord("A") and key <= ord("F"))
-            or (key >= ord("a") and key <= ord("f"))
-        ):
-            return chr(key)
-        else:
-            return None
+def _is_valid_hex_digit(key):
+    return (
+        key in _KEYPAD
+        or (key >= ord("0") and key <= ord("9"))
+        or (key >= ord("A") and key <= ord("F"))
+        or (key >= ord("a") and key <= ord("f"))
+    )
+
+
+def _get_valid_hex_digit(key):
+    if key in _KEYPAD:
+        return chr(ord("0") + key - wx.WXK_NUMPAD0)
+    elif (
+        (key >= ord("0") and key <= ord("9"))
+        or (key >= ord("A") and key <= ord("F"))
+        or (key >= ord("a") and key <= ord("f"))
+    ):
+        return chr(key)
+    else:
+        return None
 
 
 # #####################################################################################################################
 # ############################################## wx.TextCtrl ##########################################################
 # #####################################################################################################################
-class HexTextCtrl(wx.TextCtrl, HexDigitMixin):
+class HexTextCtrl(wx.TextCtrl):
     def __init__(self, parent, id, parentgrid):
         # Don't use the validator here, because apparently we can't
         # reset the validator based on the columns.  We have to do the
@@ -263,13 +251,13 @@ class HexTextCtrl(wx.TextCtrl, HexDigitMixin):
         )
         logger.debug("parent=%s" % parent)
         self.SetInsertionPoint(0)
-        self.Bind(wx.EVT_TEXT, self.OnText)
-        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.Bind(wx.EVT_TEXT, self.on_text)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.parentgrid = parentgrid
-        self.setMode("hex")
+        self.set_mode("hex")
         self.startValue = None
 
-    def setMode(self, mode):
+    def set_mode(self, mode):
         self.mode = mode
         if mode == "hex":
             self.SetMaxLength(2)
@@ -282,23 +270,23 @@ class HexTextCtrl(wx.TextCtrl, HexDigitMixin):
             self.autoadvance = 0
         self.userpressed = False
 
-    def editingNewCell(self, value, mode="hex"):
+    def editing_new_cell(self, value, mode="hex"):
         """
         Begin editing a new cell by determining the edit mode and
         setting the initial value.
         """
-        # Set the mode before setting the value, otherwise OnText gets
+        # Set the mode before setting the value, otherwise on_text gets
         # triggered before self.userpressed is set to false.  When
         # operating in char mode (i.e. autoadvance=1), this causes the
         # editor to skip every other cell.
-        self.setMode(mode)
+        self.set_mode(mode)
         self.startValue = value
         self.SetValue(value)
         self.SetFocus()
         self.SetInsertionPoint(0)
         self.SetSelection(-1, -1)  # select the text
 
-    def insertFirstKey(self, key):
+    def insert_first_key(self, key):
         """
         Check for a valid initial keystroke, and insert it into the
         text ctrl if it is one.
@@ -310,13 +298,13 @@ class HexTextCtrl(wx.TextCtrl, HexDigitMixin):
         """
         ch = None
         if self.mode == "hex":
-            ch = self.getValidHexDigit(key)
+            ch = _get_valid_hex_digit(key)
         elif key >= wx.WXK_SPACE and key <= 255:
             ch = chr(key)
 
         if ch is not None:
             # set self.userpressed before SetValue, because it appears
-            # that the OnText callback happens immediately and the
+            # that the on_text callback happens immediately and the
             # keystroke won't be flagged as one that the user caused.
             self.userpressed = True
             self.SetValue(ch)
@@ -325,7 +313,7 @@ class HexTextCtrl(wx.TextCtrl, HexDigitMixin):
 
         return False
 
-    def OnKeyDown(self, evt):
+    def on_key_down(self, evt):
         """
         Keyboard handler to process command keys before they are
         inserted.  Tabs, arrows, ESC, return, etc. should be handled
@@ -345,13 +333,13 @@ class HexTextCtrl(wx.TextCtrl, HexDigitMixin):
             wx.CallAfter(self.parentgrid._abort_edit)
             return
         elif self.mode == "hex":
-            if self.isValidHexDigit(key):
+            if _is_valid_hex_digit(key):
                 self.userpressed = True
         elif self.mode != "hex":
             self.userpressed = True
         evt.Skip()
 
-    def OnText(self, evt):
+    def on_text(self, evt):
         """
         Callback used to automatically advance to the next edit field.
         If self.autoadvance > 0, this number is used as the max number
@@ -386,7 +374,7 @@ class HexTextCtrl(wx.TextCtrl, HexDigitMixin):
 # #####################################################################################################################
 # ############################################## Grid.GridCellEditor ##################################################
 # #####################################################################################################################
-class HexCellEditor(Grid.GridCellEditor, HexDigitMixin):
+class HexCellEditor(Grid.GridCellEditor):
     """
     Cell editor for the grid, based on GridCustEditor.py from the
     wxPython demo.
@@ -445,7 +433,7 @@ class HexCellEditor(Grid.GridCellEditor, HexDigitMixin):
         logger.debug("row,col=(%d,%d)" % (row, col))
         self.startValue = grid.GetTable().GetValue(row, col)
         mode = "hex"
-        self._tc.editingNewCell(self.startValue, mode)
+        self._tc.editing_new_cell(self.startValue, mode)
 
     def EndEdit(self, row, col, grid, oldval):
         """
@@ -517,7 +505,7 @@ class HexCellEditor(Grid.GridCellEditor, HexDigitMixin):
         """
         logger.debug("keycode=%d" % evt.GetKeyCode())
         key = evt.GetKeyCode()
-        if not self._tc.insertFirstKey(key):
+        if not self._tc.insert_first_key(key):
             evt.Skip()
 
     def StartingClick(self):
@@ -586,19 +574,21 @@ class HexEditorGrid(Grid.Grid):
 
         self.ShowScrollbars(wx.SHOW_SB_ALWAYS, wx.SHOW_SB_ALWAYS)
 
-        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
+        self.GetGridWindow().Bind(wx.EVT_MOTION, self._on_motion)
         self.Show(True)
 
         self._table.refresh()
 
         self._colorised_range = None
+        self._prev_motion_rowcol = (None, None)
 
     def _advance_cursor(self):
         self.DisableCellEditControl()
         # FIXME: moving from the hex region to the value region using
         # self.MoveCursorRight(False) causes a segfault, so make sure
         # to stay in the same region
-        (row, col) = self.GetTable().getNextCursorPosition(
+        (row, col) = self.GetTable().get_next_cursor_rowcol(
             self.GetGridCursorRow(), self.GetGridCursorCol()
         )
         self.SetGridCursor(row, col)
@@ -607,7 +597,18 @@ class HexEditorGrid(Grid.Grid):
     def _abort_edit(self):
         self.DisableCellEditControl()
 
-    def OnKeyDown(self, evt):
+    def _on_motion(self, event):
+        x, y = self.CalcUnscrolledPosition(event.GetPosition())
+        row = self.YToRow(y)
+        col = self.XToCol(x)
+        # print(f"row{row} col{col}")
+        if (row >= 0) and (col >= 0) and ((row, col) != self._prev_motion_rowcol):
+            idx = self._table.get_byte_index(row, col)
+            self.GetGridWindow().SetToolTip(f"Index={idx}")
+        event.Skip()
+
+
+    def _on_key_down(self, evt):
         logger.debug("evt=%s" % evt)
         if evt.GetKeyCode() == wx.WXK_RETURN or evt.GetKeyCode() == wx.WXK_TAB:
             if evt.ControlDown():  # the edit control needs this key
@@ -615,11 +616,11 @@ class HexEditorGrid(Grid.Grid):
             else:
                 self.DisableCellEditControl()
                 if evt.ShiftDown():
-                    (row, col) = self.GetTable().getPrevCursorPosition(
+                    (row, col) = self.GetTable().get_prev_cursor_rowcol(
                         self.GetGridCursorRow(), self.GetGridCursorCol()
                     )
                 else:
-                    (row, col) = self.GetTable().getNextCursorPosition(
+                    (row, col) = self.GetTable().get_next_cursor_rowcol(
                         self.GetGridCursorRow(), self.GetGridCursorCol()
                     )
                 self.SetGridCursor(row, col)
@@ -636,7 +637,7 @@ class HexEditorGrid(Grid.Grid):
 
     def scroll_to_pos(self, pos: int, refresh: bool = True):
         """ Scroll to a specific byte position in the Hex Editor """
-        row, col = self._table.get_bytes_position(pos)
+        row, col = self._table.get_byte_rowcol(pos)
 
         self.MakeCellVisible(row, col)
 
