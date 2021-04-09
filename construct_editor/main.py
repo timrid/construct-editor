@@ -133,7 +133,8 @@ class ConstructGallery(wx.Panel):
             
             
         }
-        default_gallery = list(self.construct_gallery.keys())[1]
+        self.gallery_selection = 1
+        default_gallery = list(self.construct_gallery.keys())[self.gallery_selection]
         default_gallery_item = self.construct_gallery[default_gallery]
 
         # Define GUI elements #############################################
@@ -233,6 +234,12 @@ class ConstructGallery(wx.Panel):
     def on_gallery_selection_changed(self, event):
         selection = self.gallery_selector_lbx.GetStringSelection()
         gallery_item = self.construct_gallery[selection]
+        if gallery_item is None:
+            self.gallery_selector_lbx.SetSelection(self.gallery_selection) # restore old selection
+            return
+
+        # save currently shown selection
+        self.gallery_selection = self.gallery_selector_lbx.GetSelection()  
 
         self.example_selector_lbx.Clear()
         if len(gallery_item.example_binarys) > 0:
