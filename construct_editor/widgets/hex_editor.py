@@ -11,6 +11,7 @@ import wx.lib.newevent
 from typing import Optional, Callable
 import math
 import typing as t
+from pubsub import pub
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False
@@ -575,17 +576,16 @@ class HexEditorGrid(Grid.Grid):
 
         self.ShowScrollbars(wx.SHOW_SB_ALWAYS, wx.SHOW_SB_ALWAYS)
 
-        self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
-        self.GetGridWindow().Bind(wx.EVT_MOTION, self._on_motion)
+        # self.GetGridWindow().Bind(wx.EVT_MOTION, self._on_motion)
+        self.GetGridWindow().Bind(wx.EVT_LEFT_DOWN, self._on_mouse_left_down)
 
+        self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
+        self.Bind(Grid.EVT_GRID_SELECT_CELL, self._on_select_cell)
         self.Bind(Grid.EVT_GRID_RANGE_SELECTING, self._on_range_selecting)
 
         self.Show(True)
 
         self._table.refresh()
-
-        self._prev_motion_rowcol = (-1, -1)
-        self._selections = []
 
     def _advance_cursor(self):
         self.DisableCellEditControl()
@@ -601,18 +601,29 @@ class HexEditorGrid(Grid.Grid):
     def _abort_edit(self):
         self.DisableCellEditControl()
 
-    def _on_motion(self, event):
-        x, y = self.CalcUnscrolledPosition(event.GetPosition())
-        row = self.YToRow(y)
-        col = self.XToCol(x)
-        # print(f"row{row} col{col}")
-        if (row >= 0) and (col >= 0) and ((row, col) != self._prev_motion_rowcol):
-            idx = self._table.get_byte_idx(row, col)
-            self.GetGridWindow().SetToolTip(f"Index={idx}")
-            self._prev_motion_rowcol = (row, col)
-        event.Skip()
+    # def _on_motion(self, event):
+    #     x, y = self.CalcUnscrolledPosition(event.GetPosition())
+    #     row = self.YToRow(y)
+    #     col = self.XToCol(x)
+    #     if (row >= 0) and (col >= 0):
+    #         idx = self._table.get_byte_idx(row, col)
+    #         self.GetGridWindow().SetToolTip(f"Index={idx}")
+    #     event.Skip()
 
-    def _on_range_selecting(self, event: Grid.GridRangeSelectEvent):
+    def _on_mouse_left_down(self, event):
+        if event.AltDown() or event.ShiftDown() or event.ControlDown():
+            # don't support selecting multiple ranges with ATL/SHIFT/CTRL.
+            self._on_range_selecting(None)
+            return
+        else:
+            event.Skip()
+
+    def _on_select_cell(self, event: Grid.GridEvent):
+        """ Single cell selected """
+        idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
+        pub.sendMessage("hex_editor_selection_listener", idx1=idx, idx2=None)
+
+    def _on_range_selecting(self, event):
         """ Change selection from a rectangular block to a range between two indexes """
         self.ClearSelection()
 
@@ -631,36 +642,30 @@ class HexEditorGrid(Grid.Grid):
 
         self.select_range(idx1, idx2)
 
-    def select_range(self, idx1: int, idx2: int, add_to_selected: bool = False):
+    def select_range(self, idx1: int, idx2: int):
         """ Select the range between two byte indexes. """
-        if add_to_selected is False:
-            self._selections.clear()
-        self._selections.append((idx1, idx2))
-        self._show_selections()
+        if idx1 > idx2:
+            idx1, idx2 = idx2, idx1
+        start_row, start_col = self._table.get_byte_rowcol(idx1)
+        end_row, end_col = self._table.get_byte_rowcol(idx2)
 
-    def _show_selections(self):
-        self.ClearSelection()
-        for idx1, idx2 in self._selections:
-            if idx1 > idx2:
-                idx1, idx2 = idx2, idx1
-            start_row, start_col = self._table.get_byte_rowcol(idx1)
-            end_row, end_col = self._table.get_byte_rowcol(idx2)
+        first_col = 0
+        last_col = self._table.GetNumberCols() - 1
+        row_dist = end_row - start_row
 
-            first_col = 0
-            last_col = self._table.GetNumberCols() - 1
-            row_dist = end_row - start_row
+        if row_dist == 0:
+            # start and end are in the same row
+            self.SelectBlock(start_row, start_col, end_row, end_col, True)
+        else:
+            # start and end are in different rows
+            self.SelectBlock(start_row, start_col, start_row, last_col, True)
+            self.SelectBlock(end_row, first_col, end_row, end_col, True)
 
-            if row_dist == 0:
-                # start and end are in the same row
-                self.SelectBlock(start_row, start_col, end_row, end_col, True)
-            else:
-                # start and end are in different rows
-                self.SelectBlock(start_row, start_col, start_row, last_col, True)
-                self.SelectBlock(end_row, first_col, end_row, end_col, True)
+        if row_dist > 1:
+            # select body
+            self.SelectBlock(start_row + 1, first_col, end_row - 1, last_col, True)
 
-            if row_dist > 1:
-                # select body
-                self.SelectBlock(start_row + 1, first_col, end_row - 1, last_col, True)
+        pub.sendMessage("hex_editor_selection_listener", idx1=idx1, idx2=idx2)
 
     def _on_key_down(self, evt):
         logger.debug("evt=%s" % evt)
@@ -739,6 +744,15 @@ if __name__ == "__main__":
             self.hex_editor = HexEditorGrid(self)
             sizer.Add(self.hex_editor, 0, wx.ALL | wx.EXPAND, 5)
 
+            self.status_bar: wx.StatusBar = self.CreateStatusBar()
+            self.status_bar.SetFieldsCount(2)
+            self.status_bar.SetStatusWidths([100, 200])
+
+            pub.subscribe(
+                self.selection_listener,
+                "hex_editor_selection_listener",
+            )
+
             sizer.Add(
                 wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.ALL, 5
             )
@@ -748,6 +762,14 @@ if __name__ == "__main__":
 
             self.SetSizer(sizer)
             self.Show(True)
+
+        def selection_listener(self, idx1: int, idx2: Optional[int]):
+            if idx2 is None:
+                msg = f"Selection: {idx1:d}"
+            else:
+                msg = f"Selection: {idx1:d}-{idx2:d} ({idx2-idx1+1:d})"
+
+            self.status_bar.SetStatusText(msg, 1)
 
     app = wx.App(False)
     frame = MyFrame(None, "Construct Viewer")
