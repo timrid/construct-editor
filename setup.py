@@ -33,7 +33,6 @@ setup(
         "construct==2.10.66",
         "construct-typing==0.4.1",
         "wxPython>=4.1.1",
-        "pypubsub>=4.0.3",
         "arrow>=1.0.0"
     ],
     keywords=[

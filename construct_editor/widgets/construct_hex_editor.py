@@ -5,7 +5,11 @@ import construct as cs
 import wx
 
 from construct_editor.widgets.construct_editor import ConstructEditor
-from construct_editor.widgets.hex_editor import HexEditorGrid, OffsetFmt, TableFormat
+from construct_editor.widgets.hex_editor import (
+    HexEditor,
+    HexEditorFormat,
+    HexEditorBinaryData,
+)
 
 
 class ConstructHexEditor(wx.Panel):
@@ -23,13 +27,15 @@ class ConstructHexEditor(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # create HexEditor
-        self.hex_editor = HexEditorGrid(
+        self.hex_editor = HexEditor(
             self,
             binary,
-            TableFormat(width=16, offsetfmt=OffsetFmt.Dez),
-            on_binary_changed=lambda pos, len: self._convert_binary_to_struct(),
+            HexEditorFormat(width=16),
         )
         hsizer.Add(self.hex_editor, 0, wx.EXPAND | wx.ALL, 5)
+        self.hex_editor.on_binary_changed.append(
+            lambda _: self._convert_binary_to_struct()
+        )
 
         # add line
         hsizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.ALL, 5)
