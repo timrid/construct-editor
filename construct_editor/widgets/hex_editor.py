@@ -643,7 +643,7 @@ class HexEditorGrid(Grid.Grid):
         self.GetGridWindow().Bind(wx.EVT_LEFT_DOWN, self._on_mouse_left_down)
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
         self.Bind(Grid.EVT_GRID_SELECT_CELL, self._on_select_cell)
-        self.Bind(Grid.EVT_GRID_RANGE_SELECTING, self._on_range_selecting)
+        self.Bind(Grid.EVT_GRID_RANGE_SELECTING, self._on_range_selecting_mouse)
         self.Bind(Grid.EVT_GRID_CELL_RIGHT_CLICK, self._on_cell_right_click)
 
         self.Show(True)
@@ -732,7 +732,7 @@ class HexEditorGrid(Grid.Grid):
     def _on_mouse_left_down(self, event):
         if event.AltDown() or event.ShiftDown() or event.ControlDown():
             # don't support selecting multiple ranges with ATL/SHIFT/CTRL.
-            self._on_range_selecting(None)
+            self._on_range_selecting_mouse(None)
             return
         else:
             event.Skip()
@@ -744,7 +744,7 @@ class HexEditorGrid(Grid.Grid):
         self._selection = (idx, None)
         self.on_selection_changed.fire(start_idx=idx, end_idx=None)
 
-    def _on_range_selecting(self, event):
+    def _on_range_selecting_mouse(self, event):
         """ Change selection from a rectangular block to a range between two indexes """
         # get the first selected item
         row1, col1 = self.GetGridCursorCoords()
@@ -760,6 +760,31 @@ class HexEditorGrid(Grid.Grid):
         idx2 = self._table.get_byte_idx(row2, col2)
 
         self.select_range(idx1, idx2)
+
+    def _on_range_selecting_keyboard(self, row_diff: int = 0, col_diff: int = 0):
+        """ Change selection from the keyboard """
+        sel = self._selection
+        if sel[0] is None:
+            return  # nothing is currently selected
+
+        cursor_row, cursor_col = self.GetGridCursorCoords()
+        cursor_idx = self._table.get_byte_idx(cursor_row, cursor_col)
+
+        if sel[1] is None:
+            other_idx = cursor_idx
+        else:
+            if sel[0] == cursor_idx:
+                other_idx = sel[1]
+            else:
+                other_idx = sel[0]
+
+        cursor_row += row_diff
+        cursor_col += col_diff
+        cursor_idx = self._table.get_byte_idx(cursor_row, cursor_col)
+
+        self.SetGridCursor(cursor_row, cursor_col)
+
+        self.select_range(cursor_idx, other_idx)
 
     def select_range(self, idx1: int, idx2: int):
         """ Select the range between two byte indexes. """
@@ -910,6 +935,22 @@ class HexEditorGrid(Grid.Grid):
                     )
                 self.SetGridCursor(row, col)
                 self.MakeCellVisible(row, col)
+
+        # Shift+Up
+        elif event.ShiftDown() and event.GetKeyCode() == wx.WXK_UP:
+            self._on_range_selecting_keyboard(row_diff=-1)
+
+        # Shift+Down
+        elif event.ShiftDown() and event.GetKeyCode() == wx.WXK_DOWN:
+            self._on_range_selecting_keyboard(row_diff=1)
+
+        # Shift+Left
+        elif event.ShiftDown() and event.GetKeyCode() == wx.WXK_LEFT:
+            self._on_range_selecting_keyboard(col_diff=-1)
+
+        # Shift+Right
+        elif event.ShiftDown() and event.GetKeyCode() == wx.WXK_RIGHT:
+            self._on_range_selecting_keyboard(col_diff=1)
 
         # Ctrl+Z
         elif event.ControlDown() and event.GetKeyCode() == ord("Z"):
@@ -1120,23 +1161,15 @@ if __name__ == "__main__":
         """ We simply derive a new class of Frame. """
 
         def __init__(self, parent, title):
-            wx.Frame.__init__(self, parent, title=title, size=(1200, 800))
-            # self.control = wx.TextCtrl(self, style=wx.TE_MULTILINE)
-            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            wx.Frame.__init__(self, parent, title=title, size=(420, 800))
 
             # Create an instance of our model...
             self.hex_editor = HexEditor(self)
-            sizer.Add(self.hex_editor, 0, wx.ALL | wx.EXPAND, 5)
-
-            sizer.Add(
-                wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.ALL, 5
-            )
 
             self.hex_editor.binary = bytearray(500)
 
-            self.SetSizer(sizer)
             self.Show(True)
 
     app = wx.App(False)
-    frame = MyFrame(None, "Construct Viewer")
+    frame = MyFrame(None, "HexEditor Example")
     app.MainLoop()
