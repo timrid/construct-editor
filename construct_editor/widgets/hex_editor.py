@@ -40,6 +40,26 @@ class SelectionChangedCallbackList(CallbackList[Callable[[int, Optional[int]], N
 # #####################################################################################################################
 # ############################################## HexEditorBinaryData ##################################################
 # #####################################################################################################################
+class CommandOverwriteAll(wx.Command):
+    def __init__(self):
+        wx.Command.__init__(self, True, 'Overwrite All')
+        
+
+class CommandOverwriteRange(wx.Command):
+    def __init__(self):
+        wx.Command.__init__(self, True, 'Overwrite Range')
+        
+
+class CommandInsertRange(wx.Command):
+    def __init__(self):
+        wx.Command.__init__(self, True, 'Insert Range')
+
+
+class RemoveRange(wx.Command):
+    def __init__(self):
+        wx.Command.__init__(self, True, 'Remove Range')
+
+
 class HexEditorBinaryData:
     """
     Binary Data, which is shown in the HexEditor.
@@ -54,19 +74,14 @@ class HexEditorBinaryData:
 
         self.on_binary_changed = BinaryChangedCallbackList()
 
-    def override_all(self, byts: bytes):
-        """ override the complete data with the new ones """
+    def overwrite_all(self, byts: bytes):
+        """ overwrite the complete data with the new ones """
         self._binary.clear()
         self._binary[0:0] = byts
         self.on_binary_changed.fire(self)
 
-    def override_value(self, idx: int, value: int):
-        """ override byte value at the given index """
-        self._binary[idx : idx + 1] = bytes([value])
-        self.on_binary_changed.fire(self)
-
-    def override_range(self, idx: int, byts: bytes):
-        """ override byte range beginning from the given index """
+    def overwrite_range(self, idx: int, byts: bytes):
+        """ overwrite byte range beginning from the given index """
         self._binary[idx : idx + len(byts)] = byts
         self.on_binary_changed.fire(self)
 
@@ -158,7 +173,7 @@ class HexEditorTable(Grid.GridTableBase):
         byte_idx = self.get_byte_idx(row, col)
         if value == "" and byte_idx >= len(self._binary_data):
             return
-        self._binary_data.override_value(byte_idx, int(value, 16))
+        self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
 
     def GetValue(self, row: int, col: int):
         byte_idx = self.get_byte_idx(row, col)
@@ -772,12 +787,12 @@ class HexEditorGrid(Grid.Grid):
             return False
         return True
 
-    def _paste(self, override: bool = False, insert: bool = False) -> bool:
+    def _paste(self, overwrite: bool = False, insert: bool = False) -> bool:
         """
         Paste the data from the clipboard to the selected position.
 
-        If override=True: Override the current binary data. The binary data is only
-                          increased, if the pasted data overlaps the binary size.
+        If overwrite=True: overwrite the current binary data. The binary data is only
+                           increased, if the pasted data overlaps the binary size.
 
         If insert=True: Insert new bytes to the binary data. The binary data is always
                         increased by the size of the data from the clipboard.
@@ -787,9 +802,9 @@ class HexEditorGrid(Grid.Grid):
         if sel[0] is None:
             return False
 
-        if override and insert:
+        if overwrite and insert:
             wx.MessageBox(
-                "Only one option is supported. 'override' or 'insert'", "Warning"
+                "Only one option is supported. 'overwrite' or 'insert'", "Warning"
             )
             return False
 
@@ -814,8 +829,8 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         # copy new data to the binary data
-        if override:
-            self._binary_data.override_range(sel[0], byts)
+        if overwrite:
+            self._binary_data.overwrite_range(sel[0], byts)
         if insert:
             self._binary_data.insert_range(sel[0], byts)
 
@@ -855,7 +870,7 @@ class HexEditorGrid(Grid.Grid):
 
             # Ctrl+V
             else:
-                self._paste(override=True)
+                self._paste(overwrite=True)
 
         # Ctrl+A
         elif event.ControlDown() and event.GetKeyCode() == ord("A"):
@@ -881,7 +896,7 @@ class HexEditorGrid(Grid.Grid):
         menus = [
             ("Cut\tCtrl+X", lambda event: self._cut_selection()),
             ("Copy\tCtrl+C", lambda event: self._copy_selection()),
-            ("Paste (override)\tCtrl+V", lambda event: self._paste(override=True)),
+            ("Paste (overwrite)\tCtrl+V", lambda event: self._paste(overwrite=True)),
             ("Paste (insert)\tCtrl+Shift+V", lambda event: self._paste(insert=True)),
         ]
         popup_menu = wx.Menu()
@@ -917,6 +932,8 @@ class HexEditor(wx.Panel):
             self._format = HexEditorFormat()
         else:
             self._format = format
+
+        self.command_processor = wx.CommandProcessor()
 
         # self.control = wx.TextCtrl(self, style=wx.TE_MULTILINE)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -983,8 +1000,10 @@ class HexEditor(wx.Panel):
 
     @binary.setter
     def binary(self, val: bytes):
-        self._binary_data.override_all(val)
+        self._binary_data.overwrite_all(val)
         self.refresh()
+        # clear all commands, when new data is set from external
+        self.command_processor.ClearCommands()
 
     # Property: format ##################################################
     @property
