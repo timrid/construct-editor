@@ -23,12 +23,36 @@ import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
 import construct_editor.gallery.test_pointer_peek_seek_tell
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
+from pubsub import pub
 
 
+class ConstructGalleryFrame(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.SetTitle("Construct Gallery")
+        self.SetSize(1400, 800)
+        self.SetIcon(icon.GetIcon())
+
+        self.main_panel = ConstructGallery(self)
+
+        self.status_bar: wx.StatusBar = self.CreateStatusBar()
+        pub.subscribe(
+            self.hex_editor_selection_listener,
+            "hex_editor_selection_listener",
+        )
+
+    def hex_editor_selection_listener(self, idx1: int, idx2: t.Optional[int]):
+        if idx2 is None:
+            msg = f"Byte: {idx1:d}"
+        else:
+            msg = f"Bytes: {idx1:d}-{idx2:d} ({idx2-idx1+1:d})"
+
+        self.status_bar.SetStatusText(msg, 0)
 
 
 class ConstructGallery(wx.Panel):
-    def __init__(self, parent: wx.Window):
+    def __init__(self, parent: ConstructGalleryFrame):
         super().__init__(parent)
 
         # Define all galleries ############################################
@@ -39,38 +63,29 @@ class ConstructGallery(wx.Panel):
             "## bytes and bits ################": None,
             "Test: Bytes (TODO)": None,
             "Test: GreedyBytes (TODO)": None,
-
             "## integers and floats ###########": None,
             "Test: FormatField (TODO)": None,
             "Test: BytesInteger (TODO)": None,
             "Test: BitsInteger (TODO)": None,
-
             "## strings #######################": None,
             "Test: StringEncoded (TODO)": None,
-
             "## mappings ######################": None,
             "Test: Flag (TODO)": None,
             "Test: Enum": construct_editor.gallery.test_enum.gallery_item,
             "Test: FlagsEnum": construct_editor.gallery.test_flags_enum.gallery_item,
             "Test: TEnum": construct_editor.gallery.test_tenum.gallery_item,
             "Test: Mapping (TODO)": None,
-
             "## structures and sequences ######": None,
             "Test: Struct (TODO)": None,
             "Test: Sequence (TODO)": None,
             "Test: TStruct": construct_editor.gallery.test_tstruct.gallery_item,
             "Test: TBitStruct": construct_editor.gallery.test_tbitstruct.gallery_item,
-
-
             "## arrays ranges and repeaters ######": None,
             "Test: Array": construct_editor.gallery.test_array.gallery_item,
             "Test: GreedyRange": construct_editor.gallery.test_greedyrange.gallery_item,
             "Test: RepeatUntil (TODO)": None,
-
-
             "## specials ##########################": None,
             "Test: Renamed": construct_editor.gallery.test_renamed.gallery_item,
-
             "## miscellaneous ##########################": None,
             "Test: Const (TODO)": None,
             "Test: Computed": construct_editor.gallery.test_computed.gallery_item,
@@ -86,23 +101,19 @@ class ConstructGallery(wx.Panel):
             "Test: TimestampAdapter": construct_editor.gallery.test_timestamp.gallery_item,
             "Test: Hex (TODO)": None,
             "Test: HexDump (TODO)": None,
-
             "## conditional ##########################": None,
             "Test: Union (TODO)": None,
             "Test: Select (TODO)": None,
             "Test: IfThenElse": construct_editor.gallery.test_ifthenelse.gallery_item,
             "Test: Switch": construct_editor.gallery.test_switch.gallery_item,
             "Test: StopIf (TODO)": None,
-
             "## alignment and padding ##########################": None,
             "Test: Padded (TODO)": None,
             "Test: Aligned (TODO)": None,
-
             "## stream manipulation ##########################": None,
             "Test: Pointer/Peek/Seek/Tell": construct_editor.gallery.test_pointer_peek_seek_tell.gallery_item,
             "Test: Pass (TODO)": None,
             "Test: Terminated (TODO)": None,
-
             "## tunneling and byte/bit swapping ##########################": None,
             "Test: RawCopy (TODO)": None,
             "Test: Prefixed (TODO)": None,
@@ -118,20 +129,6 @@ class ConstructGallery(wx.Panel):
             "Test: Compressed (TODO)": None,
             "Test: CompressedLZ4 (TODO)": None,
             "Test: Rebuffered (TODO)": None,
-
-
-
-
-
-
-            
-            
-            
-
-
-            
-            
-            
         }
         self.gallery_selection = 1
         default_gallery = list(self.construct_gallery.keys())[self.gallery_selection]
@@ -235,11 +232,13 @@ class ConstructGallery(wx.Panel):
         selection = self.gallery_selector_lbx.GetStringSelection()
         gallery_item = self.construct_gallery[selection]
         if gallery_item is None:
-            self.gallery_selector_lbx.SetSelection(self.gallery_selection) # restore old selection
+            self.gallery_selector_lbx.SetSelection(
+                self.gallery_selection
+            )  # restore old selection
             return
 
         # save currently shown selection
-        self.gallery_selection = self.gallery_selector_lbx.GetSelection()  
+        self.gallery_selection = self.gallery_selector_lbx.GetSelection()
 
         self.example_selector_lbx.Clear()
         if len(gallery_item.example_binarys) > 0:
@@ -359,9 +358,7 @@ def main():
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     app = wx.App(False)
-    frame = wx.Frame(None, title="Construct Gallery", size=(1400, 800))
-    frame.SetIcon(icon.GetIcon())
-    panel = ConstructGallery(frame)
+    frame = ConstructGalleryFrame(None)
     frame.Show(True)
     app.MainLoop()
 
