@@ -23,7 +23,6 @@ import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
 import construct_editor.gallery.test_pointer_peek_seek_tell
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
-from pubsub import pub
 
 
 class ConstructGalleryFrame(wx.Frame):
@@ -37,18 +36,6 @@ class ConstructGalleryFrame(wx.Frame):
         self.main_panel = ConstructGallery(self)
 
         self.status_bar: wx.StatusBar = self.CreateStatusBar()
-        pub.subscribe(
-            self.hex_editor_selection_listener,
-            "hex_editor_selection_listener",
-        )
-
-    def hex_editor_selection_listener(self, idx1: int, idx2: t.Optional[int]):
-        if idx2 is None:
-            msg = f"Byte: {idx1:d}"
-        else:
-            msg = f"Bytes: {idx1:d}-{idx2:d} ({idx2-idx1+1:d})"
-
-        self.status_bar.SetStatusText(msg, 0)
 
 
 class ConstructGallery(wx.Panel):
