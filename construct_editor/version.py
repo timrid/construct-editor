@@ -1,2 +1,2 @@
-version = (0, 0, 1)
-version_string = "0.0.1"
+version = (0, 0, 2)
+version_string = "0.0.2"
