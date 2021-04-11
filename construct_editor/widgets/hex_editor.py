@@ -584,7 +584,7 @@ class HexEditorGrid(Grid.Grid):
 
         self.refresh()
 
-        self._selection: Optional[t.Tuple[int, Optional[int]]] = None
+        self._selection: t.Tuple[Optional[int], Optional[int]] = (None, None)
         self.on_selection_changed = SelectionChangedCallbackList()
 
     def refresh(self):
@@ -598,6 +598,8 @@ class HexEditorGrid(Grid.Grid):
         self._table._rows = math.ceil(
             len(self._binary_data) / self._editor.format.width
         )
+        # if (len(self._binary_data) % self._editor.format.width) == 1:
+        #     self._table._rows += 1
         self._table._cols = self._editor.format.width
 
         self.BeginBatch()
@@ -672,6 +674,7 @@ class HexEditorGrid(Grid.Grid):
     def _on_select_cell(self, event: Grid.GridEvent):
         """ Single cell selected """
         idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
+        self.ClearSelection()
         self._selection = (idx, None)
         self.on_selection_changed.fire(start_idx=idx, end_idx=None)
 
@@ -731,7 +734,7 @@ class HexEditorGrid(Grid.Grid):
     def _remove_selection(self) -> bool:
         """ Remove the selected bytes """
         sel = self._selection
-        if sel is None:
+        if sel[0] is None:
             return False
 
         if sel[1] == None:
@@ -741,13 +744,16 @@ class HexEditorGrid(Grid.Grid):
 
         byts = self._binary_data.remove_range(sel[0], len)
 
+        self.ClearSelection()
+        self._selection = (None, None)
+
         self.refresh()
         return True
 
     def _copy_selection(self) -> bool:
         """ Copy the selected data to the clipboard """
         sel = self._selection
-        if sel is None:
+        if sel[0] is None:
             return False
 
         if sel[1] == None:
@@ -778,11 +784,13 @@ class HexEditorGrid(Grid.Grid):
         """
         # check if somethis is selected
         sel = self._selection
-        if sel is None:
+        if sel[0] is None:
             return False
 
         if override and insert:
-            wx.MessageBox("Only one option is supported. 'override' or 'insert'", "Warning")
+            wx.MessageBox(
+                "Only one option is supported. 'override' or 'insert'", "Warning"
+            )
             return False
 
         # get data from clipboard
@@ -811,6 +819,7 @@ class HexEditorGrid(Grid.Grid):
         if insert:
             self._binary_data.insert_range(sel[0], byts)
 
+        self.select_range(sel[0], sel[0] + len(byts) - 1)
         self.refresh()
         return True
 
@@ -857,8 +866,17 @@ class HexEditorGrid(Grid.Grid):
 
     def _on_cell_right_click(self, event: Grid.GridEvent):
         """ Show context menu """
-        # select the current cell
-        self.SetGridCursor(event.GetRow(), event.GetCol())
+        # Check if the click is inside the current selection.
+        # If not, select the current cell
+        sel = self._selection
+        select_cell = True
+        if sel[0] is not None and sel[1] is not None:
+            idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
+            if sel[0] <= idx <= sel[1]:
+                select_cell = False
+
+        if select_cell:
+            self.SetGridCursor(event.GetRow(), event.GetCol())
 
         menus = [
             ("Cut\tCtrl+X", lambda event: self._cut_selection()),
@@ -901,14 +919,41 @@ class HexEditor(wx.Panel):
             self._format = format
 
         # self.control = wx.TextCtrl(self, style=wx.TE_MULTILINE)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Create an instance of our model...
+        # create HexEditorTable & HexEditorGrid
         self._table = HexEditorTable(self, self._binary_data)
         self._grid = HexEditorGrid(self, self._table, self._binary_data)
-        sizer.Add(self._grid, 0, wx.ALL | wx.EXPAND, 5)
+        sizer.Add(self._grid, 1, wx.ALL | wx.EXPAND, 5)
+
+        # create status bar
+        self._status_bar = wx.StatusBar(
+            self,
+            style=wx.STB_SHOW_TIPS | wx.STB_ELLIPSIZE_END | wx.FULL_REPAINT_ON_RESIZE,
+        )
+        self._status_bar.SetFieldsCount(2)
+        self._status_bar.SetStatusStyles(
+            [wx.SB_NORMAL, wx.SB_FLAT]
+        )  # remove vertical line after the last field
+        sizer.Add(self._status_bar, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.on_binary_changed.append(self._on_binary_changed)
+        self.on_selection_changed.append(self._on_selection_changed)
+
         self.SetSizer(sizer)
         self.Show(True)
+
+    def _on_binary_changed(self, binary_data: HexEditorBinaryData):
+        msg = f"{len(binary_data):d} Bytes"
+        self._status_bar.SetStatusText(msg, 0)
+
+    def _on_selection_changed(self, idx1: int, idx2: Optional[int]):
+        if idx2 is None:
+            msg = f"Selection: {idx1:d}"
+        else:
+            msg = f"Selection: {idx1:d}-{idx2:d} ({idx2-idx1+1:d})"
+
+        self._status_bar.SetStatusText(msg, 1)
 
     def colorise(self, start: int, end: int, refresh: bool = True):
         """ Colorize a byte range in the Hex Editor. Only a singe range can be colorized """
@@ -977,38 +1022,14 @@ if __name__ == "__main__":
             self.hex_editor = HexEditor(self)
             sizer.Add(self.hex_editor, 0, wx.ALL | wx.EXPAND, 5)
 
-            self.status_bar: wx.StatusBar = self.CreateStatusBar()
-            self.status_bar.SetFieldsCount(2)
-            self.status_bar.SetStatusWidths([100, 200])
-
-            self.hex_editor.on_binary_changed.append(
-                self.hex_editor_binary_changed_listener
-            )
-            self.hex_editor.on_selection_changed.append(
-                self.hex_editor_selection_listener
-            )
-
             sizer.Add(
                 wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.ALL, 5
             )
 
             self.hex_editor.binary = bytearray(500)
-            self.hex_editor.colorise(10, 1)
 
             self.SetSizer(sizer)
             self.Show(True)
-
-        def hex_editor_binary_changed_listener(self, binary_data: HexEditorBinaryData):
-            msg = f"{len(binary_data):d} Bytes"
-            self.status_bar.SetStatusText(msg, 0)
-
-        def hex_editor_selection_listener(self, idx1: int, idx2: Optional[int]):
-            if idx2 is None:
-                msg = f"Selection: {idx1:d}"
-            else:
-                msg = f"Selection: {idx1:d}-{idx2:d} ({idx2-idx1+1:d})"
-
-            self.status_bar.SetStatusText(msg, 1)
 
     app = wx.App(False)
     frame = MyFrame(None, "Construct Viewer")
