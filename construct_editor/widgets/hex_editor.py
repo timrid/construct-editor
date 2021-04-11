@@ -40,26 +40,6 @@ class SelectionChangedCallbackList(CallbackList[Callable[[int, Optional[int]], N
 # #####################################################################################################################
 # ############################################## HexEditorBinaryData ##################################################
 # #####################################################################################################################
-class CommandOverwriteAll(wx.Command):
-    def __init__(self):
-        wx.Command.__init__(self, True, 'Overwrite All')
-        
-
-class CommandOverwriteRange(wx.Command):
-    def __init__(self):
-        wx.Command.__init__(self, True, 'Overwrite Range')
-        
-
-class CommandInsertRange(wx.Command):
-    def __init__(self):
-        wx.Command.__init__(self, True, 'Insert Range')
-
-
-class RemoveRange(wx.Command):
-    def __init__(self):
-        wx.Command.__init__(self, True, 'Remove Range')
-
-
 class HexEditorBinaryData:
     """
     Binary Data, which is shown in the HexEditor.
@@ -73,27 +53,99 @@ class HexEditorBinaryData:
             self._binary = bytearray(binary)
 
         self.on_binary_changed = BinaryChangedCallbackList()
+        self.command_processor = wx.CommandProcessor()
 
     def overwrite_all(self, byts: bytes):
         """ overwrite the complete data with the new ones """
-        self._binary.clear()
-        self._binary[0:0] = byts
-        self.on_binary_changed.fire(self)
+        obj = self
+
+        class Cmd(wx.Command):
+            def __init__(self):
+                super().__init__(True, "Overwrite All")
+
+            def Do(self):
+                self._binary_backup = obj._binary
+                obj._binary.clear()
+                obj._binary[0:0] = byts
+                obj.on_binary_changed.fire(obj)
+                return True
+
+            def Undo(self):
+                obj._binary.clear()
+                obj._binary[0:0] = self._binary_backup
+                obj.on_binary_changed.fire(obj)
+                return True
+
+        self.command_processor.Submit(Cmd())
 
     def overwrite_range(self, idx: int, byts: bytes):
         """ overwrite byte range beginning from the given index """
-        self._binary[idx : idx + len(byts)] = byts
-        self.on_binary_changed.fire(self)
+        obj = self
+
+        class Cmd(wx.Command):
+            def __init__(self):
+                super().__init__(
+                    True, f"Overwrite Range (Index: {idx}, Length: {len(byts)})"
+                )
+
+            def Do(self):
+                self._range_backup = obj._binary[idx : idx + len(byts)]
+                if obj._binary[idx : idx + len(byts)] == byts:
+                    return False
+                obj._binary[idx : idx + len(byts)] = byts
+                obj.on_binary_changed.fire(obj)
+                return True
+
+            def Undo(self):
+                obj._binary[idx : idx + len(byts)] = self._range_backup
+                obj.on_binary_changed.fire(obj)
+                return True
+
+        self.command_processor.Submit(Cmd())
 
     def insert_range(self, idx: int, byts: bytes):
         """ inserts byte range at the given index """
-        self._binary[idx:idx] = byts
-        self.on_binary_changed.fire(self)
+        obj = self
 
-    def remove_range(self, idx: int, len: int):
+        class Cmd(wx.Command):
+            def __init__(self):
+                super().__init__(
+                    True, f"Insert Range (Index: {idx}, Length: {len(byts)})"
+                )
+
+            def Do(self):
+                obj._binary[idx:idx] = byts
+                obj.on_binary_changed.fire(obj)
+                return True
+
+            def Undo(self):
+                del obj._binary[idx : idx + len(byts)]
+                obj.on_binary_changed.fire(obj)
+                return True
+
+        self.command_processor.Submit(Cmd())
+
+    def remove_range(self, idx: int, length: int):
         """ remove the bytes at at the given range """
-        del self._binary[idx : idx + len]
-        self.on_binary_changed.fire(self)
+        obj = self
+
+        class Cmd(wx.Command):
+            def __init__(self):
+                super().__init__(True, f"Remove Range (Index: {idx}, Length: {length})")
+                super().__init__(True, "Overwrite Range")
+
+            def Do(self):
+                self._range_backup = obj._binary[idx : idx + length]
+                del obj._binary[idx : idx + length]
+                obj.on_binary_changed.fire(obj)
+                return True
+
+            def Undo(self):
+                obj._binary[idx:idx] = self._range_backup
+                obj.on_binary_changed.fire(obj)
+                return True
+
+        self.command_processor.Submit(Cmd())
 
     def get_value(self, idx: int):
         """ get the value at the given index """
@@ -835,8 +887,13 @@ class HexEditorGrid(Grid.Grid):
             self._binary_data.insert_range(sel[0], byts)
 
         self.select_range(sel[0], sel[0] + len(byts) - 1)
-        self.refresh()
         return True
+
+    def _undo(self):
+        self._binary_data.command_processor.Undo()
+
+    def _redo(self):
+        self._binary_data.command_processor.Redo()
 
     def _on_key_down(self, event: wx.KeyEvent):
         if event.GetKeyCode() == wx.WXK_RETURN or event.GetKeyCode() == wx.WXK_TAB:
@@ -854,6 +911,14 @@ class HexEditorGrid(Grid.Grid):
                     )
                 self.SetGridCursor(row, col)
                 self.MakeCellVisible(row, col)
+
+        # Ctrl+Z
+        elif event.ControlDown() and event.GetKeyCode() == ord("Z"):
+            self._undo()
+
+        # Ctrl+Y
+        elif event.ControlDown() and event.GetKeyCode() == ord("Y"):
+            self._redo()
 
         # Ctrl+X
         elif event.ControlDown() and event.GetKeyCode() == ord("X"):
@@ -894,18 +959,43 @@ class HexEditorGrid(Grid.Grid):
             self.SetGridCursor(event.GetRow(), event.GetCol())
 
         menus = [
-            ("Cut\tCtrl+X", lambda event: self._cut_selection()),
-            ("Copy\tCtrl+C", lambda event: self._copy_selection()),
-            ("Paste (overwrite)\tCtrl+V", lambda event: self._paste(overwrite=True)),
-            ("Paste (insert)\tCtrl+Shift+V", lambda event: self._paste(insert=True)),
+            (wx.ID_CUT, "Cut\tCtrl+X", lambda event: self._cut_selection(), True),
+            (wx.ID_COPY, "Copy\tCtrl+C", lambda event: self._copy_selection(), True),
+            (
+                wx.ID_PASTE,
+                "Paste (overwrite)\tCtrl+V",
+                lambda event: self._paste(overwrite=True),
+                True,
+            ),
+            (
+                wx.ID_PASTE,
+                "Paste (insert)\tCtrl+Shift+V",
+                lambda event: self._paste(insert=True),
+                True,
+            ),
+            None,
+            (
+                wx.ID_UNDO,
+                "Undo\tCtrl+Z",
+                lambda event: self._undo(),
+                self._binary_data.command_processor.CanUndo(),
+            ),
+            (
+                wx.ID_REDO,
+                "Redo\tCtrl+Y",
+                lambda event: self._redo(),
+                self._binary_data.command_processor.CanRedo(),
+            ),
         ]
+
         popup_menu = wx.Menu()
         for menu in menus:
             if menu is None:
                 popup_menu.AppendSeparator()
                 continue
-            item: wx.MenuItem = popup_menu.Append(wx.ID_ANY, menu[0])
-            self.Bind(wx.EVT_MENU, menu[1], id=item.Id)
+            item: wx.MenuItem = popup_menu.Append(menu[0], menu[1])
+            self.Bind(wx.EVT_MENU, menu[2], id=item.Id)
+            item.Enable(menu[3])
 
         self.PopupMenu(popup_menu, event.GetPosition())
         popup_menu.Destroy()
@@ -932,8 +1022,6 @@ class HexEditor(wx.Panel):
             self._format = HexEditorFormat()
         else:
             self._format = format
-
-        self.command_processor = wx.CommandProcessor()
 
         # self.control = wx.TextCtrl(self, style=wx.TE_MULTILINE)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -963,6 +1051,7 @@ class HexEditor(wx.Panel):
     def _on_binary_changed(self, binary_data: HexEditorBinaryData):
         msg = f"{len(binary_data):d} Bytes"
         self._status_bar.SetStatusText(msg, 0)
+        self.refresh()
 
     def _on_selection_changed(self, idx1: int, idx2: Optional[int]):
         if idx2 is None:
@@ -1001,9 +1090,8 @@ class HexEditor(wx.Panel):
     @binary.setter
     def binary(self, val: bytes):
         self._binary_data.overwrite_all(val)
-        self.refresh()
         # clear all commands, when new data is set from external
-        self.command_processor.ClearCommands()
+        self._binary_data.command_processor.ClearCommands()
 
     # Property: format ##################################################
     @property
