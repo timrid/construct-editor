@@ -155,13 +155,12 @@ class HexEditorBinaryData:
         """ get the value at the given index """
         return bytes(self._binary[idx : idx + len])
 
-    def __len__(self):
-        return len(self._binary)
-
-    @property
-    def binary(self) -> bytes:
+    def get_bytes(self) -> bytes:
         """ return readonly version of the data """
         return bytes(self._binary)
+
+    def __len__(self):
+        return len(self._binary)
 
 
 # #####################################################################################################################
@@ -1029,7 +1028,7 @@ class HexEditor(wx.Panel):
         # create HexEditorTable & HexEditorGrid
         self._table = HexEditorTable(self, self._binary_data)
         self._grid = HexEditorGrid(self, self._table, self._binary_data)
-        sizer.Add(self._grid, 1, wx.ALL | wx.EXPAND, 5)
+        sizer.Add(self._grid, 1, wx.ALL | wx.EXPAND, 0)
 
         # create status bar
         self._status_bar = wx.StatusBar(
@@ -1040,7 +1039,7 @@ class HexEditor(wx.Panel):
         self._status_bar.SetStatusStyles(
             [wx.SB_NORMAL, wx.SB_FLAT]
         )  # remove vertical line after the last field
-        sizer.Add(self._status_bar, 0, wx.ALL | wx.EXPAND, 5)
+        sizer.Add(self._status_bar, 0, wx.ALL | wx.EXPAND, 0)
 
         self.on_binary_changed.append(self._on_binary_changed)
         self.on_selection_changed.append(self._on_selection_changed)
@@ -1085,7 +1084,7 @@ class HexEditor(wx.Panel):
     @property
     def binary(self) -> bytes:
         """ Binary data, that is shown in the HexEditor. """
-        return self._binary_data.binary
+        return self._binary_data.get_bytes()
 
     @binary.setter
     def binary(self, val: bytes):
