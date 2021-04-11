@@ -44,7 +44,9 @@ class HexEditorTable(Grid.GridTableBase):
 
         self.grid = grid
 
-        self.binary: bytearray = bytearray(binary)  # create bytearray from bytes to make it changeable
+        self.binary: bytearray = bytearray(
+            binary
+        )  # create bytearray from bytes to make it changeable
         self.on_binary_changed = on_binary_changed
         self.table_format = table_format
 
@@ -123,7 +125,6 @@ class HexEditorTable(Grid.GridTableBase):
 
         # update the scrollbars and the displayed part of the grid
         self.grid.SetColMinimalAcceptableWidth(0)
-        
 
         # get height of a the biggest char of the font
         dc = wx.MemoryDC()
@@ -186,7 +187,7 @@ class HexEditorTable(Grid.GridTableBase):
 
     def GetAttr(self, row, col, kind):
         byte_idx = self.get_byte_idx(row, col)
-        
+
         selected = False
         for sel in self.selections:
             if sel[0] <= byte_idx < sel[1]:
@@ -198,7 +199,7 @@ class HexEditorTable(Grid.GridTableBase):
         else:
             attr = self._attr_default
 
-        attr.IncRef() # increment reference count (https://stackoverflow.com/a/14213641)
+        attr.IncRef()  # increment reference count (https://stackoverflow.com/a/14213641)
         return attr
 
 
@@ -576,12 +577,15 @@ class HexEditorGrid(Grid.Grid):
 
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
         self.GetGridWindow().Bind(wx.EVT_MOTION, self._on_motion)
+
+        self.Bind(Grid.EVT_GRID_RANGE_SELECTING, self._on_range_selecting)
+
         self.Show(True)
 
         self._table.refresh()
 
-        self._colorised_range = None
-        self._prev_motion_rowcol = (None, None)
+        self._prev_motion_rowcol = (-1, -1)
+        self._selections = []
 
     def _advance_cursor(self):
         self.DisableCellEditControl()
@@ -605,8 +609,58 @@ class HexEditorGrid(Grid.Grid):
         if (row >= 0) and (col >= 0) and ((row, col) != self._prev_motion_rowcol):
             idx = self._table.get_byte_idx(row, col)
             self.GetGridWindow().SetToolTip(f"Index={idx}")
+            self._prev_motion_rowcol = (row, col)
         event.Skip()
 
+    def _on_range_selecting(self, event: Grid.GridRangeSelectEvent):
+        """ Change selection from a rectangular block to a range between two indexes """
+        self.ClearSelection()
+
+        # get the first selected item
+        row1, col1 = self.GetGridCursorCoords()
+
+        # get the current mouse position
+        x, y = self.CalcUnscrolledPosition(
+            self.GetGridWindow().ScreenToClient(wx.GetMousePosition())
+        )
+        row2 = self.YToRow(y)
+        col2 = self.XToCol(x)
+
+        idx1 = self._table.get_byte_idx(row1, col1)
+        idx2 = self._table.get_byte_idx(row2, col2)
+
+        self.select_range(idx1, idx2)
+
+    def select_range(self, idx1: int, idx2: int, add_to_selected: bool = False):
+        """ Select the range between two byte indexes. """
+        if add_to_selected is False:
+            self._selections.clear()
+        self._selections.append((idx1, idx2))
+        self._show_selections()
+
+    def _show_selections(self):
+        self.ClearSelection()
+        for idx1, idx2 in self._selections:
+            if idx1 > idx2:
+                idx1, idx2 = idx2, idx1
+            start_row, start_col = self._table.get_byte_rowcol(idx1)
+            end_row, end_col = self._table.get_byte_rowcol(idx2)
+
+            first_col = 0
+            last_col = self._table.GetNumberCols() - 1
+            row_dist = end_row - start_row
+
+            if row_dist == 0:
+                # start and end are in the same row
+                self.SelectBlock(start_row, start_col, end_row, end_col, True)
+            else:
+                # start and end are in different rows
+                self.SelectBlock(start_row, start_col, start_row, last_col, True)
+                self.SelectBlock(end_row, first_col, end_row, end_col, True)
+
+            if row_dist > 1:
+                # select body
+                self.SelectBlock(start_row + 1, first_col, end_row - 1, last_col, True)
 
     def _on_key_down(self, evt):
         logger.debug("evt=%s" % evt)
@@ -689,7 +743,7 @@ if __name__ == "__main__":
                 wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.ALL, 5
             )
 
-            self.hex_editor.binary = bytearray(b"HalloWelt123456789ABCDEF")
+            self.hex_editor.binary = bytearray(500)
             self.hex_editor.colorise(10, 1)
 
             self.SetSizer(sizer)
