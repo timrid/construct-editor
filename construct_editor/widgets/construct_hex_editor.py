@@ -49,6 +49,8 @@ class ConstructHexEditor(wx.Panel):
         )
         hsizer.Add(self.construct_editor, 1, wx.ALL | wx.EXPAND, 5)
 
+        self._converting = False
+
         # show data in construct editor
         self.refresh()
 
@@ -99,15 +101,25 @@ class ConstructHexEditor(wx.Panel):
     # Internals ###############################################################
     def _convert_binary_to_struct(self):
         """ Convert binary to construct object """
-        self.construct_editor.parse(self.hex_editor.binary, **self.contextkw)
+        if self._converting:
+            return
+        try:
+            self._converting = True
+            self.construct_editor.parse(self.hex_editor.binary, **self.contextkw)
+        finally:
+            self._converting = False
+
 
     def _convert_struct_to_binary(self):
         """ Convert construct object to binary """
         try:
+            self._converting = True
             binary = self.construct_editor.build(**self.contextkw)
             self.hex_editor.binary = binary
         except Exception:
-            pass  # ignore errors
+            pass  # ignore errors, because they are already shown in the gui
+        finally:
+            self._converting = False
 
     def _on_entry_selected(self, start: Optional[int], end: Optional[int]):
         if start is not None and end is not None:
