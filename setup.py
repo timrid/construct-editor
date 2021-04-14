@@ -32,7 +32,7 @@ setup(
     install_requires=[
         "construct==2.10.66",
         "construct-typing==0.4.1",
-        "wxPython>=4.1.1",
+        "wxPython>=4.1.0",
         "arrow>=1.0.0"
     ],
     keywords=[
