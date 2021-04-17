@@ -37,8 +37,14 @@ class ConstructHexEditor(wx.Panel):
             lambda _: self._convert_binary_to_struct()
         )
 
-        # add line
-        hsizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND | wx.ALL, 5)
+        # add button as line to toggle the visibility of the HexEditor
+        self.toggle_hex_visibility_btn = wx.Button(
+            self, wx.ID_ANY, "«", size=wx.Size(12, -1)
+        )  # »
+        hsizer.Add(self.toggle_hex_visibility_btn, 0, wx.EXPAND | wx.ALL, 0)
+        self.toggle_hex_visibility_btn.Bind(
+            wx.EVT_BUTTON, lambda evt: self.toggle_hex_visibility()
+        )
 
         # create ConstructEditor
         self.construct_editor = ConstructEditor(
@@ -50,6 +56,7 @@ class ConstructHexEditor(wx.Panel):
         hsizer.Add(self.construct_editor, 1, wx.ALL | wx.EXPAND, 5)
 
         self._converting = False
+        self._hex_editor_visible = True
 
         # show data in construct editor
         self.refresh()
@@ -62,6 +69,21 @@ class ConstructHexEditor(wx.Panel):
         self.Freeze()
         self.hex_editor.refresh()
         self._convert_binary_to_struct()
+        self.Thaw()
+
+    def toggle_hex_visibility(self):
+        """ Toggle the visibility of the HexEditor """
+        if self._hex_editor_visible:
+            self.hex_editor.HideWithEffect(wx.SHOW_EFFECT_ROLL_TO_LEFT)
+            self.toggle_hex_visibility_btn.SetLabelText("»")
+            self._hex_editor_visible = False
+        else:
+            self.hex_editor.ShowWithEffect(wx.SHOW_EFFECT_ROLL_TO_RIGHT)
+            self.toggle_hex_visibility_btn.SetLabelText("«")
+            self._hex_editor_visible = True
+        self.Freeze()
+        self.Layout()
+        self.Refresh()
         self.Thaw()
 
     # Property: construct #####################################################
@@ -108,7 +130,6 @@ class ConstructHexEditor(wx.Panel):
             self.construct_editor.parse(self.hex_editor.binary, **self.contextkw)
         finally:
             self._converting = False
-
 
     def _convert_struct_to_binary(self):
         """ Convert construct object to binary """

@@ -339,8 +339,8 @@ icon = PyEmbeddedImage(
 
 
 def main():
-    # Windows Icon fix: https://stackoverflow.com/a/1552105
     if sys.platform == "win32":
+        # Windows Icon fix: https://stackoverflow.com/a/1552105
         import ctypes
 
         myappid = "timrid.construct_hex_editor"
