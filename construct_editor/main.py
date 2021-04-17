@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import sys
 import typing as t
 
 from pathlib import Path
@@ -339,10 +340,11 @@ icon = PyEmbeddedImage(
 
 def main():
     # Windows Icon fix: https://stackoverflow.com/a/1552105
-    import ctypes
+    if sys.platform == "win32":
+        import ctypes
 
-    myappid = "timrid.construct_hex_editor"
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        myappid = "timrid.construct_hex_editor"
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     app = wx.App(False)
     frame = ConstructGalleryFrame(None)
