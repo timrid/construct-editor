@@ -33,6 +33,7 @@ def int_to_str(val: int) -> str:
 # #####################################################################################################################
 class ObjPanel(wx.Panel):
     """ Base class for a panel that shows the value and allows modifications of it. """
+
     pass
 
 
@@ -497,7 +498,13 @@ class EntryConstruct(object):
 
     # default "create_obj_panel" ##############################################
     def create_obj_panel(self, parent) -> ObjPanel:
+        """ This method is called, when the user clicks an entry """
         return ObjPanel_Default(parent, self)
+
+    # default "modify_context_menu" ###########################################
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        """ This method is called, when the user right clicks an entry and a ContextMenu is created """
+        pass
 
     # default "path" ##########################################################
     @property
@@ -553,9 +560,13 @@ class EntrySubconstruct(EntryConstruct):
     def dvc_item(self, val: Any):
         self.subentry.dvc_item = val
 
-    # default "create_obj_panel" ##############################################
+    # pass throught "create_obj_panel" to subentry ############################
     def create_obj_panel(self, parent) -> ObjPanel:
         return self.subentry.create_obj_panel(parent)
+
+    # pass throught "modify_context_menu" to subentry #########################
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        return self.subentry.modify_context_menu(menu)
 
 
 # EntryStruct #########################################################################################################
@@ -654,6 +665,16 @@ class EntryArray(EntrySubconstruct):
 
     def create_obj_panel(self, parent) -> ObjPanel:
         return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
+
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+
+        def on_as_list_clicked(event):
+            wx.MessageBox("View as List is currently not supported", "Not supported")
+
+        view_as_list = wx.MenuItem(menu, wx.ID_ANY, "View as List", kind=wx.ITEM_NORMAL)
+        menu.Append(view_as_list)
+        menu.Bind(wx.EVT_MENU, on_as_list_clicked, view_as_list)
 
 
 # EntryGreedyRange ####################################################################################################
@@ -1334,6 +1355,7 @@ class EntryFlagsEnum(EntrySubconstruct):
     def create_obj_panel(self, parent) -> ObjPanel:
         return ObjPanel_FlagsEnum(parent, self)
 
+
 # EntryTEnum ##########################################################################################################
 class EntryTEnum(EntrySubconstruct):
     construct: "cst.TEnum[Any]"
@@ -1360,9 +1382,6 @@ class EntryTEnum(EntrySubconstruct):
 
     def create_obj_panel(self, parent) -> ObjPanel:
         return ObjPanel_Enum(parent, self)
-    
-
-
 
 
 # #####################################################################################################################
@@ -1377,33 +1396,33 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     # cs.GreedyBytes
     # cs.Bitwise
     # cs.Bytewise
-
+    #
     # integers and floats #######################
     cs.FormatField: EntryFormatField,
     cs.BytesInteger: EntryBytesInteger,
     cs.BitsInteger: EntryBitsInteger,
-
+    #
     # strings ###################################
     # cs.StringEncoded
-
+    #
     # mappings ##################################
     # cs.Flag
     cs.Enum: EntryEnum,
     cs.FlagsEnum: EntryFlagsEnum,
     # cs.Mapping
-
+    #
     # structures and sequences ##################
     cs.Struct: EntryStruct,
     # cs.Sequence
-
+    #
     # arrays ranges and repeaters ###############
     cs.Array: EntryArray,
     cs.GreedyRange: EntryGreedyRange,
     # cs.RepeatUntil
-
+    #
     # specials ##################################
     cs.Renamed: EntryRenamed,
-
+    #
     # miscellaneous #############################
     cs.Const: EntryTransparentSubcon,
     cs.Computed: EntryComputed,
@@ -1419,18 +1438,18 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     cs.TimestampAdapter: EntryTimestamp,
     # cs.Hex
     # cs.HexDump
-
+    #
     # conditional ###############################
     # cs.Union
     # cs.Select
     cs.IfThenElse: EntryIfThenElse,
     cs.Switch: EntrySwitch,
     # cs.StopIf
-
+    #
     # alignment and padding #####################
     # cs.Padded
     # cs.Aligned
-
+    #
     # stream manipulation #######################
     cs.Pointer: EntryTransparentSubcon,
     cs.Peek: EntryPeek,
@@ -1438,7 +1457,7 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     type(cs.Tell): EntryTell,
     # cs.Pass
     # cs.Terminated
-
+    #
     # tunneling and byte/bit swapping ###########
     cs.RawCopy: EntryRawCopy,
     # cs.Prefixed

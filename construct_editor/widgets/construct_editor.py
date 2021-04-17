@@ -165,7 +165,7 @@ class EntryDetailsViewer(wx.Panel):
 # Context Menu ########################################################################################################
 # #####################################################################################################################
 class ContextMenu(wx.Menu):
-    def __init__(self, parent: "ConstructEditor"):
+    def __init__(self, parent: "ConstructEditor", entry: "EntryConstruct"):
         super(ContextMenu, self).__init__()
         self.parent = parent
 
@@ -185,6 +185,9 @@ class ContextMenu(wx.Menu):
         self.Append(self.hide_protected_mi)
         self.Bind(wx.EVT_MENU, self.on_hide_protected, self.hide_protected_mi)
         self.hide_protected_mi.Check(self.parent.hide_protected)
+
+        # Add additional items for this entry
+        entry.modify_context_menu(self)
 
     def on_expand_all(self, event):
         self.parent.expand_all()
@@ -653,10 +656,12 @@ class ConstructEditor(wx.Panel):
         else:
             self._entry_details_viewer.clear()
 
-    def _on_right_click(self, event):
+    def _on_right_click(self, event: dv.DataViewEvent):
         """
         This method is called, the dvc ist right clicked
 
         Then a context menu is created
         """
-        self.PopupMenu(ContextMenu(self), event.GetPosition())
+        item = event.GetItem()
+        entry: "EntryConstruct" = self._model.ItemToObject(item)
+        self.PopupMenu(ContextMenu(self, entry), event.GetPosition())
