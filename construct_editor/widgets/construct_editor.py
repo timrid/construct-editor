@@ -10,27 +10,8 @@ import wx.dataview as dv
 import dataclasses
 
 from construct_editor.helper.preprocessor import get_gui_metadata, include_metadata
-from construct_editor.helper.wrapper import EntryConstruct, entry_mapping_construct
+from construct_editor.helper.wrapper import ObjPanel_Empty, EntryConstruct, entry_mapping_construct
 
-
-class EmptyObjPanel(wx.Panel):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(-1, -1),
-            wx.TE_READONLY,
-        )
-        hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.SetSizer(hsizer)
-        self.Layout()
 
 
 # #####################################################################################################################
@@ -112,7 +93,7 @@ class EntryDetailsViewer(wx.Panel):
             self, wx.ID_ANY, "Value:", wx.DefaultPosition, wx.Size(50, -1), 0
         )
         hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.obj_panel = EmptyObjPanel(
+        self.obj_panel = ObjPanel_Empty(
             self
         )
         hsizer.Add(self.obj_panel, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -143,7 +124,7 @@ class EntryDetailsViewer(wx.Panel):
     def _replace_obj_panel(self, entry: Optional["EntryConstruct"]):
         self.Freeze()
         if entry is None:
-            new_panel = EmptyObjPanel(self)
+            new_panel = ObjPanel_Empty(self)
         else:
             new_panel = entry.create_obj_panel(self)
         self.obj_sizer.Replace(self.obj_panel, new_panel)

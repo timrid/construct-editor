@@ -36,6 +36,25 @@ class ObjPanel(wx.Panel):
     pass
 
 
+class ObjPanel_Empty(ObjPanel):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.obj_txt = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            wx.EmptyString,
+            wx.DefaultPosition,
+            wx.Size(-1, -1),
+            wx.TE_READONLY,
+        )
+        hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(hsizer)
+        self.Layout()
+
 
 class ObjPanel_Default(ObjPanel):
     def __init__(self, parent, entry: "EntryConstruct"):
