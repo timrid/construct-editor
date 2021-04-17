@@ -534,8 +534,6 @@ class ConstructEditor(wx.Panel):
             # clear everything
             self._model.Cleared()
             self._entry_details_viewer.clear()
-            self._parse_error_info_bar.Dismiss()
-            self._build_error_info_bar.Dismiss()
 
             # restore settings
             self._expand_from_expansion_infos(None, expansion_infos)
