@@ -470,13 +470,29 @@ class ConstructEditor(wx.Panel):
             selected_entry: EntryConstruct = self._model.ItemToObject(
                 self._dvc.GetSelection()
             )
-            return selected_entry.path
+            return ["root"] + selected_entry.path
         else:
             return []
 
-    def _set_selection_from_path(self, path: List[str]):
+    def _set_selection_from_path(self, parent: Optional[dv.DataViewItem], path: List[str]):
         """ Set the selected entry from path """
-        # TODO: Enhancement for cs.Peek
+        if len(path) == 0:
+            return
+
+        name = path.pop(0)
+
+        childs: List[dv.DataViewItem] = []
+        self._model.GetChildren(parent, childs)
+        for child in childs:
+            entry: EntryConstruct = self._model.ItemToObject(child)
+            if entry.name == name:
+                if len(path) == 0:
+                    self._dvc.Select(entry.dvc_item)
+                    self._on_dvc_selection_changed(None)
+                else:
+                    if self._model.IsContainer(child):
+                        self._set_selection_from_path(child, path)
+                return
 
     def reload(self):
         """ Reload the ConstructEditor, while remaining expaned elements and selection """
@@ -493,7 +509,7 @@ class ConstructEditor(wx.Panel):
 
             # restore settings
             self._expand_from_expansion_infos(None, expansion_infos)
-            selected_entry = self._set_selection_from_path(selected_entry_path)
+            selected_entry = self._set_selection_from_path(None, selected_entry_path)
 
         finally:
             self.Thaw()
@@ -523,7 +539,10 @@ class ConstructEditor(wx.Panel):
             )
             raise e
 
-        # wx.CallAfter(lambda: self.parse(binary, **contextkw))  # TODO: Enhancement for cs.Peek
+        # parse the build binary, so that constructs that parses from nothing are shown correctly (eg. cs.Peek)
+        # TODO: If this is uncommented, the focus of the ObjPanel is lost every time a change is made
+        # wx.CallAfter(lambda: self.parse(binary, **contextkw))  
+
         return binary
 
     # Property: construct #####################################################
@@ -623,16 +642,15 @@ class ConstructEditor(wx.Panel):
         self.expand_level(1)
 
     # Internals ###############################################################
-    def _on_dvc_selection_changed(self, event: wx.Event):
+    def _on_dvc_selection_changed(self, event):
         """
         This method is called, if the selection in the dvc has changed.
 
         Then the infos of the new selected entry is shown.
         """
-        dvc = event.GetEventObject()
-        item = dvc.GetSelection()
+        item = self._dvc.GetSelection()
         if item.ID is not None:
-            entry: EntryConstruct = dvc.Model.ItemToObject(item)
+            entry: EntryConstruct = self._model.ItemToObject(item)
             self._entry_details_viewer.set_entry(entry)
 
             metadata = get_gui_metadata(entry.obj)
