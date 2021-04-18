@@ -10,8 +10,11 @@ import wx.dataview as dv
 import dataclasses
 
 from construct_editor.helper.preprocessor import get_gui_metadata, include_metadata
-from construct_editor.helper.wrapper import ObjPanel_Empty, EntryConstruct, entry_mapping_construct
-
+from construct_editor.helper.wrapper import (
+    ObjPanel_Empty,
+    EntryConstruct,
+    entry_mapping_construct,
+)
 
 
 # #####################################################################################################################
@@ -93,9 +96,7 @@ class EntryDetailsViewer(wx.Panel):
             self, wx.ID_ANY, "Value:", wx.DefaultPosition, wx.Size(50, -1), 0
         )
         hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.obj_panel = ObjPanel_Empty(
-            self
-        )
+        self.obj_panel = ObjPanel_Empty(self)
         hsizer.Add(self.obj_panel, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         self.obj_sizer = hsizer
         vsizer.Add(hsizer, 0, wx.EXPAND, 5)
@@ -322,7 +323,10 @@ class ConstructEditorModel(dv.PyDataViewModel):
             if isinstance(parent_entry, EntryConstruct):
                 entries = []
                 for entry in parent_entry.subentries:
-                    if (self._hide_protected == True) and (entry.name.startswith("_") or entry.name == ""):
+                    name = entry.name
+                    if (self._hide_protected == True) and (
+                        name.startswith("_") or name == ""
+                    ):
                         continue
                     entries.append(entry)
 
@@ -402,10 +406,10 @@ class ConstructEditorModel(dv.PyDataViewModel):
 
 
 @dataclasses.dataclass
-class ExpansionInfo():
+class ExpansionInfo:
     expanded: bool
     subinfos: Dict[str, "ExpansionInfo"]
-        
+
 
 # #####################################################################################################################
 # Construct Editor ####################################################################################################
@@ -428,7 +432,12 @@ class ConstructEditor(wx.Panel):
 
         # Create DataViewCtrl
         self._dvc = dv.DataViewCtrl(
-            self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0, name="construct_editor"
+            self,
+            wx.ID_ANY,
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            0,
+            name="construct_editor",
         )
         self._dvc.AppendTextColumn("Name", 0, width=250)
         self._dvc.AppendTextColumn("Type", 1, width=100)
@@ -461,10 +470,9 @@ class ConstructEditor(wx.Panel):
         )
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_right_click)
 
-
-
-
-    def _get_expansion_infos(self, parent: Optional[dv.DataViewItem]) -> Dict[str, ExpansionInfo]:
+    def _get_expansion_infos(
+        self, parent: Optional[dv.DataViewItem]
+    ) -> Dict[str, ExpansionInfo]:
         """ Get infos about the expaneded items in the DVC """
         infos: Dict[str, ExpansionInfo] = {}
         childs: List[dv.DataViewItem] = []
@@ -477,8 +485,12 @@ class ConstructEditor(wx.Panel):
                 infos[entry.name] = ExpansionInfo(expanded, subinfos)
         return infos
 
-    def _expand_from_expansion_infos(self, parent: Optional[dv.DataViewItem], expansion_infos: Dict[str, ExpansionInfo]):
-        """ 
+    def _expand_from_expansion_infos(
+        self,
+        parent: Optional[dv.DataViewItem],
+        expansion_infos: Dict[str, ExpansionInfo],
+    ):
+        """
         Expand the DVC items from previously saved expansion infos.
         The expansion stays the same if the name of the item is still the same. Items with
         new name, will be collapsed.
@@ -497,7 +509,9 @@ class ConstructEditor(wx.Panel):
     def _get_selected_entry_path(self) -> List[str]:
         """ Get the path to the selected entry """
         if self._dvc.HasSelection():
-            selected_entry: EntryConstruct = self._model.ItemToObject(self._dvc.GetSelection())
+            selected_entry: EntryConstruct = self._model.ItemToObject(
+                self._dvc.GetSelection()
+            )
             return selected_entry.path
         else:
             return []
@@ -532,7 +546,10 @@ class ConstructEditor(wx.Panel):
             self._model.root_obj = self._model.construct.parse(binary, **contextkw)
             self._parse_error_info_bar.Dismiss()
         except Exception as e:
-            self._parse_error_info_bar.ShowMessage(f"Error while parsing binary data: {type(e).__name__}\n{str(e)}", wx.ICON_WARNING)
+            self._parse_error_info_bar.ShowMessage(
+                f"Error while parsing binary data: {type(e).__name__}\n{str(e)}",
+                wx.ICON_WARNING,
+            )
             self._model.root_obj = None
         self.reload()
 
@@ -542,7 +559,10 @@ class ConstructEditor(wx.Panel):
             binary = self._model.construct.build(self.root_obj, **contextkw)
             self._build_error_info_bar.Dismiss()
         except Exception as e:
-            self._build_error_info_bar.ShowMessage(f"Error while building binary data: {type(e).__name__}\n{str(e)}", wx.ICON_WARNING)
+            self._build_error_info_bar.ShowMessage(
+                f"Error while building binary data: {type(e).__name__}\n{str(e)}",
+                wx.ICON_WARNING,
+            )
             raise e
 
         # wx.CallAfter(lambda: self.parse(binary, **contextkw))  # TODO: Enhancement for cs.Peek
@@ -602,11 +622,13 @@ class ConstructEditor(wx.Panel):
         """
 
         def dvc_expand(entry: EntryConstruct, current_level: int):
-            if entry.subentries is not None:
-                if entry.dvc_item is not None:
-                    self._dvc.Expand(entry.dvc_item)
+            subentries = entry.subentries
+            dvc_item = entry.dvc_item
+            if subentries is not None:
+                if dvc_item is not None:
+                    self._dvc.Expand(dvc_item)
                 if current_level < level:
-                    for sub_entry in entry.subentries:
+                    for sub_entry in subentries:
                         dvc_expand(sub_entry, current_level + 1)
 
         if self._model._root_entry:
@@ -619,11 +641,13 @@ class ConstructEditor(wx.Panel):
         """
 
         def dvc_collapse(entry: EntryConstruct):
-            if entry.subentries is not None:
-                if entry.dvc_item is not None:
-                    self._dvc.Collapse(entry.dvc_item)
-                for sub_entry in entry.subentries:
+            subentries = entry.subentries
+            dvc_item = entry.dvc_item
+            if subentries is not None:
+                for sub_entry in subentries:
                     dvc_collapse(sub_entry)
+                if dvc_item is not None:
+                    self._dvc.Collapse(dvc_item)
 
         if self._model._root_entry:
             dvc_collapse(self._model._root_entry)
