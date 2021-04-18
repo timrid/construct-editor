@@ -320,27 +320,26 @@ class ConstructEditorModel(dv.PyDataViewModel):
                 entries = [self._root_entry]
         else:
             parent_entry = self.ItemToObject(parent)
-            if isinstance(parent_entry, EntryConstruct):
-                entries = []
-                for entry in parent_entry.subentries:
-                    name = entry.name
-                    if (self._hide_protected == True) and (
-                        name.startswith("_") or name == ""
-                    ):
-                        continue
-                    entries.append(entry)
-
-            else:
+            if not isinstance(parent_entry, EntryConstruct):
                 raise ValueError(f"{repr(parent_entry)} is no valid entry")
+
+            entries = []
+            for entry in parent_entry.subentries:
+                name = entry.name
+                if (self._hide_protected == True) and (
+                    name.startswith("_") or name == ""
+                ):
+                    continue
+                entries.append(entry)
 
         if entries is None:
             return 0
-        else:
-            for entry in entries:
-                item = self.ObjectToItem(entry)
-                entry.dvc_item = item
-                children.append(item)
-            return len(children)
+
+        for entry in entries:
+            item = self.ObjectToItem(entry)
+            entry.dvc_item = item
+            children.append(item)
+        return len(children)
 
     def IsContainer(self, item):
         # Return True if the item has children, False otherwise.
@@ -380,16 +379,17 @@ class ConstructEditorModel(dv.PyDataViewModel):
         entry = self.ItemToObject(item)
 
         # show values
-        if isinstance(entry, EntryConstruct):
-            mapper = {
-                self.Column.Name: entry.name,
-                self.Column.Type: entry.typ_str,
-                self.Column.Value: entry.obj_str,
-            }
-        else:
+        if not isinstance(entry, EntryConstruct):
             raise ValueError(f"{repr(entry)} is no valid entry")
 
-        return mapper[col]
+        if col == self.Column.Name:
+            return entry.name
+        elif col == self.Column.Type:
+            return entry.typ_str
+        elif col == self.Column.Value:
+            return entry.obj_str
+        else:
+            raise ValueError(f"column {col} not available")
 
     def GetAttr(self, item, col, attr):
         entry = self.ItemToObject(item)
@@ -439,7 +439,7 @@ class ConstructEditor(wx.Panel):
             0,
             name="construct_editor",
         )
-        self._dvc.AppendTextColumn("Name", 0, width=250)
+        self._dvc.AppendTextColumn("Name", 0, width=200)
         self._dvc.AppendTextColumn("Type", 1, width=100)
         self._dvc.AppendTextColumn("Value", 2, width=260)
         vsizer.Add(self._dvc, 3, wx.ALL | wx.EXPAND, 5)
