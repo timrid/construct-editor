@@ -50,10 +50,12 @@ class ConstructHexEditor(wx.Panel):
         self.construct_editor = ConstructEditor(
             self,
             construct,
-            on_obj_changed=self._convert_struct_to_binary,
-            on_entry_selected=self._on_entry_selected,
         )
         hsizer.Add(self.construct_editor, 1, wx.ALL | wx.EXPAND, 5)
+        self.construct_editor.on_root_obj_changed.append(
+            lambda _: self._convert_struct_to_binary()
+        )
+        self.construct_editor.on_entry_selected.append(self._on_entry_selected)
 
         self._converting = False
         self._hex_editor_visible = True

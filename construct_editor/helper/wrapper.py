@@ -123,8 +123,6 @@ class ObjPanel_Integer(ObjPanel):
             self.entry.obj = new_value
 
         self.entry.model.ItemChanged(self.entry.dvc_item)
-        if self.entry.model._on_obj_changed is not None:
-            self.entry.model._on_obj_changed()
 
 
 class ObjPanel_Enum(ObjPanel):
@@ -192,8 +190,6 @@ class ObjPanel_Enum(ObjPanel):
             self.entry.obj = new_value
 
         self.entry.model.ItemChanged(self.entry.dvc_item)
-        if self.entry.model._on_obj_changed is not None:
-            self.entry.model._on_obj_changed()
 
 
 class FlagsEnumComboPopup(wx.ComboPopup):
@@ -300,8 +296,6 @@ class ObjPanel_FlagsEnum(ObjPanel):
         self.combo_ctrl.SetValue(self.entry.obj_str)
 
         self.entry.model.ItemChanged(self.entry.dvc_item)
-        if self.entry.model._on_obj_changed is not None:
-            self.entry.model._on_obj_changed()
 
 
 class ObjPanel_Timestamp(ObjPanel):
@@ -386,8 +380,6 @@ class ObjPanel_Timestamp(ObjPanel):
         self.obj_txtctrl.SetValue(self.entry.obj_str)
 
         self.entry.model.ItemChanged(self.entry.dvc_item)
-        if self.entry.model._on_obj_changed is not None:
-            self.entry.model._on_obj_changed()
 
 
 # #####################################################################################################################

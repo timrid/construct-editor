@@ -8,6 +8,7 @@ import construct_typed as cst
 import wx
 import wx.dataview as dv
 import dataclasses
+from construct_editor.helper import CallbackList
 
 from construct_editor.helper.preprocessor import get_gui_metadata, include_metadata
 from construct_editor.helper.wrapper import (
@@ -15,6 +16,20 @@ from construct_editor.helper.wrapper import (
     EntryConstruct,
     entry_mapping_construct,
 )
+
+
+class RootObjChangedCallbackList(CallbackList[Callable[[Any], None]]):
+    def fire(self, root_obj: Any):
+        for listener in self:
+            listener(root_obj)
+
+
+class EntrySelectedCallbackList(
+    CallbackList[Callable[[Optional[int], Optional[int]], None]]
+):
+    def fire(self, start_idx: Optional[int], end_idx: Optional[int]):
+        for listener in self:
+            listener(start_idx, end_idx)
 
 
 # #####################################################################################################################
@@ -219,15 +234,11 @@ class ConstructEditorModel(dv.PyDataViewModel):
         Type = 1
         Value = 2
 
-    def __init__(
-        self,
-        construct: cs.Construct,
-        on_obj_changed: Optional[Callable[[], None]] = None,
-    ):
+    def __init__(self, construct: cs.Construct):
         dv.PyDataViewModel.__init__(self)
-        self.root_obj = None
         self.hide_protected = True
-        self._on_obj_changed = on_obj_changed
+        self.root_obj = None
+        self.on_root_obj_changed = RootObjChangedCallbackList()
 
         # Initialize root
         self._construct = construct
@@ -258,9 +269,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
 
     # #########################################################################
     def create_construct_entry(
-        self,
-        parent: Optional["EntryConstruct"],
-        subcon: "cs.Construct[Any, Any]"
+        self, parent: Optional["EntryConstruct"], subcon: "cs.Construct[Any, Any]"
     ) -> "EntryConstruct":
 
         if type(subcon) in entry_mapping_construct:
@@ -279,6 +288,10 @@ class ConstructEditorModel(dv.PyDataViewModel):
     # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
     # #################################################################################################################
+    def ItemChanged(self, item):
+        super().ItemChanged(item)
+        self.on_root_obj_changed.fire(self)
+
     def GetColumnCount(self):
         # Report how many columns this model provides data for.
         return 3
@@ -401,14 +414,10 @@ class ConstructEditor(wx.Panel):
         self,
         parent,
         construct: cs.Construct,
-        on_obj_changed: Optional[Callable[[], None]] = None,
-        on_entry_selected: Optional[
-            Callable[[Optional[int], Optional[int]], None]
-        ] = None,
     ):
         super().__init__(parent)
 
-        self._on_entry_selected = on_entry_selected
+        self.on_entry_selected = EntrySelectedCallbackList()
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -427,7 +436,7 @@ class ConstructEditor(wx.Panel):
         vsizer.Add(self._dvc, 3, wx.ALL | wx.EXPAND, 5)
 
         # Create Model of DataViewCtrl
-        self._model = ConstructEditorModel(include_metadata(construct), on_obj_changed)
+        self._model = ConstructEditorModel(include_metadata(construct))
         self._dvc.AssociateModel(self._model)
 
         # Create InfoBars
@@ -567,6 +576,11 @@ class ConstructEditor(wx.Panel):
     def root_obj(self) -> Any:
         return self._model.root_obj
 
+    # Property: on_root_obj_changed ###########################################
+    @property
+    def on_root_obj_changed(self) -> RootObjChangedCallbackList:
+        return self._model.on_root_obj_changed
+
     # Property: hide_protected ################################################
     @property
     def hide_protected(self) -> bool:
@@ -656,8 +670,7 @@ class ConstructEditor(wx.Panel):
                 start = metadata.offset_start
                 end = metadata.offset_end
 
-            if self._on_entry_selected is not None:
-                self._on_entry_selected(start, end)
+            self.on_entry_selected.fire(start, end)
 
         else:
             self._entry_details_viewer.clear()

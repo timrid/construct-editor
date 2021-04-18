@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
-import logging
 import dataclasses
-import enum
 import wx
 import wx.stc
 import wx.grid as Grid
@@ -12,17 +10,10 @@ from typing import Optional, Callable, List
 import math
 import typing as t
 
+from construct_editor.helper import CallbackList
+
 logger = logging.getLogger("my-logger")
 logger.propagate = False
-
-
-T = t.TypeVar("T")
-
-
-class CallbackList(t.List[T]):
-    def fire(self, *args, **kwargs):
-        for listener in self:
-            listener(*args, **kwargs)  # type: ignore
 
 
 class BinaryChangedCallbackList(CallbackList[Callable[["HexEditorBinaryData"], None]]):
