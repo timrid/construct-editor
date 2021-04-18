@@ -221,6 +221,12 @@ class ContextMenu(wx.Menu):
 # #####################################################################################################################
 # Construct Editor Model ##############################################################################################
 # #####################################################################################################################
+class ConstructEditorColumn(enum.IntEnum):
+    Name = 0
+    Type = 1
+    Value = 2
+
+
 class ConstructEditorModel(dv.PyDataViewModel):
     """
     This model acts as a bridge between the DataViewCtrl and the dataclasses.
@@ -229,11 +235,6 @@ class ConstructEditorModel(dv.PyDataViewModel):
         1. Type: string
         2. Value: string
     """
-
-    class Column(enum.IntEnum):
-        Name = 0
-        Type = 1
-        Value = 2
 
     def __init__(self, construct: cs.Construct):
         dv.PyDataViewModel.__init__(self)
@@ -378,11 +379,11 @@ class ConstructEditorModel(dv.PyDataViewModel):
         if not isinstance(entry, EntryConstruct):
             raise ValueError(f"{repr(entry)} is no valid entry")
 
-        if col == self.Column.Name:
+        if col == ConstructEditorColumn.Name:
             return entry.name
-        elif col == self.Column.Type:
+        elif col == ConstructEditorColumn.Type:
             return entry.typ_str
-        elif col == self.Column.Value:
+        elif col == ConstructEditorColumn.Value:
             return entry.obj_str
         else:
             raise ValueError(f"column {col} not available")
@@ -431,9 +432,9 @@ class ConstructEditor(wx.Panel):
             0,
             name="construct_editor",
         )
-        self._dvc.AppendTextColumn("Name", 0, width=200)
-        self._dvc.AppendTextColumn("Type", 1, width=100)
-        self._dvc.AppendTextColumn("Value", 2, width=260)
+        self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=200)
+        self._dvc.AppendTextColumn("Type", ConstructEditorColumn.Type, width=100)
+        self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=260)
         vsizer.Add(self._dvc, 3, wx.ALL | wx.EXPAND, 5)
 
         # Create Model of DataViewCtrl
