@@ -401,14 +401,10 @@ class EntryConstruct(object):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Construct[Any, Any]",
-        root_obj: Optional[Any],
     ):
         self.model = model
         self._parent = parent
         self._construct = construct
-
-        # This is only set at the root entry. Otherwise it is None.
-        self._root_obj = root_obj
 
         # This is set from the model, when the dvc item for this entry is created.
         self._dvc_item = None
@@ -423,20 +419,11 @@ class EntryConstruct(object):
     def construct(self) -> "cs.Construct[Any, Any]":
         return self._construct
 
-    # default "root_obj" ######################################################
-    @property
-    def root_obj(self) -> Any:
-        if self._root_obj is not None:
-            return self._root_obj
-        if self.parent is not None:
-            return self.parent.root_obj
-        return None
-
     # default "obj" ###########################################################
     @property
     def obj(self) -> Any:
         path = self.path
-        obj = self.root_obj
+        obj = self.model.root_obj
         for p in path:
             if isinstance(obj, dict):
                 obj = obj[p]
@@ -447,7 +434,7 @@ class EntryConstruct(object):
     @obj.setter
     def obj(self, val: Any):
         path = self.path
-        obj = self.root_obj
+        obj = self.model.root_obj
         for p in path[:-1]:
             if isinstance(obj, dict):
                 obj = obj[p]
@@ -530,11 +517,10 @@ class EntrySubconstruct(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Subconstruct[Any, Any, Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
-        self.subentry = model.create_construct_entry(self, construct.subcon, None)
+        self.subentry = model.create_construct_entry(self, construct.subcon)
 
     # pass throught "obj_str" to subentry #####################################
     @property
@@ -578,20 +564,15 @@ class EntryStruct(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Struct[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
         # change default row infos
         self._subentries = []
 
         # create sub entries
         for subcon in self.construct.subcons:
-            subentry = self.model.create_construct_entry(
-                self,
-                subcon,
-                None,
-            )
+            subentry = self.model.create_construct_entry(self, subcon)
             self._subentries.append(subentry)
 
     @property
@@ -619,9 +600,8 @@ class EntryArray(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Array[Any, Any, Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
         self._subentries = []
 
@@ -648,7 +628,6 @@ class EntryArray(EntrySubconstruct):
         subentry = self.model.create_construct_entry(
             self,
             cs.Renamed(self.construct.subcon, newname=str(index)),
-            None,
         )
         self._subentries.append(subentry)
 
@@ -686,9 +665,8 @@ class EntryGreedyRange(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.GreedyRange[Any, Any, Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
         self._subentries = []
 
@@ -712,7 +690,6 @@ class EntryGreedyRange(EntrySubconstruct):
         subentry = self.model.create_construct_entry(
             self,
             cs.Renamed(self.construct.subcon, newname=str(index)),
-            None,
         )
         self._subentries.append(subentry)
 
@@ -740,9 +717,8 @@ class EntryIfThenElse(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.IfThenElse[Any, Any, Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
         self._subentry_then = EntryRenamed(
             self.model,
@@ -750,14 +726,12 @@ class EntryIfThenElse(EntryConstruct):
             cs.Renamed(
                 self.construct.thensubcon, newname=f"If {self.construct.condfunc} then"
             ),
-            None,
             exclude_from_path=True,
         )
         self._subentry_else = EntryRenamed(
             self.model,
             self,
             cs.Renamed(self.construct.elsesubcon, newname=f"Else"),
-            None,
             exclude_from_path=True,
         )
 
@@ -821,15 +795,12 @@ class EntrySwitch(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Switch[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
         self._subentries: List[EntryConstruct] = []
         self._subentry_cases: Dict[str, EntryConstruct] = {}
         self._subentry_default: Optional[EntryConstruct] = None
-        self.construct.cases
-        self.construct.default
 
         for key, value in self.construct.cases.items():
             subentry_case = EntryRenamed(
@@ -838,7 +809,6 @@ class EntrySwitch(EntryConstruct):
                 cs.Renamed(
                     value, newname=f"Case {self.construct.keyfunc} == {str(key)}"
                 ),
-                None,
                 exclude_from_path=True,
             )
             self._subentry_cases[key] = subentry_case
@@ -849,7 +819,6 @@ class EntrySwitch(EntryConstruct):
                 self.model,
                 self,
                 cs.Renamed(self.construct.default, newname=f"Default"),
-                None,
                 exclude_from_path=True,
             )
             self._subentries.append(self._subentry_default)
@@ -908,9 +877,8 @@ class EntryFormatField(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.FormatField[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
         type_mapping = {
             ">B": ("Int8ub", int, 8, False),
@@ -984,9 +952,8 @@ class EntryBytesInteger(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.BytesInteger[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> str:
@@ -1028,9 +995,8 @@ class EntryBitsInteger(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.BitsInteger[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> str:
@@ -1064,9 +1030,8 @@ class EntryBytes(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Bytes[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def obj_str(self) -> str:
@@ -1093,10 +1058,9 @@ class EntryRenamed(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Renamed[Any, Any]",
-        root_obj: Optional[Any],
         exclude_from_path: bool = False,
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
         self._exclude_from_path = exclude_from_path
 
         # This is for the case, when nesting Renamed like this: `Renamed(Renamed(Int8sb, newname=...), newdocs=...)`
@@ -1124,9 +1088,8 @@ class EntryTell(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Construct[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> str:
@@ -1142,9 +1105,8 @@ class EntrySeek(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Seek",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> str:
@@ -1162,9 +1124,8 @@ class EntryComputed(EntryConstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Computed[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> str:
@@ -1185,9 +1146,8 @@ class EntryTimestamp(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.TimestampAdapter[Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def obj_str(self) -> str:
@@ -1207,9 +1167,8 @@ class EntryTransparentSubcon(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Subconstruct[Any, Any, Any, Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
 
 # EntryPeek ###########################################################################################################
@@ -1221,9 +1180,8 @@ class EntryPeek(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Peek",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
 
 # EntryRawCopy #######################################################################################################
@@ -1233,12 +1191,8 @@ class EntryRawCopy(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.RawCopy[Any, Any, Any, Any]",
-        root_obj: Optional[Any],
     ):
-        subcon_obj = None
-        if self.obj is not None:
-            subcon_obj = root_obj.obj
-        super().__init__(model, parent, construct, subcon_obj)
+        super().__init__(model, parent, construct)
 
         # change default row infos
 
@@ -1252,9 +1206,8 @@ class EntryTStruct(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cst.TStruct[Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
@@ -1277,9 +1230,8 @@ class EntryTBitStruct(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cst.TBitStruct[Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
@@ -1302,9 +1254,8 @@ class EntryEnum(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Enum",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> Any:
@@ -1330,9 +1281,8 @@ class EntryFlagsEnum(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.FlagsEnum",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> Any:
@@ -1365,9 +1315,8 @@ class EntryTEnum(EntrySubconstruct):
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cst.TEnum[Any]",
-        root_obj: Optional[Any],
     ):
-        super().__init__(model, parent, construct, root_obj)
+        super().__init__(model, parent, construct)
 
     @property
     def typ_str(self) -> Any:

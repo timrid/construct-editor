@@ -225,13 +225,14 @@ class ConstructEditorModel(dv.PyDataViewModel):
         on_obj_changed: Optional[Callable[[], None]] = None,
     ):
         dv.PyDataViewModel.__init__(self)
-        self._hide_protected = True
+        self.root_obj = None
+        self.hide_protected = True
         self._on_obj_changed = on_obj_changed
 
         # Initialize root
         self._construct = construct
         self._root_entry = self.create_construct_entry(
-            None, cs.Renamed(self._construct, newname="root"), None
+            None, cs.Renamed(self._construct, newname="root")
         )
 
         # The PyDataViewModel derives from both DataViewModel and from
@@ -252,45 +253,26 @@ class ConstructEditorModel(dv.PyDataViewModel):
     def construct(self, val: cs.Construct):
         self._construct = val
         self._root_entry = self.create_construct_entry(
-            None, cs.Renamed(self._construct, newname="root"), None
+            None, cs.Renamed(self._construct, newname="root")
         )
-
-    # Property: root_obj ######################################################
-    @property
-    def root_obj(self) -> Any:
-        return self._root_entry._root_obj
-
-    @root_obj.setter
-    def root_obj(self, val: Any):
-        self._root_entry._root_obj = val
-
-    # Property: hide_protected ################################################
-    @property
-    def hide_protected(self) -> bool:
-        return self._hide_protected
-
-    @hide_protected.setter
-    def hide_protected(self, value: bool):
-        self._hide_protected = value
 
     # #########################################################################
     def create_construct_entry(
         self,
         parent: Optional["EntryConstruct"],
-        subcon: "cs.Construct[Any, Any]",
-        obj: Any,
+        subcon: "cs.Construct[Any, Any]"
     ) -> "EntryConstruct":
 
         if type(subcon) in entry_mapping_construct:
-            return entry_mapping_construct[type(subcon)](self, parent, subcon, obj)
+            return entry_mapping_construct[type(subcon)](self, parent, subcon)
         else:
             for key, value in entry_mapping_construct.items():
                 if isinstance(subcon, key):  # type: ignore
-                    return entry_mapping_construct[key](self, parent, subcon, obj)
+                    return entry_mapping_construct[key](self, parent, subcon)
 
         # use fallback, if no entry found in the mapping
         if isinstance(subcon, cs.Construct):
-            return EntryConstruct(self, parent, subcon, obj)
+            return EntryConstruct(self, parent, subcon)
 
         raise ValueError("subcon type {} is not implemented".format(repr(subcon)))
 
@@ -326,7 +308,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
             entries = []
             for entry in parent_entry.subentries:
                 name = entry.name
-                if (self._hide_protected == True) and (
+                if (self.hide_protected == True) and (
                     name.startswith("_") or name == ""
                 ):
                     continue
@@ -582,7 +564,7 @@ class ConstructEditor(wx.Panel):
 
     # Property: root_obj ######################################################
     @property
-    def root_obj(self) -> bytes:
+    def root_obj(self) -> Any:
         return self._model.root_obj
 
     # Property: hide_protected ################################################
