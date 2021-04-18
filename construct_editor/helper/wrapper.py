@@ -4,6 +4,7 @@ import typing as t
 import construct as cs
 import construct_typed as cst
 
+import textwrap
 import arrow
 import wx
 import wx.adv
@@ -22,6 +23,8 @@ def evaluate(param, context):
 
 
 def int_to_str(val: int) -> str:
+    if isinstance(val, str):
+        return val  # tolerate string
     if val < 10:
         return f"{val}"
     else:
@@ -97,6 +100,18 @@ class ObjPanel_Integer(ObjPanel):
             self, wx.ID_ANY, self.entry.obj_str, wx.DefaultPosition, wx.DefaultSize, 0
         )
         hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.obj_txtctrl.SetToolTip(
+            textwrap.dedent(
+                """\
+                Integer value. The following prefixes are allowed:
+                 - 0b/0B: binary (base 2)
+                 - 0o/0O: octal (base 8)
+                 - none: decimal (base 10)
+                 - 0x/0X: octal (base 16)
+                """
+            )
+        )
 
         self.SetSizer(hsizer)
         self.Layout()
