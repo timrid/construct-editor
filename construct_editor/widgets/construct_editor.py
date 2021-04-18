@@ -14,7 +14,7 @@ from construct_editor.helper.preprocessor import get_gui_metadata, include_metad
 from construct_editor.helper.wrapper import (
     ObjPanel_Empty,
     EntryConstruct,
-    entry_mapping_construct,
+    create_entry_from_construct,
 )
 
 
@@ -236,17 +236,14 @@ class ConstructEditorModel(dv.PyDataViewModel):
         2. Value: string
     """
 
-    def __init__(self, construct: cs.Construct):
+    def __init__(self):
         dv.PyDataViewModel.__init__(self)
-        self.hide_protected = True
-        self.root_obj = None
+
+        self.root_entry: Optional["EntryConstruct"] = None
+        self.root_obj: Optional[Any] = None
         self.on_root_obj_changed = RootObjChangedCallbackList()
 
-        # Initialize root
-        self._construct = construct
-        self._root_entry = self.create_construct_entry(
-            None, cs.Renamed(self._construct, newname="root")
-        )
+        self.hide_protected = True
 
         # The PyDataViewModel derives from both DataViewModel and from
         # DataViewItemObjectMapper, which has methods that help associate
@@ -255,37 +252,6 @@ class ConstructEditorModel(dv.PyDataViewModel):
         # are weak-referencable then the objmapper can use a
         # WeakValueDictionary instead.
         self.UseWeakRefs(True)
-
-    # Property: construct #####################################################
-    @property
-    def construct(self) -> cs.Construct:
-        """ construct used for displaying """
-        return self._construct
-
-    @construct.setter
-    def construct(self, val: cs.Construct):
-        self._construct = val
-        self._root_entry = self.create_construct_entry(
-            None, cs.Renamed(self._construct, newname="root")
-        )
-
-    # #########################################################################
-    def create_construct_entry(
-        self, parent: Optional["EntryConstruct"], subcon: "cs.Construct[Any, Any]"
-    ) -> "EntryConstruct":
-
-        if type(subcon) in entry_mapping_construct:
-            return entry_mapping_construct[type(subcon)](self, parent, subcon)
-        else:
-            for key, value in entry_mapping_construct.items():
-                if isinstance(subcon, key):  # type: ignore
-                    return entry_mapping_construct[key](self, parent, subcon)
-
-        # use fallback, if no entry found in the mapping
-        if isinstance(subcon, cs.Construct):
-            return EntryConstruct(self, parent, subcon)
-
-        raise ValueError("subcon type {} is not implemented".format(repr(subcon)))
 
     # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
@@ -313,8 +279,8 @@ class ConstructEditorModel(dv.PyDataViewModel):
         # Entry Gruppen auswerten...
         entries = None
         if not parent:
-            if self._root_entry is not None:
-                entries = [self._root_entry]
+            if self.root_entry is not None:
+                entries = [self.root_entry]
         else:
             parent_entry = self.ItemToObject(parent)
             if not isinstance(parent_entry, EntryConstruct):
@@ -374,8 +340,6 @@ class ConstructEditorModel(dv.PyDataViewModel):
 
         # Fetch the data object for this item.
         entry = self.ItemToObject(item)
-
-        # show values
         if not isinstance(entry, EntryConstruct):
             raise ValueError(f"{repr(entry)} is no valid entry")
 
@@ -391,7 +355,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
     def GetAttr(self, item, col, attr):
         entry = self.ItemToObject(item)
 
-        if entry is self._root_entry:
+        if entry is self.root_entry:
             attr.SetColour("blue")
             attr.SetBold(True)
             return True
@@ -419,8 +383,6 @@ class ConstructEditor(wx.Panel):
     ):
         super().__init__(parent)
 
-        self.on_entry_selected = EntrySelectedCallbackList()
-
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
         # Create DataViewCtrl
@@ -438,7 +400,7 @@ class ConstructEditor(wx.Panel):
         vsizer.Add(self._dvc, 3, wx.ALL | wx.EXPAND, 5)
 
         # Create Model of DataViewCtrl
-        self._model = ConstructEditorModel(include_metadata(construct))
+        self._model = ConstructEditorModel()
         self._dvc.AssociateModel(self._model)
 
         # Create InfoBars
@@ -462,6 +424,9 @@ class ConstructEditor(wx.Panel):
             id=wx.ID_ANY,
         )
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_right_click)
+
+        self.on_entry_selected = EntrySelectedCallbackList()
+        self.construct = construct
 
     def _get_expansion_infos(
         self, parent: Optional[dv.DataViewItem]
@@ -536,7 +501,7 @@ class ConstructEditor(wx.Panel):
     def parse(self, binary: bytes, **contextkw: Any):
         """ Parse binary data to struct. """
         try:
-            self._model.root_obj = self._model.construct.parse(binary, **contextkw)
+            self._model.root_obj = self._construct.parse(binary, **contextkw)
             self._parse_error_info_bar.Dismiss()
         except Exception as e:
             self._parse_error_info_bar.ShowMessage(
@@ -549,7 +514,7 @@ class ConstructEditor(wx.Panel):
     def build(self, **contextkw: Any) -> bytes:
         """ Build binary data from struct. """
         try:
-            binary = self._model.construct.build(self.root_obj, **contextkw)
+            binary = self._construct.build(self.root_obj, **contextkw)
             self._build_error_info_bar.Dismiss()
         except Exception as e:
             self._build_error_info_bar.ShowMessage(
@@ -565,13 +530,17 @@ class ConstructEditor(wx.Panel):
     @property
     def construct(self) -> cs.Construct:
         """ Construct that is used for displaying. """
-        return self._model.construct
+        return self._construct
 
     @construct.setter
     def construct(self, val: cs.Construct):
         # modify the copied construct, so that each item also includes metadata for the GUI
-        val = include_metadata(val)
-        self._model.construct = val
+        self._construct = include_metadata(val)
+
+        # create entry from the construct
+        self._model.root_entry = create_entry_from_construct(
+            self._model, None, cs.Renamed(self._construct, newname="root")
+        )
 
     # Property: root_obj ######################################################
     @property
@@ -610,8 +579,8 @@ class ConstructEditor(wx.Panel):
                 for sub_entry in entry.subentries:
                     dvc_expand(sub_entry)
 
-        if self._model._root_entry:
-            dvc_expand(self._model._root_entry)
+        if self._model.root_entry:
+            dvc_expand(self._model.root_entry)
 
     # expand_level ############################################################
     def expand_level(self, level: int):
@@ -629,8 +598,8 @@ class ConstructEditor(wx.Panel):
                     for sub_entry in subentries:
                         dvc_expand(sub_entry, current_level + 1)
 
-        if self._model._root_entry:
-            dvc_expand(self._model._root_entry, 1)
+        if self._model.root_entry:
+            dvc_expand(self._model.root_entry, 1)
 
     # collapse_all ############################################################
     def collapse_all(self):
@@ -647,8 +616,8 @@ class ConstructEditor(wx.Panel):
                 if dvc_item is not None:
                     self._dvc.Collapse(dvc_item)
 
-        if self._model._root_entry:
-            dvc_collapse(self._model._root_entry)
+        if self._model.root_entry:
+            dvc_collapse(self._model.root_entry)
 
         # expand the root entry again
         self.expand_level(1)

@@ -527,7 +527,7 @@ class EntrySubconstruct(EntryConstruct):
     ):
         super().__init__(model, parent, construct)
 
-        self.subentry = model.create_construct_entry(self, construct.subcon)
+        self.subentry = create_entry_from_construct(model, self, construct.subcon)
 
     # pass throught "obj_str" to subentry #####################################
     @property
@@ -579,7 +579,7 @@ class EntryStruct(EntryConstruct):
 
         # create sub entries
         for subcon in self.construct.subcons:
-            subentry = self.model.create_construct_entry(self, subcon)
+            subentry = create_entry_from_construct(model, self, subcon)
             self._subentries.append(subentry)
 
     @property
@@ -632,7 +632,8 @@ class EntryArray(EntrySubconstruct):
         return self._subentries
 
     def insert_entry(self, index: int):
-        subentry = self.model.create_construct_entry(
+        subentry = create_entry_from_construct(
+            self.model,
             self,
             cs.Renamed(self.construct.subcon, newname=str(index)),
         )
@@ -694,7 +695,8 @@ class EntryGreedyRange(EntrySubconstruct):
         return self._subentries
 
     def insert_entry(self, index: int):
-        subentry = self.model.create_construct_entry(
+        subentry = create_entry_from_construct(
+            self.model,
             self,
             cs.Renamed(self.construct.subcon, newname=str(index)),
         )
@@ -1447,3 +1449,23 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     IncludeGuiMetaData: EntryTransparentSubcon,
     # #########################################################################
 }
+
+
+def create_entry_from_construct(
+    model: "construct_editor.ConstructEditorModel",
+    parent: Optional["EntryConstruct"],
+    subcon: "cs.Construct[Any, Any]",
+) -> "EntryConstruct":
+
+    if type(subcon) in entry_mapping_construct:
+        return entry_mapping_construct[type(subcon)](model, parent, subcon)
+    else:
+        for key, value in entry_mapping_construct.items():
+            if isinstance(subcon, key):  # type: ignore
+                return entry_mapping_construct[key](model, parent, subcon)
+
+    # use fallback, if no entry found in the mapping
+    if isinstance(subcon, cs.Construct):
+        return EntryConstruct(model, parent, subcon)
+
+    raise ValueError("subcon type {} is not implemented".format(repr(subcon)))
