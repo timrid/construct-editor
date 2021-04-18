@@ -181,7 +181,7 @@ class EntryDetailsViewer(wx.Panel):
 # Context Menu ########################################################################################################
 # #####################################################################################################################
 class ContextMenu(wx.Menu):
-    def __init__(self, parent: "ConstructEditor", entry: "EntryConstruct"):
+    def __init__(self, parent: "ConstructEditor", entry: Optional["EntryConstruct"]):
         super(ContextMenu, self).__init__()
         self.parent = parent
 
@@ -202,8 +202,9 @@ class ContextMenu(wx.Menu):
         self.Bind(wx.EVT_MENU, self.on_hide_protected, self.hide_protected_mi)
         self.hide_protected_mi.Check(self.parent.hide_protected)
 
-        # Add additional items for this entry
-        entry.modify_context_menu(self)
+        if entry is not None:
+            # Add additional items for this entry
+            entry.modify_context_menu(self)
 
     def on_expand_all(self, event):
         self.parent.expand_all()
@@ -682,5 +683,9 @@ class ConstructEditor(wx.Panel):
         Then a context menu is created
         """
         item = event.GetItem()
-        entry: "EntryConstruct" = self._model.ItemToObject(item)
+        entry: Optional["EntryConstruct"]
+        if item.ID is not None:
+            entry = self._model.ItemToObject(item)
+        else:
+            entry = None
         self.PopupMenu(ContextMenu(self, entry), event.GetPosition())
