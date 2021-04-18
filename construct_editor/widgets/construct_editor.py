@@ -276,29 +276,24 @@ class ConstructEditorModel(dv.PyDataViewModel):
         # item, so we'll use the genre objects as its children and they will
         # end up being the collection of visible roots in our tree.
 
-        # Entry Gruppen auswerten...
-        entries = None
+        if self.root_entry is None:
+            return 0
+
         if not parent:
-            if self.root_entry is not None:
-                entries = [self.root_entry]
-        else:
+            entry = self.root_entry
+            item = self.ObjectToItem(entry)
+            entry.dvc_item = item
+            children.append(item)
+            return 1
+
             parent_entry = self.ItemToObject(parent)
             if not isinstance(parent_entry, EntryConstruct):
                 raise ValueError(f"{repr(parent_entry)} is no valid entry")
 
-            entries = []
             for entry in parent_entry.subentries:
                 name = entry.name
-                if (self.hide_protected == True) and (
-                    name.startswith("_") or name == ""
-                ):
+            if (self.hide_protected == True) and (name.startswith("_") or name == ""):
                     continue
-                entries.append(entry)
-
-        if entries is None:
-            return 0
-
-        for entry in entries:
             item = self.ObjectToItem(entry)
             entry.dvc_item = item
             children.append(item)
@@ -474,7 +469,9 @@ class ConstructEditor(wx.Panel):
         else:
             return []
 
-    def _set_selection_from_path(self, parent: Optional[dv.DataViewItem], path: List[str]):
+    def _set_selection_from_path(
+        self, parent: Optional[dv.DataViewItem], path: List[str]
+    ):
         """ Set the selected entry from path """
         if len(path) == 0:
             return
