@@ -650,6 +650,9 @@ class ConstructEditor(wx.Panel):
         if self._model._root_entry:
             dvc_collapse(self._model._root_entry)
 
+        # expand the root entry again
+        self.expand_level(1)
+
     # Internals ###############################################################
     def _on_dvc_selection_changed(self, event: wx.Event):
         """
