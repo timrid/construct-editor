@@ -800,6 +800,22 @@ class EntryIfThenElse(EntryConstruct):
             return subentry.typ_str
 
     @property
+    def dvc_item(self) -> Any:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return self._dvc_item
+        else:
+            return subentry.dvc_item
+
+    @dvc_item.setter
+    def dvc_item(self, val: Any):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item = val
+        else:
+            subentry.dvc_item = val
+
+    @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
         subentry = self._get_subentry()
         if subentry is None:
@@ -880,6 +896,22 @@ class EntrySwitch(EntryConstruct):
             return "Switch"
         else:
             return subentry.typ_str
+
+    @property
+    def dvc_item(self) -> Any:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return self._dvc_item
+        else:
+            return subentry.dvc_item
+
+    @dvc_item.setter
+    def dvc_item(self, val: Any):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item = val
+        else:
+            subentry.dvc_item = val
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
