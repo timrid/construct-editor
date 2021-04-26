@@ -23,6 +23,7 @@ import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
 import construct_editor.gallery.test_pointer_peek_seek_tell
+import construct_editor.gallery.test_pass
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
@@ -100,7 +101,7 @@ class ConstructGallery(wx.Panel):
             "Test: Aligned (TODO)": None,
             "## stream manipulation ##########################": None,
             "Test: Pointer/Peek/Seek/Tell": construct_editor.gallery.test_pointer_peek_seek_tell.gallery_item,
-            "Test: Pass (TODO)": None,
+            "Test: Pass": construct_editor.gallery.test_pass.gallery_item,
             "Test: Terminated (TODO)": None,
             "## tunneling and byte/bit swapping ##########################": None,
             "Test: RawCopy (TODO)": None,

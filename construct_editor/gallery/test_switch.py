@@ -27,11 +27,22 @@ class SwitchTest(cst.TContainerMixin):
     switch: t.Union[Case1, Case2, CaseDefault] = cst.sfield(
         cs.Switch(
             cs.this.choice,
-            {
+            cases={
                 1: cst.TStruct(Case1),
                 2: cst.TStruct(Case2),
             },
-            cst.TStruct(CaseDefault),
+            default=cst.TStruct(CaseDefault),
+        )
+    )
+
+    switch_without_default: t.Union[Case1, Case2, None] = cst.sfield(
+        cs.Switch(
+            cs.this.choice,
+            cases={
+                1: cst.TStruct(Case1),
+                2: cst.TStruct(Case2),
+            },
+            default=cs.Pass,
         )
     )
 
@@ -41,7 +52,8 @@ constr = cst.TStruct(SwitchTest)
 gallery_item = GalleryItem(
     construct=constr,
     example_binarys={
-        "Zeros": bytes([0, 0, 0, 0, 0]),
-        "1": bytes([1, 1, 2, 1, 2]),
+        "Default": bytes([0, 0, 0, 0, 0]),
+        "Case 1": bytes([1, 1, 2, 1, 2, 5, 6, 7, 8]),
+        "Case 2": bytes([2, 1, 2, 1, 2, 5, 6, 7, 8]),
     },
 )

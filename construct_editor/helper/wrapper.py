@@ -1,21 +1,19 @@
-from typing import Any, Dict, List, Optional, Type, Union
-import typing as t
-
-import construct as cs
-import construct_typed as cst
-
 import textwrap
+import typing as t
+from typing import Any, Dict, List, Optional, Type, Union
+
 import arrow
+import construct as cs
+import construct_editor.widgets.construct_editor as construct_editor
+import construct_typed as cst
 import wx
 import wx.adv
 from construct_editor.helper.preprocessor import (
-    IncludeGuiMetaData,
     GuiMetaData,
-    get_gui_metadata,
+    IncludeGuiMetaData,
     add_gui_metadata,
+    get_gui_metadata,
 )
-
-import construct_editor.widgets.construct_editor as construct_editor
 
 
 def evaluate(param, context):
@@ -1126,6 +1124,25 @@ class EntrySeek(EntryConstruct):
         return ""
 
 
+# EntryPass ###########################################################################################################
+class EntryPass(EntryConstruct):
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Construct[None, None]",
+    ):
+        super().__init__(model, parent, construct)
+
+    @property
+    def typ_str(self) -> str:
+        return "Pass"
+
+    @property
+    def obj_str(self) -> str:
+        return ""
+
+
 # EntryComputed ###########################################################################################################
 class EntryComputed(EntryConstruct):
     def __init__(
@@ -1413,7 +1430,7 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     cs.Peek: EntryPeek,
     cs.Seek: EntrySeek,
     type(cs.Tell): EntryTell,
-    # cs.Pass
+    type(cs.Pass): EntryPass,
     # cs.Terminated
     #
     # tunneling and byte/bit swapping ###########

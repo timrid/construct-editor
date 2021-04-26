@@ -35,6 +35,10 @@ class StrWithGuiMetadata(str):
     pass
 
 
+class NoneWithGuiMetadata:
+    pass
+
+
 def get_gui_metadata(obj: t.Any) -> t.Optional[GuiMetaData]:
     """ Get the GUI metadata if they are available """
     try:
@@ -62,6 +66,9 @@ def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
             obj.__gui_metadata = gui_metadata  # type: ignore
         elif isinstance(obj, str):
             obj = StrWithGuiMetadata(obj)
+            obj.__gui_metadata = gui_metadata  # type: ignore
+        elif obj is None:
+            obj = NoneWithGuiMetadata()
             obj.__gui_metadata = gui_metadata  # type: ignore
         else:
             raise ValueError(f"add_gui_metadata dont work with type of {type(obj)}")
