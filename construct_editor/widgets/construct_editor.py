@@ -181,9 +181,15 @@ class EntryDetailsViewer(wx.Panel):
 # Context Menu ########################################################################################################
 # #####################################################################################################################
 class ContextMenu(wx.Menu):
-    def __init__(self, parent: "ConstructEditor", entry: Optional["EntryConstruct"]):
+    def __init__(
+        self,
+        parent: "ConstructEditor",
+        model: "ConstructEditorModel",
+        entry: Optional["EntryConstruct"],
+    ):
         super(ContextMenu, self).__init__()
         self.parent = parent
+        self.model = model
 
         self.expand_all_mi = wx.MenuItem(self, wx.ID_ANY, "Expand All")
         self.Append(self.expand_all_mi)
@@ -202,8 +208,25 @@ class ContextMenu(wx.Menu):
         self.Bind(wx.EVT_MENU, self.on_hide_protected, self.hide_protected_mi)
         self.hide_protected_mi.Check(self.parent.hide_protected)
 
+        self.Append(wx.MenuItem(self, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+
+        # Add List with all currently shown list viewed items
+        submenu = wx.Menu()
+        self.submenu_map: Dict[Any, EntryConstruct] = {}
+        for e in model.list_viewed_entries:
+            name = "->".join(e.path)
+            mi = wx.MenuItem(submenu, wx.ID_ANY, name, kind=wx.ITEM_CHECK)
+            submenu.Append(mi)
+            self.submenu_map[mi.GetId()] = e
+            self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, mi)
+            mi.Check(True)
+
+        submenu_mi: wx.MenuItem = self.AppendSubMenu(submenu, "List Viewed Items")
+        if len(model.list_viewed_entries) == 0:
+            self.Enable(submenu_mi.GetId(), False)
+
+        # Add additional items for this entry
         if entry is not None:
-            # Add additional items for this entry
             entry.modify_context_menu(self)
 
     def on_expand_all(self, event):
@@ -217,6 +240,10 @@ class ContextMenu(wx.Menu):
         self.parent.hide_protected = checked
         self.parent.reload()
 
+    def on_remove_list_viewed_item(self, event: wx.CommandEvent):
+        entry = self.submenu_map[event.GetId()]
+        self.model.list_viewed_entries.remove(entry)
+        self.parent.reload()
 
 # #####################################################################################################################
 # Construct Editor Model ##############################################################################################
@@ -241,9 +268,11 @@ class ConstructEditorModel(dv.PyDataViewModel):
 
         self.root_entry: Optional["EntryConstruct"] = None
         self.root_obj: Optional[Any] = None
-        self.on_root_obj_changed = RootObjChangedCallbackList()
 
         self.hide_protected = True
+
+        # List with all entries that have the list view enabled
+        self.list_viewed_entries: List["EntryConstruct"] = []
 
         # The PyDataViewModel derives from both DataViewModel and from
         # DataViewItemObjectMapper, which has methods that help associate
@@ -253,18 +282,30 @@ class ConstructEditorModel(dv.PyDataViewModel):
         # WeakValueDictionary instead.
         self.UseWeakRefs(True)
 
+    def get_column_count(self):
+        """ Get the column count """
+        return 3
+
+    def get_column_name(self, selected_item, col):
+        """ Get the name of the column. The column name depends on the selected item """
+        entry = self.ItemToObject(selected_item)
+        if not isinstance(entry, EntryConstruct):
+            raise ValueError(f"{repr(entry)} is no valid entry")
+
+        flat_subentry_list: List["EntryConstruct"] = []
+        entry.create_flat_subentry_list(flat_subentry_list)
+
+        return "->".join(flat_subentry_list[col].path)
+
     # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
     # #################################################################################################################
-    def ItemChanged(self, item):
-        super().ItemChanged(item)
-        self.on_root_obj_changed.fire(self)
-
     def GetColumnCount(self):
         # Report how many columns this model provides data for.
-        return 3
+        return self.get_column_count()
 
     def GetChildren(self, parent, children):
+
         # The view calls this method to find the children of any node in the
         # control. There is an implicit hidden root node, and the top level
         # item(s) should be reported as children of this node. A List view
@@ -286,14 +327,14 @@ class ConstructEditorModel(dv.PyDataViewModel):
             children.append(item)
             return 1
 
-            parent_entry = self.ItemToObject(parent)
-            if not isinstance(parent_entry, EntryConstruct):
-                raise ValueError(f"{repr(parent_entry)} is no valid entry")
+        parent_entry = self.ItemToObject(parent)
+        if not isinstance(parent_entry, EntryConstruct):
+            raise ValueError(f"{repr(parent_entry)} is no valid entry")
 
-            for entry in parent_entry.subentries:
-                name = entry.name
+        for entry in parent_entry.subentries:
+            name = entry.name
             if (self.hide_protected == True) and (name.startswith("_") or name == ""):
-                    continue
+                continue
             item = self.ObjectToItem(entry)
             entry.dvc_item = item
             children.append(item)
@@ -329,23 +370,31 @@ class ConstructEditorModel(dv.PyDataViewModel):
             return entry.parent.dvc_item
 
     def GetValue(self, item, col):
-        # Return the value to be displayed for this item and column. For this
-        # example we'll just pull the values from the data objects we
-        # associated with the items in GetChildren.
+        # Return the value to be displayed for this item and column.
 
-        # Fetch the data object for this item.
         entry = self.ItemToObject(item)
         if not isinstance(entry, EntryConstruct):
             raise ValueError(f"{repr(entry)} is no valid entry")
 
         if col == ConstructEditorColumn.Name:
             return entry.name
-        elif col == ConstructEditorColumn.Type:
+        if col == ConstructEditorColumn.Type:
             return entry.typ_str
-        elif col == ConstructEditorColumn.Value:
+        if col == ConstructEditorColumn.Value:
             return entry.obj_str
+
+        if (entry.parent is None) or (entry.parent not in self.list_viewed_entries):
+            return ""
+
+        # flatten the hierarchical structure to a list
+        col = col - len(ConstructEditorColumn)
+
+        flat_subentry_list: List["EntryConstruct"] = []
+        entry.create_flat_subentry_list(flat_subentry_list)
+        if len(flat_subentry_list) > col:
+            return flat_subentry_list[col].obj_str
         else:
-            raise ValueError(f"column {col} not available")
+            return ""
 
     def GetAttr(self, item, col, attr):
         entry = self.ItemToObject(item)
@@ -386,12 +435,9 @@ class ConstructEditor(wx.Panel):
             wx.ID_ANY,
             wx.DefaultPosition,
             wx.DefaultSize,
-            0,
+            style=dv.DV_VERT_RULES | dv.DV_ROW_LINES,
             name="construct_editor",
         )
-        self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=200)
-        self._dvc.AppendTextColumn("Type", ConstructEditorColumn.Type, width=100)
-        self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=260)
         vsizer.Add(self._dvc, 3, wx.ALL | wx.EXPAND, 5)
 
         # Create Model of DataViewCtrl
@@ -418,9 +464,11 @@ class ConstructEditor(wx.Panel):
             self._on_dvc_selection_changed,
             id=wx.ID_ANY,
         )
+        self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self._on_dvc_value_changed)
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_right_click)
 
         self.on_entry_selected = EntrySelectedCallbackList()
+        self.on_root_obj_changed = RootObjChangedCallbackList()
         self.construct = construct
 
     def _get_expansion_infos(
@@ -496,6 +544,9 @@ class ConstructEditor(wx.Panel):
         try:
             self.Freeze()
 
+            # reload dvc columns  # TODO: Macht das hier noch probleme?
+            self._reload_dvc_columns()
+
             # save settings
             expansion_infos = self._get_expansion_infos(None)
             selected_entry_path = self._get_selected_entry_path()
@@ -506,7 +557,7 @@ class ConstructEditor(wx.Panel):
 
             # restore settings
             self._expand_from_expansion_infos(None, expansion_infos)
-            selected_entry = self._set_selection_from_path(None, selected_entry_path)
+            self._set_selection_from_path(None, selected_entry_path)
 
         finally:
             self.Thaw()
@@ -538,7 +589,7 @@ class ConstructEditor(wx.Panel):
 
         # parse the build binary, so that constructs that parses from nothing are shown correctly (eg. cs.Peek)
         # TODO: If this is uncommented, the focus of the ObjPanel is lost every time a change is made
-        # wx.CallAfter(lambda: self.parse(binary, **contextkw))  
+        # wx.CallAfter(lambda: self.parse(binary, **contextkw))
 
         return binary
 
@@ -558,15 +609,12 @@ class ConstructEditor(wx.Panel):
             self._model, None, cs.Renamed(self._construct, newname="root")
         )
 
+        self._model.list_viewed_entries.clear()
+
     # Property: root_obj ######################################################
     @property
     def root_obj(self) -> Any:
         return self._model.root_obj
-
-    # Property: on_root_obj_changed ###########################################
-    @property
-    def on_root_obj_changed(self) -> RootObjChangedCallbackList:
-        return self._model.on_root_obj_changed
 
     # Property: hide_protected ################################################
     @property
@@ -639,6 +687,47 @@ class ConstructEditor(wx.Panel):
         self.expand_level(1)
 
     # Internals ###############################################################
+    def _reload_dvc_columns(self):
+        """ Reload the dvc columns """
+        self._dvc.ClearColumns()
+
+        self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=160)
+        self._dvc.AppendTextColumn("Type", ConstructEditorColumn.Type, width=90)
+        self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=200)
+
+        list_cols = 0
+        for list_viewed_entry in self._model.list_viewed_entries:
+            for subentry in list_viewed_entry.subentries:
+                flat_list = []
+                subentry.create_flat_subentry_list(flat_list)
+                list_cols = max(list_cols, len(flat_list))
+
+        for list_col in range(list_cols):
+            self._dvc.AppendTextColumn(
+                str(list_col), len(ConstructEditorColumn) + list_col
+            )
+
+    def _rename_dvc_columns(self, entry: EntryConstruct):
+        """ Rename the dvc columns """
+
+        flat_list: List["EntryConstruct"] = []
+        if (entry.parent is not None) and (
+            entry.parent in self._model.list_viewed_entries
+        ):
+            entry.create_flat_subentry_list(flat_list)
+
+        list_cols = self._dvc.GetColumnCount() - len(ConstructEditorColumn)
+        for list_col in range(list_cols):
+            dvc_column: dv.DataViewColumn = self._dvc.GetColumn(
+                len(ConstructEditorColumn) + list_col
+            )
+            if list_col < len(flat_list):
+                path = flat_list[list_col].path
+                path = path[len(entry.path) :]  # remove the path from the parent
+                dvc_column.SetTitle("->".join(path))
+            else:
+                dvc_column.SetTitle(str(list_col))
+
     def _on_dvc_selection_changed(self, event):
         """
         This method is called, if the selection in the dvc has changed.
@@ -661,8 +750,14 @@ class ConstructEditor(wx.Panel):
 
             self.on_entry_selected.fire(start, end)
 
+            self._rename_dvc_columns(entry)
+
         else:
             self._entry_details_viewer.clear()
+
+    def _on_dvc_value_changed(self, event: dv.DataViewEvent):
+        """ This method is called, if a value in the dvc has changed. """
+        self.on_root_obj_changed.fire(self._model.root_obj)
 
     def _on_right_click(self, event: dv.DataViewEvent):
         """
@@ -676,4 +771,4 @@ class ConstructEditor(wx.Panel):
             entry = self._model.ItemToObject(item)
         else:
             entry = None
-        self.PopupMenu(ContextMenu(self, entry), event.GetPosition())
+        self.PopupMenu(ContextMenu(self, self._model, entry), event.GetPosition())

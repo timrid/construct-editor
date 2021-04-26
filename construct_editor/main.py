@@ -32,7 +32,7 @@ class ConstructGalleryFrame(wx.Frame):
         super().__init__(*args, **kwargs)
 
         self.SetTitle("Construct Gallery")
-        self.SetSize(1400, 800)
+        self.SetSize(1600, 1000)
         self.SetIcon(icon.GetIcon())
 
         self.main_panel = ConstructGallery(self)

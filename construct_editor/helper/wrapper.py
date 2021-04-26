@@ -488,6 +488,15 @@ class EntryConstruct(object):
     def dvc_item(self, val) -> Any:
         self._dvc_item = val
 
+    # default "add_nonstruct_subentries_to_list" ##############################
+    def create_flat_subentry_list(self, flat_subentry_list: List["EntryConstruct"]):
+        """ Create a flat list with all subentires """
+        if self.subentries is not None:
+            for subentry in self.subentries:
+                subentry.create_flat_subentry_list(flat_subentry_list)
+        else:
+            flat_subentry_list.append(self)
+
     # default "create_obj_panel" ##############################################
     def create_obj_panel(self, parent) -> ObjPanel:
         """ This method is called, when the user clicks an entry """
@@ -609,6 +618,7 @@ class EntryArray(EntrySubconstruct):
         super().__init__(model, parent, construct)
 
         self._subentries = []
+        self._list_view_frame: Optional[wx.Frame] = None
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
@@ -652,14 +662,26 @@ class EntryArray(EntrySubconstruct):
         return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
 
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        # If the subentry has no subentries itselfe, it makes no sense to create a list view.
+        temp_subentry = create_entry_from_construct(
+            self.model, self, self.construct.subcon
+        )
+        if temp_subentry.subentries is None:
+            return
+
         menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
 
-        def on_as_list_clicked(event):
-            wx.MessageBox("View as List is currently not supported", "Not supported")
+        def on_menu_item_clicked(event: wx.MenuEvent):
+            if self in self.model.list_viewed_entries:
+                self.model.list_viewed_entries.remove(self)
+            else:
+                self.model.list_viewed_entries.append(self)
+            menu.parent.reload()
 
-        view_as_list = wx.MenuItem(menu, wx.ID_ANY, "View as List", kind=wx.ITEM_NORMAL)
-        menu.Append(view_as_list)
-        menu.Bind(wx.EVT_MENU, on_as_list_clicked, view_as_list)
+        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Enable List View", kind=wx.ITEM_CHECK)
+        menu.Append(menu_item)
+        menu_item.Check(self in self.model.list_viewed_entries)
+        menu.Bind(wx.EVT_MENU, on_menu_item_clicked, menu_item)
 
 
 # EntryGreedyRange ####################################################################################################
