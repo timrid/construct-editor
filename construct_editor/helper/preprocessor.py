@@ -162,6 +162,7 @@ def include_metadata(
         new_cases = {}
         for key, subcon in constr.cases.items():
             new_cases[key] = include_metadata(subcon)
+        constr.cases = new_cases
         if constr.default is not None:
             constr.default = include_metadata(constr.default)
         return IncludeGuiMetaData(constr)
