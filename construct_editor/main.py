@@ -10,6 +10,7 @@ import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 
 import construct_editor.gallery.example_pe32coff
+import construct_editor.gallery.example_ipstack
 import construct_editor.gallery.test_array
 import construct_editor.gallery.test_greedyrange
 import construct_editor.gallery.test_renamed
@@ -48,6 +49,7 @@ class ConstructGallery(wx.Panel):
         self.construct_gallery = {
             "################ EXAMPLES ################": None,
             "Example: pe32coff": construct_editor.gallery.example_pe32coff.gallery_item,
+            "Example: ipstack": construct_editor.gallery.example_ipstack.gallery_item,            
             "################ TESTS ####################": None,
             "## bytes and bits ################": None,
             "Test: Bytes (TODO)": None,
