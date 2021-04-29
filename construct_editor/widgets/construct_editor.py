@@ -103,151 +103,6 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
 
 
 # #####################################################################################################################
-# Entry Details Viewer ################################################################################################
-# #####################################################################################################################
-class EntryDetailsViewer(wx.Panel):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-
-        # Name
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        label = wx.StaticText(
-            self, wx.ID_ANY, "Name:", wx.DefaultPosition, wx.Size(50, -1), 0
-        )
-        hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.name_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(-1, -1),
-            wx.TE_READONLY,
-        )
-        hsizer.Add(self.name_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0, wx.EXPAND, 5)
-
-        # Type
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        label = wx.StaticText(
-            self, wx.ID_ANY, "Type:", wx.DefaultPosition, wx.Size(50, -1), 0
-        )
-        hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.type_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(-1, -1),
-            wx.TE_READONLY,
-        )
-        hsizer.Add(self.type_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
-        # Offset
-        label = wx.StaticText(
-            self, wx.ID_ANY, "Offset:", wx.DefaultPosition, wx.Size(-1, -1), 0
-        )
-        hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.offset_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(100, -1),
-            wx.TE_READONLY,
-        )
-        hsizer.Add(self.offset_txt, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
-        # Length
-        label = wx.StaticText(
-            self, wx.ID_ANY, "Length:", wx.DefaultPosition, wx.Size(-1, -1), 0
-        )
-        hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.length_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(100, -1),
-            wx.TE_READONLY,
-        )
-        hsizer.Add(self.length_txt, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0, wx.EXPAND, 5)
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        label = wx.StaticText(
-            self, wx.ID_ANY, "Value:", wx.DefaultPosition, wx.Size(50, -1), 0
-        )
-        hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.obj_panel = ObjPanel_Empty(self)
-        hsizer.Add(self.obj_panel, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.obj_sizer = hsizer
-        vsizer.Add(hsizer, 0, wx.EXPAND, 5)
-
-        # Doc
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        label = wx.StaticText(
-            self, wx.ID_ANY, "Doc:", wx.DefaultPosition, wx.Size(50, -1), 0
-        )
-        hsizer.Add(label, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.docs_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(-1, 100),
-            wx.TE_MULTILINE | wx.TE_READONLY,
-        )
-        self.docs_txt.SetBackgroundColour(wx.Colour(240, 240, 240))
-        hsizer.Add(self.docs_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        vsizer.Add(hsizer, 0, wx.EXPAND, 5)
-
-        self.SetSizer(vsizer)
-        self.Layout()
-
-    def _replace_obj_panel(self, entry: Optional["EntryConstruct"]):
-        self.Freeze()
-        if entry is None:
-            new_panel = ObjPanel_Empty(self)
-        else:
-            new_panel = entry.create_obj_panel(self)
-        self.obj_sizer.Replace(self.obj_panel, new_panel)
-        self.obj_panel.Destroy()
-        self.obj_panel = new_panel
-        self.obj_panel.MoveBeforeInTabOrder(self.docs_txt)
-        self.obj_sizer.Layout()
-        self.Thaw()
-
-    def set_entry(self, entry: "EntryConstruct"):
-        # set general infos
-        self.name_txt.SetValue("->".join(entry.path))
-        self.type_txt.SetValue(entry.typ_str)
-        self.docs_txt.SetValue(entry.docs)
-
-        # get metadata
-        metadata = entry.obj_metadata
-        if metadata is not None:
-            self.offset_txt.SetValue(str(metadata.offset_start))
-            self.length_txt.SetValue(str(metadata.length))
-        else:
-            self.offset_txt.SetValue("")
-            self.length_txt.SetValue("")
-
-        # set obj panel
-        self._replace_obj_panel(entry)
-
-    def clear(self):
-        self.name_txt.SetValue("")
-        self.type_txt.SetValue("")
-        self.docs_txt.SetValue("")
-        self.length_txt.SetValue("")
-        self.offset_txt.SetValue("")
-        self._replace_obj_panel(None)
-
-
-# #####################################################################################################################
 # Context Menu ########################################################################################################
 # #####################################################################################################################
 class ContextMenu(wx.Menu):
@@ -521,10 +376,6 @@ class ConstructEditor(wx.Panel):
         self._build_error_info_bar = wx.InfoBar(self)
         vsizer.Add(self._build_error_info_bar, 0, wx.EXPAND)
 
-        # create details viewer
-        self._entry_details_viewer = EntryDetailsViewer(self)
-        vsizer.Add(self._entry_details_viewer, 1, wx.ALL | wx.EXPAND, 5)
-
         # create status bar
         self._status_bar = wx.StatusBar(
             self,
@@ -643,7 +494,6 @@ class ConstructEditor(wx.Panel):
 
             # clear everything
             self._model.Cleared()
-            self._entry_details_viewer.clear()
             self._clear_status_bar()
 
             # restore settings
@@ -835,7 +685,6 @@ class ConstructEditor(wx.Panel):
         item = self._dvc.GetSelection()
         if item.ID is not None:
             entry: EntryConstruct = self._model.ItemToObject(item)
-            self._entry_details_viewer.set_entry(entry)
             self._refresh_status_bar(entry)
 
             self.on_entry_selected.fire(entry)
@@ -843,7 +692,6 @@ class ConstructEditor(wx.Panel):
             self._rename_dvc_columns(entry)
 
         else:
-            self._entry_details_viewer.clear()
             self._clear_status_bar()
 
     def _refresh_status_bar(self, entry: EntryConstruct):
@@ -876,7 +724,7 @@ class ConstructEditor(wx.Panel):
             self._dvc_main_window.SetToolTip("")
             return
         obj: EntryConstruct = self._model.ItemToObject(item)
-        
+
         if col.ModelColumn == ConstructEditorColumn.Name:
             # only set tooltip if the obj changed. this prevents flickering
             if self._last_motion_obj is not obj:
