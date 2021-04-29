@@ -19,8 +19,9 @@ import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_tstruct
 import construct_editor.gallery.test_tbitstruct
 import construct_editor.gallery.test_enum
-import construct_editor.gallery.test_flags_enum
+import construct_editor.gallery.test_flagsenum
 import construct_editor.gallery.test_tenum
+import construct_editor.gallery.test_tflagsenum
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
 import construct_editor.gallery.test_pointer_peek_seek_tell
@@ -63,8 +64,9 @@ class ConstructGallery(wx.Panel):
             "## mappings ######################": None,
             "Test: Flag (TODO)": None,
             "Test: Enum": construct_editor.gallery.test_enum.gallery_item,
-            "Test: FlagsEnum": construct_editor.gallery.test_flags_enum.gallery_item,
+            "Test: FlagsEnum": construct_editor.gallery.test_flagsenum.gallery_item,
             "Test: TEnum": construct_editor.gallery.test_tenum.gallery_item,
+            "Test: TFlagsEnum": construct_editor.gallery.test_tflagsenum.gallery_item,
             "Test: Mapping (TODO)": None,
             "## structures and sequences ######": None,
             "Test: Struct (TODO)": None,
