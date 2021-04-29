@@ -549,6 +549,14 @@ class ConstructEditor(wx.Panel):
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self._on_dvc_value_changed)
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_right_click)
 
+        self._dvc_main_window: wx.Window = self._dvc.GetMainWindow()
+        self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
+        self._last_motion_obj: Optional[EntryConstruct] = None
+
+        self._dvc_header = self._dvc.FindWindowByName("wxMSWHeaderCtrl")
+        if self._dvc_header is not None:
+            self._dvc_header.Bind(wx.EVT_MOTION, self._on_dvc_header_motion)
+
         self.on_entry_selected = EntrySelectedCallbackList()
         self.on_root_obj_changed = RootObjChangedCallbackList()
         self.construct = construct
@@ -857,6 +865,29 @@ class ConstructEditor(wx.Panel):
     def _on_dvc_value_changed(self, event: dv.DataViewEvent):
         """ This method is called, if a value in the dvc has changed. """
         self.on_root_obj_changed.fire(self._model.root_obj)
+
+    def _on_dvc_motion(self, event: wx.MouseEvent):
+        # this is a mouse event, so we have to calculate the position of
+        # the item where the mouse is manually.
+        pos = event.GetPosition()
+        pos += (0, self._dvc_header.Size.Height)  # correct the dvc header
+        item, col = self._dvc.HitTest(pos)
+        if item.GetID() is None:
+            self._dvc_main_window.SetToolTip("")
+            return
+        obj: EntryConstruct = self._model.ItemToObject(item)
+        
+        if col.ModelColumn == ConstructEditorColumn.Name:
+            # only set tooltip if the obj changed. this prevents flickering
+            if self._last_motion_obj is not obj:
+                self._dvc_main_window.SetToolTip(obj.docs)
+            self._last_motion_obj = obj
+        else:
+            self._dvc_main_window.SetToolTip("")
+            self._last_motion_obj = None
+
+    def _on_dvc_header_motion(self, event: wx.MouseEvent):
+        event.Skip()  # TODO: Create Tooltip for DVC-Header
 
     def _on_right_click(self, event: dv.DataViewEvent):
         """
