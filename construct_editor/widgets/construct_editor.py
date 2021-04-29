@@ -24,9 +24,7 @@ class RootObjChangedCallbackList(CallbackList[Callable[[Any], None]]):
             listener(root_obj)
 
 
-class EntrySelectedCallbackList(
-    CallbackList[Callable[[EntryConstruct], None]]
-):
+class EntrySelectedCallbackList(CallbackList[Callable[[EntryConstruct], None]]):
     def fire(self, entry: EntryConstruct):
         for listener in self:
             listener(entry)
@@ -55,39 +53,22 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         # this item.
         value = self.entry.obj_str if self.entry else ""
         size = self.GetTextExtent(value)
-        size += (2,2)
-        #self.log.write('GetSize("{}"): {}'.format(value, size))
+        size += (2, 2)
+        # self.log.write('GetSize("{}"): {}'.format(value, size))
         return size
 
-
     def Render(self, rect, dc, state):
-        #if state != 0:
-        #    self.log.write('Render: %s, %d' % (rect, state))
-
-        if not state & dv.DATAVIEW_CELL_SELECTED:
-            # we'll draw a shaded background to see if the rect correctly
-            # fills the cell
-            dc.SetBrush(wx.Brush('#ffd0d0'))
-            dc.SetPen(wx.TRANSPARENT_PEN)
-            rect.Deflate(1, 1)
-            dc.DrawRoundedRectangle(rect, 2)
-
         # And then finish up with this helper function that draws the
         # text for us, dealing with alignment, font and color
         # attributes, etc.
         value = self.entry.obj_str if self.entry else ""
-        self.RenderText(value,
-                        0,   # x-offset
-                        rect,
-                        dc,
-                        state # wxDataViewCellRenderState flags
-                        )
+        self.RenderText(
+            value, 0, rect, dc, state  # x-offset  # wxDataViewCellRenderState flags
+        )
         return True
-
 
     def ActivateCell(self, rect, model, item, col, mouseEvent):
         return False
-
 
     # The HasEditorCtrl, CreateEditorCtrl and GetValueFromEditorCtrl
     # methods need to be implemented if this renderer is going to
@@ -97,24 +78,17 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     def HasEditorCtrl(self):
         return True
 
-
     def CreateEditorCtrl(self, parent, labelRect: wx.Rect, value: EntryConstruct):
-        ctrl = wx.TextCtrl(parent,
-                           value=value.obj_str,
-                           pos=labelRect.Position,
-                           size=labelRect.Size)
-
-        # select the text and put the caret at the end
-        ctrl.SetInsertionPointEnd()
-        ctrl.SelectAll()
+        ctrl = value.create_obj_panel(parent)
+        ctrl.SetPosition(labelRect.Position)
+        ctrl.SetSize(labelRect.Size)
 
         return ctrl
 
-
     def GetValueFromEditorCtrl(self, editor):
-        value = editor.GetValue()
-        return value
-
+        pass
+        # value = editor.GetValue()
+        # return value
 
     # The LeftClick and Activate methods serve as notifications
     # letting you know that the user has either clicked or
@@ -124,9 +98,9 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     def LeftClick(self, pos, cellRect, model, item, col):
         return False
 
-
     def Activate(self, cellRect, model, item, col):
         return False
+
 
 # #####################################################################################################################
 # Entry Details Viewer ################################################################################################
@@ -803,9 +777,11 @@ class ConstructEditor(wx.Panel):
         self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=160)
         self._dvc.AppendTextColumn("Type", ConstructEditorColumn.Type, width=90)
         # self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=200)
-        
+
         renderer = ObjectRenderer()
-        col = dv.DataViewColumn("Value", renderer, ConstructEditorColumn.Value, width=200)
+        col = dv.DataViewColumn(
+            "Value", renderer, ConstructEditorColumn.Value, width=200
+        )
         col.Alignment = wx.ALIGN_LEFT
         self._dvc.AppendColumn(col)
 
