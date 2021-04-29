@@ -10,6 +10,9 @@ from construct_editor.widgets.hex_editor import (
     HexEditorFormat,
     HexEditorBinaryData,
 )
+from construct_editor.helper.wrapper import (
+    EntryConstruct,
+)
 
 
 class ConstructHexEditor(wx.Panel):
@@ -144,11 +147,12 @@ class ConstructHexEditor(wx.Panel):
         finally:
             self._converting = False
 
-    def _on_entry_selected(self, start: Optional[int], end: Optional[int]):
-        if start is not None and end is not None:
-            self.hex_editor.colorise(start, end, refresh=False)
-            self.hex_editor.scroll_to_idx(end - 1, refresh=False)
-            self.hex_editor.scroll_to_idx(start, refresh=False)
+    def _on_entry_selected(self, entry: EntryConstruct):
+        metadata = entry.obj_metadata
+        if metadata is not None:
+            self.hex_editor.colorise(metadata.offset_start, metadata.offset_end, refresh=False)
+            self.hex_editor.scroll_to_idx(metadata.offset_end - 1, refresh=False)
+            self.hex_editor.scroll_to_idx(metadata.offset_start, refresh=False)
             self.hex_editor.refresh()
         else:
             self.hex_editor.colorise(0, 0)

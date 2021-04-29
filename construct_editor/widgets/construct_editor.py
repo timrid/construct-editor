@@ -10,7 +10,7 @@ import wx.dataview as dv
 import dataclasses
 from construct_editor.helper import CallbackList
 
-from construct_editor.helper.preprocessor import get_gui_metadata, include_metadata
+from construct_editor.helper.preprocessor import include_metadata
 from construct_editor.helper.wrapper import (
     ObjPanel_Empty,
     EntryConstruct,
@@ -25,11 +25,11 @@ class RootObjChangedCallbackList(CallbackList[Callable[[Any], None]]):
 
 
 class EntrySelectedCallbackList(
-    CallbackList[Callable[[Optional[int], Optional[int]], None]]
+    CallbackList[Callable[[EntryConstruct], None]]
 ):
-    def fire(self, start_idx: Optional[int], end_idx: Optional[int]):
+    def fire(self, entry: EntryConstruct):
         for listener in self:
-            listener(start_idx, end_idx)
+            listener(entry)
 
 
 # #####################################################################################################################
@@ -157,7 +157,7 @@ class EntryDetailsViewer(wx.Panel):
         self.docs_txt.SetValue(entry.docs)
 
         # get metadata
-        metadata = get_gui_metadata(entry.obj)
+        metadata = entry.obj_metadata
         if metadata is not None:
             self.offset_txt.SetValue(str(metadata.offset_start))
             self.length_txt.SetValue(str(metadata.length))
@@ -208,11 +208,10 @@ class ContextMenu(wx.Menu):
         self.Bind(wx.EVT_MENU, self.on_hide_protected, self.hide_protected_mi)
         self.hide_protected_mi.Check(self.parent.hide_protected)
 
-
         # Add List with all currently shown list viewed items
         if len(model.list_viewed_entries) > 0:
             self.Append(wx.MenuItem(self, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
-            
+
             submenu = wx.Menu()
             self.submenu_map: Dict[Any, EntryConstruct] = {}
             for e in model.list_viewed_entries:
@@ -223,7 +222,7 @@ class ContextMenu(wx.Menu):
                 self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, mi)
                 mi.Check(True)
 
-            submenu_mi: wx.MenuItem = self.AppendSubMenu(submenu, "List Viewed Items")
+            self.AppendSubMenu(submenu, "List Viewed Items")
 
         # Add additional items for this entry
         if entry is not None:
@@ -244,6 +243,7 @@ class ContextMenu(wx.Menu):
         entry = self.submenu_map[event.GetId()]
         self.model.list_viewed_entries.remove(entry)
         self.parent.reload()
+
 
 # #####################################################################################################################
 # Construct Editor Model ##############################################################################################
@@ -455,6 +455,18 @@ class ConstructEditor(wx.Panel):
         self._entry_details_viewer = EntryDetailsViewer(self)
         vsizer.Add(self._entry_details_viewer, 1, wx.ALL | wx.EXPAND, 5)
 
+        # create status bar
+        self._status_bar = wx.StatusBar(
+            self,
+            style=wx.STB_SHOW_TIPS | wx.STB_ELLIPSIZE_END | wx.FULL_REPAINT_ON_RESIZE,
+        )
+        self._status_bar.SetFieldsCount(2)
+        self._status_bar.SetStatusStyles(
+            [wx.SB_NORMAL, wx.SB_FLAT]
+        )  # remove vertical line after the last field
+        self._status_bar.SetStatusWidths([-2, -1])
+        vsizer.Add(self._status_bar, 0, wx.ALL | wx.EXPAND, 0)
+
         self.SetSizer(vsizer)
         self.Layout()
 
@@ -554,6 +566,7 @@ class ConstructEditor(wx.Panel):
             # clear everything
             self._model.Cleared()
             self._entry_details_viewer.clear()
+            self._clear_status_bar()
 
             # restore settings
             self._expand_from_expansion_infos(None, expansion_infos)
@@ -738,22 +751,31 @@ class ConstructEditor(wx.Panel):
         if item.ID is not None:
             entry: EntryConstruct = self._model.ItemToObject(item)
             self._entry_details_viewer.set_entry(entry)
+            self._refresh_status_bar(entry)
 
-            metadata = get_gui_metadata(entry.obj)
-
-            if metadata is None:
-                start = None
-                end = None
-            else:
-                start = metadata.offset_start
-                end = metadata.offset_end
-
-            self.on_entry_selected.fire(start, end)
+            self.on_entry_selected.fire(entry)
 
             self._rename_dvc_columns(entry)
 
         else:
             self._entry_details_viewer.clear()
+            self._clear_status_bar()
+
+    def _refresh_status_bar(self, entry: EntryConstruct):
+        self._status_bar.SetStatusText("->".join(entry.path), 0)
+        bytes_info = ""
+        metadata = entry.obj_metadata
+        if metadata is not None:
+            start = metadata.offset_start
+            end = metadata.offset_end - 1
+            size = end - start + 1
+            if size > 0:
+                bytes_info = f"Bytes: {start}-{end} ({size})"
+        self._status_bar.SetStatusText(bytes_info, 1)
+
+    def _clear_status_bar(self):
+        self._status_bar.SetStatusText("", 0)
+        self._status_bar.SetStatusText("", 1)
 
     def _on_dvc_value_changed(self, event: dv.DataViewEvent):
         """ This method is called, if a value in the dvc has changed. """

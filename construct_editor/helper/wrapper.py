@@ -475,6 +475,16 @@ class EntryConstruct(object):
         elif isinstance(obj, list):
             obj[int(path[-1])] = val
 
+    # default "obj_str" #######################################################
+    @property
+    def obj_str(self) -> str:
+        return str(self.obj)
+
+    # default "obj_metadata" ##################################################
+    @property
+    def obj_metadata(self) -> t.Optional[GuiMetaData]:
+        return get_gui_metadata(self.obj)
+    
     # default "name" ##########################################################
     @property
     def name(self) -> str:
@@ -487,11 +497,6 @@ class EntryConstruct(object):
     @property
     def docs(self) -> str:
         return self.construct.docs
-
-    # default "obj_str" #######################################################
-    @property
-    def obj_str(self) -> str:
-        return str(self.obj)
 
     # default "typ_str" #######################################################
     @property
