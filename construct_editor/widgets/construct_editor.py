@@ -208,22 +208,22 @@ class ContextMenu(wx.Menu):
         self.Bind(wx.EVT_MENU, self.on_hide_protected, self.hide_protected_mi)
         self.hide_protected_mi.Check(self.parent.hide_protected)
 
-        self.Append(wx.MenuItem(self, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
 
         # Add List with all currently shown list viewed items
-        submenu = wx.Menu()
-        self.submenu_map: Dict[Any, EntryConstruct] = {}
-        for e in model.list_viewed_entries:
-            name = "->".join(e.path)
-            mi = wx.MenuItem(submenu, wx.ID_ANY, name, kind=wx.ITEM_CHECK)
-            submenu.Append(mi)
-            self.submenu_map[mi.GetId()] = e
-            self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, mi)
-            mi.Check(True)
+        if len(model.list_viewed_entries) > 0:
+            self.Append(wx.MenuItem(self, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+            
+            submenu = wx.Menu()
+            self.submenu_map: Dict[Any, EntryConstruct] = {}
+            for e in model.list_viewed_entries:
+                name = "->".join(e.path)
+                mi = wx.MenuItem(submenu, wx.ID_ANY, name, kind=wx.ITEM_CHECK)
+                submenu.Append(mi)
+                self.submenu_map[mi.GetId()] = e
+                self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, mi)
+                mi.Check(True)
 
-        submenu_mi: wx.MenuItem = self.AppendSubMenu(submenu, "List Viewed Items")
-        if len(model.list_viewed_entries) == 0:
-            self.Enable(submenu_mi.GetId(), False)
+            submenu_mi: wx.MenuItem = self.AppendSubMenu(submenu, "List Viewed Items")
 
         # Add additional items for this entry
         if entry is not None:
