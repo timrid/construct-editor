@@ -170,7 +170,6 @@ def include_metadata(
     elif isinstance(
         constr,
         (
-            cs.Adapter,
             cs.Tunnel,
             cs.Renamed,
             cs.Const,
@@ -194,6 +193,8 @@ def include_metadata(
     elif isinstance(
         constr,
         (
+            cs.ExprAdapter,
+            cs.Adapter,
             type(cs.GreedyBytes),
             type(cs.VarInt),
             type(cs.ZigZag),

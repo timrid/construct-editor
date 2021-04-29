@@ -1,4 +1,5 @@
 import dataclasses
+import enum
 import textwrap
 import typing as t
 from typing import Any, Dict, List, Optional, Type, Union
@@ -82,6 +83,42 @@ class ObjPanel_Default(ObjPanel):
 
         self.SetSizer(hsizer)
         self.Layout()
+
+
+class ObjPanel_String(ObjPanel):
+    def __init__(self, parent, entry: "EntryConstruct"):
+        super().__init__(parent)
+        self.entry = entry
+
+        # Test if the obj of the entry is available
+        if self.entry.obj is None:
+            return
+
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.obj_txt = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            self.entry.obj_str,
+        )
+        hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(hsizer)
+        self.Layout()
+
+        # Connect Events
+        self.obj_txt.Bind(wx.EVT_TEXT, self._on_obj_changed)
+
+    def _on_obj_changed(self, event):
+        val_str: str = self.obj_txt.GetValue()
+
+        metadata = get_gui_metadata(self.entry.obj)
+        if metadata is not None:
+            self.entry.obj = add_gui_metadata(val_str, metadata)
+        else:
+            self.entry.obj = val_str
+
+        self.entry.model.ItemChanged(self.entry.dvc_item)
 
 
 class ObjPanel_Integer(ObjPanel):
@@ -554,6 +591,75 @@ class EntrySubconstruct(EntryConstruct):
     # pass throught "modify_context_menu" to subentry #########################
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
         return self.subentry.modify_context_menu(menu)
+
+
+# EntryAdapter ########################################################################################################
+class AdapterPanelType(enum.Enum):
+    Default = enum.auto()
+    Integer = enum.auto()
+    String = enum.auto()
+
+
+@dataclasses.dataclass
+class AdapterMapping:
+    name: str
+    panel: AdapterPanelType
+
+
+@dataclasses.dataclass
+class AdapterInstanceMapping(AdapterMapping):
+    """ Mapping for a Adapter Instance (normally a cs.ExprAdapter) """
+
+    adapter_instance: "cs.Adapter[Any, Any, Any, Any]"
+
+
+@dataclasses.dataclass
+class AdapterClassMapping(AdapterMapping):
+    """ Mapping for a Adapter Instance (normally a cs.Adapter) """
+
+    adapter_class: Type["cs.Adapter[Any, Any, Any, Any]"]
+
+
+def add_adapter_mapping(
+    adapter_mapping: t.Union[AdapterInstanceMapping, AdapterClassMapping]
+):
+    """ Add a Mapping for a custom adapter construct """
+
+    class EntryAdapter(EntryConstruct):
+        def __init__(
+            self,
+            model: "construct_editor.ConstructEditorModel",
+            parent: Optional["EntryConstruct"],
+            construct: "cs.Subconstruct[Any, Any, Any, Any]",
+        ):
+            super().__init__(model, parent, construct)
+
+        @property
+        def typ_str(self) -> str:
+            return adapter_mapping.name
+
+        @property
+        def obj_str(self) -> Any:
+            return str(self.obj)
+
+        def create_obj_panel(self, parent) -> ObjPanel:
+            if adapter_mapping.panel == AdapterPanelType.Integer:
+                return ObjPanel_Integer(parent, self)
+            elif adapter_mapping.panel == AdapterPanelType.String:
+                return ObjPanel_String(parent, self)
+            else:
+                return ObjPanel_Default(parent, self)
+
+    if isinstance(adapter_mapping, AdapterInstanceMapping):
+        mapping = SigletonEntryMapping(adapter_mapping.adapter_instance, EntryAdapter)
+    elif isinstance(adapter_mapping, AdapterClassMapping):
+        mapping = ClassEntryMapping(adapter_mapping.adapter_class, EntryAdapter)
+    else:
+        raise ValueError(
+            "adapter_mapping has to be of type 'AdapterInstanceMapping' or 'AdapterClassMapping'"
+        )
+
+    construct_entry_mapping.append(mapping)
 
 
 # EntryStruct #########################################################################################################
@@ -1461,8 +1567,8 @@ class EntryTEnum(EntrySubconstruct):
         """ Get items to show in the ComboBox """
         items: t.List[EnumItem] = []
         enum_type: t.Type[cst.EnumBase] = self.construct.enum_type
-        for enum in enum_type:
-            items.append(EnumItem(name=enum.name, value=enum.value))
+        for e in enum_type:
+            items.append(EnumItem(name=e.name, value=e.value))
         return items
 
     def get_enum_item_from_obj(self) -> EnumItem:
@@ -1550,63 +1656,75 @@ class EntryTFlagsEnum(EntrySubconstruct):
 # #####################################################################################################################
 # Entry Mapping #######################################################################################################
 # #####################################################################################################################
-entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruct]] = {
+@dataclasses.dataclass
+class ClassEntryMapping:
+    constr_class: Type["cs.Construct[Any, Any]"]
+    entry: Type[EntryConstruct]
+
+
+@dataclasses.dataclass
+class SigletonEntryMapping:
+    constr_instance: "cs.Construct[Any, Any]"
+    entry: Type[EntryConstruct]
+
+
+construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]] = [
     # #########################################################################
     # wrapper from: construct #################################################
     # #########################################################################
     # bytes and bits ############################
-    cs.Bytes: EntryBytes,
+    ClassEntryMapping(cs.Bytes, EntryBytes),
     # cs.GreedyBytes
     # cs.Bitwise
     # cs.Bytewise
     #
     # integers and floats #######################
-    cs.FormatField: EntryFormatField,
-    cs.BytesInteger: EntryBytesInteger,
-    cs.BitsInteger: EntryBitsInteger,
+    ClassEntryMapping(cs.FormatField, EntryFormatField),
+    ClassEntryMapping(cs.BytesInteger, EntryBytesInteger),
+    ClassEntryMapping(cs.BitsInteger, EntryBitsInteger),
     #
     # strings ###################################
     # cs.StringEncoded
     #
     # mappings ##################################
     # cs.Flag
-    cs.Enum: EntryEnum,
-    cs.FlagsEnum: EntryFlagsEnum,
+    ClassEntryMapping(cs.Enum, EntryEnum),
+    ClassEntryMapping(cs.FlagsEnum, EntryFlagsEnum),
     # cs.Mapping
     #
     # structures and sequences ##################
-    cs.Struct: EntryStruct,
+    ClassEntryMapping(cs.Struct, EntryStruct),
     # cs.Sequence
     #
     # arrays ranges and repeaters ###############
-    cs.Array: EntryArray,
-    cs.GreedyRange: EntryGreedyRange,
+    ClassEntryMapping(cs.Array, EntryArray),
+    ClassEntryMapping(cs.GreedyRange, EntryGreedyRange),
     # cs.RepeatUntil
     #
     # specials ##################################
-    cs.Renamed: EntryRenamed,
+    ClassEntryMapping(cs.Renamed, EntryRenamed),
     #
     # miscellaneous #############################
-    cs.Const: EntryTransparentSubcon,
-    cs.Computed: EntryComputed,
+    ClassEntryMapping(cs.Const, EntryTransparentSubcon),
+    ClassEntryMapping(cs.Computed, EntryComputed),
     # cs.Index
     # cs.Rebuild
-    cs.Default: EntryTransparentSubcon,
+    ClassEntryMapping(cs.Default, EntryTransparentSubcon),
     # cs.Check
     # cs.Error
     # cs.FocusedSeq
     # cs.Pickled
     # cs.Numpy
     # cs.NamedTuple
-    cs.TimestampAdapter: EntryTimestamp,
+    ClassEntryMapping(cs.TimestampAdapter, EntryTimestamp),
     # cs.Hex
     # cs.HexDump
     #
     # conditional ###############################
     # cs.Union
     # cs.Select
-    cs.IfThenElse: EntryIfThenElse,
-    cs.Switch: EntrySwitch,
+    ClassEntryMapping(cs.IfThenElse, EntryIfThenElse),
+    ClassEntryMapping(cs.Switch, EntrySwitch),
     # cs.StopIf
     #
     # alignment and padding #####################
@@ -1614,22 +1732,22 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     # cs.Aligned
     #
     # stream manipulation #######################
-    cs.Pointer: EntryTransparentSubcon,
-    cs.Peek: EntryPeek,
-    cs.Seek: EntrySeek,
-    type(cs.Tell): EntryTell,
-    type(cs.Pass): EntryPass,
+    ClassEntryMapping(cs.Pointer, EntryTransparentSubcon),
+    ClassEntryMapping(cs.Peek, EntryPeek),
+    ClassEntryMapping(cs.Seek, EntrySeek),
+    SigletonEntryMapping(cs.Tell, EntryTell),
+    SigletonEntryMapping(cs.Pass, EntryPass),
     # cs.Terminated
     #
     # tunneling and byte/bit swapping ###########
-    cs.RawCopy: EntryRawCopy,
+    ClassEntryMapping(cs.RawCopy, EntryRawCopy),
     # cs.Prefixed
     # cs.FixedSized
     # cs.NullTerminated
     # cs.NullStripped
     # cs.RestreamData
-    cs.Transformed: EntryTransparentSubcon,
-    cs.Restreamed: EntryTransparentSubcon,
+    ClassEntryMapping(cs.Transformed, EntryTransparentSubcon),
+    ClassEntryMapping(cs.Restreamed, EntryTransparentSubcon),
     # cs.ProcessXor
     # cs.ProcessRotateLeft
     # cs.Checksum
@@ -1642,18 +1760,19 @@ entry_mapping_construct: Dict[Type["cs.Construct[Any, Any]"], Type[EntryConstruc
     # #########################################################################
     # wrapper from: construct_typing ##########################################
     # #########################################################################
-    cst.TStruct: EntryTStruct,
-    cst.TBitStruct: EntryTBitStruct,
-    cst.TEnum: EntryTEnum,
+    ClassEntryMapping(cst.TStruct, EntryTStruct),
+    ClassEntryMapping(cst.TBitStruct, EntryTBitStruct),
+    ClassEntryMapping(cst.TEnum, EntryTEnum),
+    ClassEntryMapping(cst.TFlagsEnum, EntryTFlagsEnum),
     # #########################################################################
     #
     #
     # #########################################################################
     # wrapper from: construct_editor ##########################################
     # #########################################################################
-    IncludeGuiMetaData: EntryTransparentSubcon,
+    ClassEntryMapping(IncludeGuiMetaData, EntryTransparentSubcon),
     # #########################################################################
-}
+]
 
 
 def create_entry_from_construct(
@@ -1662,14 +1781,22 @@ def create_entry_from_construct(
     subcon: "cs.Construct[Any, Any]",
 ) -> "EntryConstruct":
 
-    if type(subcon) in entry_mapping_construct:
-        return entry_mapping_construct[type(subcon)](model, parent, subcon)
-    else:
-        for key, value in entry_mapping_construct.items():
-            if isinstance(subcon, key):  # type: ignore
-                return entry_mapping_construct[key](model, parent, subcon)
+    # at first check singleton mappings
+    for mapping in construct_entry_mapping:
+        if (
+            isinstance(mapping, SigletonEntryMapping)
+            and subcon is mapping.constr_instance
+        ):
+            return mapping.entry(model, parent, subcon)
 
-    # use fallback, if no entry found in the mapping
+    # then check class mappings
+    for mapping in construct_entry_mapping:
+        if isinstance(mapping, ClassEntryMapping) and isinstance(
+            subcon, mapping.constr_class
+        ):
+            return mapping.entry(model, parent, subcon)
+
+    # use fallback, if no mapping is found
     if isinstance(subcon, cs.Construct):
         return EntryConstruct(model, parent, subcon)
 

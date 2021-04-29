@@ -6,6 +6,7 @@ WARNING: before parsing the application layer over a TCP stream, you must first 
 
 from construct import *
 from construct.lib import *
+import construct_editor.helper.wrapper as cse_wrapper
 from . import GalleryItem
 
 
@@ -761,6 +762,29 @@ layer2_ethernet = Struct(
 
 # ip_stack = "ip_stack" / layer2_ethernet
 ip_stack = layer2_ethernet
+
+
+cse_wrapper.add_adapter_mapping(
+    cse_wrapper.AdapterInstanceMapping(
+        name="MacAddress",
+        panel=cse_wrapper.AdapterPanelType.String,
+        adapter_instance=MacAddress
+    )
+)
+cse_wrapper.add_adapter_mapping(
+    cse_wrapper.AdapterInstanceMapping(
+        name="IpAddress",
+        panel=cse_wrapper.AdapterPanelType.String,
+        adapter_instance=IpAddress
+    )
+)
+cse_wrapper.add_adapter_mapping(
+    cse_wrapper.AdapterInstanceMapping(
+        name="Ipv6Address",
+        panel=cse_wrapper.AdapterPanelType.String,
+        adapter_instance=Ipv6Address
+    )
+)
 
 
 gallery_item = GalleryItem(

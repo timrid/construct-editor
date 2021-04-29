@@ -31,7 +31,7 @@ setup(
     python_requires="==3.8.*",
     install_requires=[
         "construct==2.10.66",
-        "construct-typing==0.4.1",
+        "construct-typing==0.4.2",
         "wxPython>=4.1.0",
         "arrow>=1.0.0"
     ],
