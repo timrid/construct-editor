@@ -33,6 +33,102 @@ class EntrySelectedCallbackList(
 
 
 # #####################################################################################################################
+# Object Renderer #####################################################################################################
+# #####################################################################################################################
+class ObjectRenderer(dv.DataViewCustomRenderer):
+    def __init__(self):
+        super().__init__(varianttype="PyObject", mode=dv.DATAVIEW_CELL_EDITABLE)
+        self.entry: Optional[EntryConstruct] = None
+        self.EnableEllipsize(wx.ELLIPSIZE_END)
+
+    def SetValue(self, value):
+        self.entry = value
+        return True
+
+    def GetValue(self):
+        return self.entry
+
+    def GetSize(self):
+        # Return the size needed to display the value.  The renderer
+        # has a helper function we can use for measuring text that is
+        # aware of any custom attributes that may have been set for
+        # this item.
+        value = self.entry.obj_str if self.entry else ""
+        size = self.GetTextExtent(value)
+        size += (2,2)
+        #self.log.write('GetSize("{}"): {}'.format(value, size))
+        return size
+
+
+    def Render(self, rect, dc, state):
+        #if state != 0:
+        #    self.log.write('Render: %s, %d' % (rect, state))
+
+        if not state & dv.DATAVIEW_CELL_SELECTED:
+            # we'll draw a shaded background to see if the rect correctly
+            # fills the cell
+            dc.SetBrush(wx.Brush('#ffd0d0'))
+            dc.SetPen(wx.TRANSPARENT_PEN)
+            rect.Deflate(1, 1)
+            dc.DrawRoundedRectangle(rect, 2)
+
+        # And then finish up with this helper function that draws the
+        # text for us, dealing with alignment, font and color
+        # attributes, etc.
+        value = self.entry.obj_str if self.entry else ""
+        self.RenderText(value,
+                        0,   # x-offset
+                        rect,
+                        dc,
+                        state # wxDataViewCellRenderState flags
+                        )
+        return True
+
+
+    def ActivateCell(self, rect, model, item, col, mouseEvent):
+        return False
+
+
+    # The HasEditorCtrl, CreateEditorCtrl and GetValueFromEditorCtrl
+    # methods need to be implemented if this renderer is going to
+    # support in-place editing of the cell value, otherwise they can
+    # be omitted.
+
+    def HasEditorCtrl(self):
+        return True
+
+
+    def CreateEditorCtrl(self, parent, labelRect: wx.Rect, value: EntryConstruct):
+        ctrl = wx.TextCtrl(parent,
+                           value=value.obj_str,
+                           pos=labelRect.Position,
+                           size=labelRect.Size)
+
+        # select the text and put the caret at the end
+        ctrl.SetInsertionPointEnd()
+        ctrl.SelectAll()
+
+        return ctrl
+
+
+    def GetValueFromEditorCtrl(self, editor):
+        value = editor.GetValue()
+        return value
+
+
+    # The LeftClick and Activate methods serve as notifications
+    # letting you know that the user has either clicked or
+    # double-clicked on an item.  Implementing them in your renderer
+    # is optional.
+
+    def LeftClick(self, pos, cellRect, model, item, col):
+        return False
+
+
+    def Activate(self, cellRect, model, item, col):
+        return False
+
+# #####################################################################################################################
 # Entry Details Viewer ################################################################################################
 # #####################################################################################################################
 class EntryDetailsViewer(wx.Panel):
@@ -381,7 +477,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
         if col == ConstructEditorColumn.Type:
             return entry.typ_str
         if col == ConstructEditorColumn.Value:
-            return entry.obj_str
+            return entry
 
         if (entry.parent is None) or (entry.parent not in self.list_viewed_entries):
             return ""
@@ -706,7 +802,12 @@ class ConstructEditor(wx.Panel):
 
         self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=160)
         self._dvc.AppendTextColumn("Type", ConstructEditorColumn.Type, width=90)
-        self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=200)
+        # self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=200)
+        
+        renderer = ObjectRenderer()
+        col = dv.DataViewColumn("Value", renderer, ConstructEditorColumn.Value, width=200)
+        col.Alignment = wx.ALIGN_LEFT
+        self._dvc.AppendColumn(col)
 
         list_cols = 0
         for list_viewed_entry in self._model.list_viewed_entries:
