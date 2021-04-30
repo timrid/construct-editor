@@ -7,6 +7,16 @@ This package provides a GUI (based on wxPython) for 'construct', which is a powe
 ![Preview](doc/preview.gif)
 
 
+Features:
+- show documentation as tooltip
+- different editors for:
+    - Integer values
+    - Enum values
+    - FlagsEnum values
+    - DateTime values
+- undo/redo in HexEditor and in ConstructEditor
+- extensible for custom adapters
+
 ## Installation
 The preferred way to installation is via PyPI:
 ```

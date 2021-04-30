@@ -87,7 +87,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     def GetValueFromEditorCtrl(self, editor: ObjPanel):
         new_obj = editor.get_new_obj()
         # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
-        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type 
+        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type
         # by the DVC...
         return {"new_obj": new_obj}
 
@@ -106,36 +106,49 @@ class ContextMenu(wx.Menu):
         self.parent = parent
         self.model = model
 
-        self.expand_all_mi = wx.MenuItem(self, wx.ID_ANY, "Expand All")
-        self.Append(self.expand_all_mi)
-        self.Bind(wx.EVT_MENU, self.on_expand_all, self.expand_all_mi)
+        item: wx.MenuItem = self.Append(wx.ID_ANY, "Expand All")
+        self.Bind(wx.EVT_MENU, self.on_expand_all, id=item.Id)
 
-        self.collapse_all_mi = wx.MenuItem(self, wx.ID_ANY, "Collapse All")
-        self.Append(self.collapse_all_mi)
-        self.Bind(wx.EVT_MENU, self.on_collapse_all, self.collapse_all_mi)
+        item: wx.MenuItem = self.Append(wx.ID_ANY, "Collapse All")
+        self.Bind(wx.EVT_MENU, self.on_collapse_all, id=item.Id)
 
-        self.Append(wx.MenuItem(self, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+        self.AppendSeparator()
 
-        self.hide_protected_mi = wx.MenuItem(
-            self, wx.ID_ANY, "Hide Protected", kind=wx.ITEM_CHECK
+        item: wx.MenuItem = self.Append(wx.ID_UNDO, "Undo\tCtrl+Z")
+        self.Bind(
+            wx.EVT_MENU,
+            lambda event: self.model.command_processor.Undo(),
+            id=item.Id,
         )
-        self.Append(self.hide_protected_mi)
-        self.Bind(wx.EVT_MENU, self.on_hide_protected, self.hide_protected_mi)
-        self.hide_protected_mi.Check(self.parent.hide_protected)
+        item.Enable(self.model.command_processor.CanUndo())
+
+        item: wx.MenuItem = self.Append(wx.ID_REDO, "Redo\tCtrl+Y")
+        self.Bind(
+            wx.EVT_MENU,
+            lambda event: self.model.command_processor.Redo(),
+            id=item.Id,
+        )
+        item.Enable(self.model.command_processor.CanRedo())
+
+        self.AppendSeparator()
+
+        item: wx.MenuItem = self.AppendCheckItem(wx.ID_ANY, "Hide Protected")
+        self.Bind(wx.EVT_MENU, self.on_hide_protected, id=item.Id)
+        item.Check(self.parent.hide_protected)
+        self.hide_protected_mi = item
 
         # Add List with all currently shown list viewed items
         if len(model.list_viewed_entries) > 0:
-            self.Append(wx.MenuItem(self, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+            self.AppendSeparator()
 
             submenu = wx.Menu()
             self.submenu_map: Dict[Any, EntryConstruct] = {}
             for e in model.list_viewed_entries:
                 name = "->".join(e.path)
-                mi = wx.MenuItem(submenu, wx.ID_ANY, name, kind=wx.ITEM_CHECK)
-                submenu.Append(mi)
-                self.submenu_map[mi.GetId()] = e
-                self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, mi)
-                mi.Check(True)
+                item: wx.MenuItem = submenu.AppendCheckItem(wx.ID_ANY, name)
+                self.submenu_map[item.GetId()] = e
+                self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, item)
+                item.Check(True)
 
             self.AppendSubMenu(submenu, "List Viewed Items")
 
@@ -196,6 +209,8 @@ class ConstructEditorModel(dv.PyDataViewModel):
         # are weak-referencable then the objmapper can use a
         # WeakValueDictionary instead.
         self.UseWeakRefs(True)
+
+        self.command_processor = wx.CommandProcessor()
 
     def get_column_count(self):
         """ Get the column count """
@@ -315,12 +330,12 @@ class ConstructEditorModel(dv.PyDataViewModel):
         if col != ConstructEditorColumn.Value:
             raise ValueError(f"col={col} cannot be modified")
 
-        entry = self.ItemToObject(item)
+        entry: EntryConstruct = self.ItemToObject(item)
         if not isinstance(entry, EntryConstruct):
             raise ValueError(f"{repr(entry)} is no valid entry")
 
         # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
-        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type 
+        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type
         # by the DVC...
         new_obj = value["new_obj"]
 
@@ -332,10 +347,23 @@ class ConstructEditorModel(dv.PyDataViewModel):
         if metadata is not None:
             new_obj = add_gui_metadata(new_obj, metadata)
 
-        # change the object
-        # TODO: Add "obj" and the "new_obj" to a command processor to make undo/redo possible
-        entry.obj = new_obj
+        model = self
+        class Cmd(wx.Command):
+            def __init__(self):
+                super().__init__(True, f"Value '{entry.path[-1]}' changed")
 
+            def Do(self):
+                self._obj_backup = obj
+                entry.obj = new_obj
+                model.ItemChanged(entry.dvc_item)
+                return True
+
+            def Undo(self):
+                entry.obj = self._obj_backup
+                model.ItemChanged(entry.dvc_item)
+                return True
+
+        self.command_processor.Submit(Cmd())
         return True
 
     def GetAttr(self, item, col, attr):
@@ -528,6 +556,8 @@ class ConstructEditor(wx.Panel):
                 wx.ICON_WARNING,
             )
             self._model.root_obj = None
+        # clear all commands, when new data is set from external
+        self._model.command_processor.ClearCommands()
         self.reload()
 
     def build(self, **contextkw: Any) -> bytes:
