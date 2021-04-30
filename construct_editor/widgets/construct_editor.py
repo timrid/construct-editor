@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# GUI File aus "wxFormBuilder" importieren
 import enum
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
@@ -12,9 +11,11 @@ from construct_editor.helper import CallbackList
 
 from construct_editor.helper.preprocessor import include_metadata
 from construct_editor.helper.wrapper import (
-    ObjPanel_Empty,
+    ObjPanel,
     EntryConstruct,
     create_entry_from_construct,
+    get_gui_metadata,
+    add_gui_metadata,
 )
 
 
@@ -51,19 +52,18 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         # has a helper function we can use for measuring text that is
         # aware of any custom attributes that may have been set for
         # this item.
-        value = self.entry.obj_str if self.entry else ""
-        size = self.GetTextExtent(value)
+        obj_str = self.entry.obj_str if self.entry else ""
+        size = self.GetTextExtent(obj_str)
         size += (2, 2)
-        # self.log.write('GetSize("{}"): {}'.format(value, size))
         return size
 
     def Render(self, rect, dc, state):
         # And then finish up with this helper function that draws the
         # text for us, dealing with alignment, font and color
         # attributes, etc.
-        value = self.entry.obj_str if self.entry else ""
+        obj_str = self.entry.obj_str if self.entry else ""
         self.RenderText(
-            value, 0, rect, dc, state  # x-offset  # wxDataViewCellRenderState flags
+            obj_str, 0, rect, dc, state  # x-offset  # wxDataViewCellRenderState flags
         )
         return True
 
@@ -79,27 +79,17 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         return True
 
     def CreateEditorCtrl(self, parent, labelRect: wx.Rect, value: EntryConstruct):
-        ctrl = value.create_obj_panel(parent)
-        ctrl.SetPosition(labelRect.Position)
-        ctrl.SetSize(labelRect.Size)
+        editor: ObjPanel = value.create_obj_panel(parent)
+        editor.SetPosition(labelRect.Position)
+        editor.SetSize(labelRect.Size)
+        return editor
 
-        return ctrl
-
-    def GetValueFromEditorCtrl(self, editor):
-        pass
-        # value = editor.GetValue()
-        # return value
-
-    # The LeftClick and Activate methods serve as notifications
-    # letting you know that the user has either clicked or
-    # double-clicked on an item.  Implementing them in your renderer
-    # is optional.
-
-    def LeftClick(self, pos, cellRect, model, item, col):
-        return False
-
-    def Activate(self, cellRect, model, item, col):
-        return False
+    def GetValueFromEditorCtrl(self, editor: ObjPanel):
+        new_obj = editor.get_new_obj()
+        # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
+        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type 
+        # by the DVC...
+        return {"new_obj": new_obj}
 
 
 # #####################################################################################################################
@@ -294,7 +284,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
         else:
             return entry.parent.dvc_item
 
-    def GetValue(self, item, col):
+    def GetValue(self, item: dv.DataViewItem, col: int):
         # Return the value to be displayed for this item and column.
 
         entry = self.ItemToObject(item)
@@ -321,6 +311,33 @@ class ConstructEditorModel(dv.PyDataViewModel):
         else:
             return ""
 
+    def SetValue(self, value: Any, item: dv.DataViewItem, col: int):
+        if col != ConstructEditorColumn.Value:
+            raise ValueError(f"col={col} cannot be modified")
+
+        entry = self.ItemToObject(item)
+        if not isinstance(entry, EntryConstruct):
+            raise ValueError(f"{repr(entry)} is no valid entry")
+
+        # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
+        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type 
+        # by the DVC...
+        new_obj = value["new_obj"]
+
+        # get the current object
+        obj = entry.obj
+
+        # link the metadata from the current object to the new one
+        metadata = get_gui_metadata(obj)
+        if metadata is not None:
+            new_obj = add_gui_metadata(new_obj, metadata)
+
+        # change the object
+        # TODO: Add "obj" and the "new_obj" to a command processor to make undo/redo possible
+        entry.obj = new_obj
+
+        return True
+
     def GetAttr(self, item, col, attr):
         entry = self.ItemToObject(item)
 
@@ -330,9 +347,6 @@ class ConstructEditorModel(dv.PyDataViewModel):
             return True
 
         return False
-
-    def SetValue(self, value, item, col):
-        return True
 
 
 @dataclasses.dataclass
@@ -398,7 +412,7 @@ class ConstructEditor(wx.Panel):
             id=wx.ID_ANY,
         )
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self._on_dvc_value_changed)
-        self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_right_click)
+        self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_dvc_right_clicked)
 
         self._dvc_main_window: wx.Window = self._dvc.GetMainWindow()
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
@@ -737,7 +751,7 @@ class ConstructEditor(wx.Panel):
     def _on_dvc_header_motion(self, event: wx.MouseEvent):
         event.Skip()  # TODO: Create Tooltip for DVC-Header
 
-    def _on_right_click(self, event: dv.DataViewEvent):
+    def _on_dvc_right_clicked(self, event: dv.DataViewEvent):
         """
         This method is called, the dvc ist right clicked
 

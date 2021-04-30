@@ -1,6 +1,6 @@
 import dataclasses
 import enum
-import textwrap
+import string
 import typing as t
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -37,7 +37,8 @@ def int_to_str(val: int) -> str:
 class ObjPanel(wx.Panel):
     """ Base class for a panel that shows the value and allows modifications of it. """
 
-    pass
+    def get_new_obj(self) -> Any:
+        raise NotImplementedError()
 
 
 class ObjPanel_Empty(ObjPanel):
@@ -106,19 +107,9 @@ class ObjPanel_String(ObjPanel):
         self.SetSizer(hsizer)
         self.Layout()
 
-        # Connect Events
-        self.obj_txt.Bind(wx.EVT_TEXT, self._on_obj_changed)
-
-    def _on_obj_changed(self, event):
+    def get_new_obj(self) -> Any:
         val_str: str = self.obj_txt.GetValue()
-
-        metadata = get_gui_metadata(self.entry.obj)
-        if metadata is not None:
-            self.entry.obj = add_gui_metadata(val_str, metadata)
-        else:
-            self.entry.obj = val_str
-
-        self.entry.model.ItemChanged(self.entry.dvc_item)
+        return val_str
 
 
 class ObjPanel_Integer(ObjPanel):
@@ -132,48 +123,25 @@ class ObjPanel_Integer(ObjPanel):
 
         # Obj
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txtctrl = wx.TextCtrl(
-            self, wx.ID_ANY, self.entry.obj_str, wx.DefaultPosition, wx.DefaultSize, 0
-        )
+        self.obj_txtctrl = wx.TextCtrl(self, wx.ID_ANY, self.entry.obj_str)
         hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.obj_txtctrl.SetToolTip(
-            textwrap.dedent(
-                """\
-                Integer value. The following prefixes are allowed:
-                 - 0b/0B: binary (base 2)
-                 - 0o/0O: octal (base 8)
-                 - none: decimal (base 10)
-                 - 0x/0X: octal (base 16)
-                """
-            )
-        )
 
         self.SetSizer(hsizer)
         self.Layout()
 
-        # Connect Events
-        self.obj_txtctrl.Bind(wx.EVT_TEXT, self._on_obj_changed)
-
-    def _on_obj_changed(self, event):
+    def get_new_obj(self) -> Any:
         val_str: str = self.obj_txtctrl.GetValue()
         if len(val_str) == 0:
             val_str = "0"
 
         try:
-            new_value = int(
-                val_str, base=0
-            )  # base=0 means, that eg. 0x, 0b prefixes are allowed
+            # convert string to int
+            # (base=0 means, that eg. 0x, 0b prefixes are allowed)
+            new_obj = int(val_str, base=0)
         except Exception:
-            new_value = val_str  # this will probably result in a building error
+            new_obj = val_str  # this will probably result in a building error
 
-        metadata = get_gui_metadata(self.entry.obj)
-        if metadata is not None:
-            self.entry.obj = add_gui_metadata(new_value, metadata)
-        else:
-            self.entry.obj = new_value
-
-        self.entry.model.ItemChanged(self.entry.dvc_item)
+        return new_obj
 
 
 @dataclasses.dataclass
@@ -213,19 +181,21 @@ class ObjPanel_Enum(ObjPanel):
         self.SetSizer(hsizer)
         self.Layout()
 
-        # Connect Events
-        self.obj_combobox.Bind(wx.EVT_COMBOBOX, self._on_obj_changed)
-        self.obj_combobox.Bind(wx.EVT_TEXT, self._on_obj_changed)
-
-    def _on_obj_changed(self, event):
+    def get_new_obj(self) -> Any:
         val_str: str = self.obj_combobox.GetValue()
         if len(val_str) == 0:
             val_str = "0"
 
-        int_str = val_str.split()[0]
-        self.entry.set_obj_from_string(int_str)
+        val_str = val_str.split()[0]
+        new_obj = self.entry.conv_str_to_obj(val_str)
+        return new_obj
 
-        self.entry.model.ItemChanged(self.entry.dvc_item)
+
+@dataclasses.dataclass
+class FlagsEnumItem:
+    name: str
+    value: int
+    checked: bool
 
 
 class FlagsEnumComboPopup(wx.ComboPopup):
@@ -257,18 +227,8 @@ class FlagsEnumComboPopup(wx.ComboPopup):
                 items.append(item)
             self.clbx.SetCheckedItems(items)
 
-            # read all flagsenum items and modify checked status
-            flagsenum_items: t.List[FlagsEnumItem] = []
-            for item in range(self.clbx.GetCount()):
-                flagsenum_item: FlagsEnumItem = self.clbx.GetClientData(item)
-                flagsenum_item.checked = self.clbx.IsChecked(item)
-                flagsenum_items.append(flagsenum_item)
-
-            # set the value
-            self.entry.set_obj_from_flagsenum_items(flagsenum_items)
-
+            # refresh shown string
             self.combo_ctrl.SetValue(self.GetStringValue())
-            self.entry.model.ItemChanged(self.entry.dvc_item)
 
     def Create(self, parent):
         self.clbx = wx.CheckListBox(parent)
@@ -291,15 +251,19 @@ class FlagsEnumComboPopup(wx.ComboPopup):
         prefHeight = min(row_height * row_count + 4, prefHeight)
         return wx.ComboPopup.GetAdjustedSize(self, minWidth, prefHeight, maxHeight)
 
+    def get_flagsenum_items(self) -> t.List["FlagsEnumItem"]:
+        # read all flagsenum items and modify checked status
+        flagsenum_items: t.List[FlagsEnumItem] = []
+        for item in range(self.clbx.GetCount()):
+            flagsenum_item: FlagsEnumItem = self.clbx.GetClientData(item)
+            flagsenum_item.checked = self.clbx.IsChecked(item)
+            flagsenum_items.append(flagsenum_item)
+        return flagsenum_items
+
     def GetStringValue(self):
-        return self.entry.obj_str
-
-
-@dataclasses.dataclass
-class FlagsEnumItem:
-    name: str
-    value: int
-    checked: bool
+        flagsenum_items = self.get_flagsenum_items()
+        temp_obj = self.entry.conv_flagsenum_items_to_obj(flagsenum_items)
+        return self.entry.conv_obj_to_str(temp_obj)
 
 
 class ObjPanel_FlagsEnum(ObjPanel):
@@ -333,6 +297,11 @@ class ObjPanel_FlagsEnum(ObjPanel):
 
         self.SetSizer(hsizer)
         self.Layout()
+
+    def get_new_obj(self) -> Any:
+        flagsenum_items = self.popup_ctrl.get_flagsenum_items()
+        new_obj = self.entry.conv_flagsenum_items_to_obj(flagsenum_items)
+        return new_obj
 
 
 class ObjPanel_Timestamp(ObjPanel):
@@ -392,14 +361,10 @@ class ObjPanel_Timestamp(ObjPanel):
         self.SetSizer(hsizer)
         self.Layout()
 
-        # Connect Events
-        self.date_picker.Bind(wx.adv.EVT_DATE_CHANGED, self._on_obj_changed)
-        self.time_picker.Bind(wx.adv.EVT_TIME_CHANGED, self._on_obj_changed)
-
-    def _on_obj_changed(self, event):
+    def get_new_obj(self) -> Any:
         date: wx.DateTime = self.date_picker.GetValue()
         time: wx.DateTime = self.time_picker.GetValue()
-        new_value = arrow.Arrow(
+        new_obj = arrow.Arrow(
             year=date.year,
             month=date.month + 1,  # in wx.adc.DatePickerCtrl the month start with 0
             day=date.day,
@@ -407,16 +372,7 @@ class ObjPanel_Timestamp(ObjPanel):
             minute=time.minute,
             second=time.second,
         )
-
-        metadata = get_gui_metadata(self.entry.obj)
-        if metadata is not None:
-            self.entry.obj = add_gui_metadata(new_value, metadata)
-        else:
-            self.entry.obj = new_value
-
-        self.obj_txtctrl.SetValue(self.entry.obj_str)
-
-        self.entry.model.ItemChanged(self.entry.dvc_item)
+        return new_obj
 
 
 # #####################################################################################################################
@@ -484,7 +440,7 @@ class EntryConstruct(object):
     @property
     def obj_metadata(self) -> t.Optional[GuiMetaData]:
         return get_gui_metadata(self.obj)
-    
+
     # default "name" ##########################################################
     @property
     def name(self) -> str:
@@ -1462,14 +1418,16 @@ class EntryEnum(EntrySubconstruct):
         obj = self.obj
         if isinstance(obj, int):
             if obj in self.construct.decmapping:
-                return EnumItem(name=str(self.construct.decmapping[obj]), value=int(obj))
+                return EnumItem(
+                    name=str(self.construct.decmapping[obj]), value=int(obj)
+                )
             else:
                 return EnumItem(name=str(obj), value=int(obj))
         else:
             return EnumItem(name=str(obj), value=int(self.construct.encmapping[obj]))
 
-    def set_obj_from_string(self, s: str):
-        """ Set object from string (enum name or integer value) """
+    def conv_str_to_obj(self, s: str) -> Any:
+        """ Convert string (enum name or integer value) to object """
         try:
             if s in self.construct.encmapping:
                 value = self.construct.encmapping[s]
@@ -1482,13 +1440,7 @@ class EntryEnum(EntrySubconstruct):
                 new_obj = cs.EnumInteger(value)
         except Exception:
             new_obj = s  # this will probably result in a binary-build-error
-
-        # set new obj and copy the gui_metadata
-        metadata = get_gui_metadata(self.obj)
-        if metadata is not None:
-            self.obj = add_gui_metadata(new_obj, metadata)
-        else:
-            self.obj = new_obj
+        return new_obj
 
 
 # EntryFlagsEnum ######################################################################################################
@@ -1509,8 +1461,13 @@ class EntryFlagsEnum(EntrySubconstruct):
 
     @property
     def obj_str(self) -> str:
+        return self.conv_obj_to_str(self.obj)
+
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_FlagsEnum(parent, self)
+
+    def conv_obj_to_str(self, obj: Any) -> str:
         try:
-            obj = self.obj
             val = 0
             flags = []
             for flag in self.construct.flags.keys():
@@ -1520,9 +1477,6 @@ class EntryFlagsEnum(EntrySubconstruct):
             return f"0x{val:x} ({' | '.join(flags)})"
         except Exception:
             return str(self.obj)
-
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_FlagsEnum(parent, self)
 
     def get_flagsenum_items_from_obj(self) -> t.List[FlagsEnumItem]:
         """ Get items to show in the ComboBox """
@@ -1535,14 +1489,15 @@ class EntryFlagsEnum(EntrySubconstruct):
             )
         return items
 
-    def set_obj_from_flagsenum_items(self, items: t.List[FlagsEnumItem]):
-        """ Set object, when the combobox changed """
-        obj = self.obj
+    def conv_flagsenum_items_to_obj(self, items: t.List[FlagsEnumItem]) -> Any:
+        """ Convert flagsenum items to object """
+        new_obj = cs.Container()
         for item in items:
             if item.checked:
-                obj[item.name] = True
+                new_obj[item.name] = True
             else:
-                obj[item.name] = False
+                new_obj[item.name] = False
+        return new_obj
 
 
 # EntryTEnum ##########################################################################################################
@@ -1584,8 +1539,8 @@ class EntryTEnum(EntrySubconstruct):
         obj: cst.EnumBase = self.obj
         return EnumItem(name=obj.name, value=obj.value)
 
-    def set_obj_from_string(self, s: str):
-        """ Set object from string (enum name or integer value) """
+    def conv_str_to_obj(self, s: str) -> Any:
+        """ Convert string (enum name or integer value) to object """
         enum_type: t.Type[cst.EnumBase] = self.construct.enum_type
         try:
             try:
@@ -1595,13 +1550,7 @@ class EntryTEnum(EntrySubconstruct):
                 new_obj = enum_type(value)
         except Exception:
             new_obj = s  # this will probably result in a binary-build-error
-
-        # set new obj and copy the gui_metadata
-        metadata = get_gui_metadata(self.obj)
-        if metadata is not None:
-            self.obj = add_gui_metadata(new_obj, metadata)
-        else:
-            self.obj = new_obj
+        return new_obj
 
 
 # EntryTFlagsEnum #####################################################################################################
@@ -1622,8 +1571,13 @@ class EntryTFlagsEnum(EntrySubconstruct):
 
     @property
     def obj_str(self) -> str:
+        return self.conv_obj_to_str(self.obj)
+
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_FlagsEnum(parent, self)
+
+    def conv_obj_to_str(self, obj: Any) -> str:
         try:
-            obj = self.obj
             flags = []
             for flag in self.construct.enum_type:
                 if flag & obj == flag:
@@ -1632,9 +1586,6 @@ class EntryTFlagsEnum(EntrySubconstruct):
             return f"0x{int(obj):x} ({' | '.join(flags)})"
         except Exception:
             return str(self.obj)
-
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_FlagsEnum(parent, self)
 
     def get_flagsenum_items_from_obj(self) -> t.List[FlagsEnumItem]:
         """ Get items to show in the ComboBox """
@@ -1651,14 +1602,14 @@ class EntryTFlagsEnum(EntrySubconstruct):
             )
         return items
 
-    def set_obj_from_flagsenum_items(self, items: t.List[FlagsEnumItem]):
-        """ Set object, when the combobox changed """
+    def conv_flagsenum_items_to_obj(self, items: t.List[FlagsEnumItem]) -> Any:
+        """ Convert flagsenum items to object """
         enum_type: t.Type[cst.FlagsEnumBase] = self.construct.enum_type
-        obj = enum_type(0)
+        new_obj = enum_type(0)
         for item in items:
             if item.checked:
-                obj |= enum_type(item.value)
-        self.obj = obj
+                new_obj |= enum_type(item.value)
+        return new_obj
 
 
 # #####################################################################################################################
