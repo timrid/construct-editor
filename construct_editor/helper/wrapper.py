@@ -1461,7 +1461,10 @@ class EntryEnum(EntrySubconstruct):
         """ Get items to select in the ComboBox """
         obj = self.obj
         if isinstance(obj, int):
-            return EnumItem(name=str(self.construct.decmapping[obj]), value=int(obj))
+            if obj in self.construct.decmapping:
+                return EnumItem(name=str(self.construct.decmapping[obj]), value=int(obj))
+            else:
+                return EnumItem(name=str(obj), value=int(obj))
         else:
             return EnumItem(name=str(obj), value=int(self.construct.encmapping[obj]))
 
@@ -1476,7 +1479,7 @@ class EntryEnum(EntrySubconstruct):
             if value in self.construct.decmapping:
                 new_obj = self.construct.decmapping[value]
             else:
-                new_obj = value
+                new_obj = cs.EnumInteger(value)
         except Exception:
             new_obj = s  # this will probably result in a binary-build-error
 
