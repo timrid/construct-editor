@@ -106,10 +106,10 @@ class ContextMenu(wx.Menu):
         self.parent = parent
         self.model = model
 
-        item: wx.MenuItem = self.Append(wx.ID_ANY, "Expand All")
+        item: wx.MenuItem = self.Append(wx.ID_ANY, "Expand All\tCtrl+E")
         self.Bind(wx.EVT_MENU, self.on_expand_all, id=item.Id)
 
-        item: wx.MenuItem = self.Append(wx.ID_ANY, "Collapse All")
+        item: wx.MenuItem = self.Append(wx.ID_ANY, "Collapse All\tCtrl+W")
         self.Bind(wx.EVT_MENU, self.on_collapse_all, id=item.Id)
 
         self.AppendSeparator()
@@ -348,6 +348,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
             new_obj = add_gui_metadata(new_obj, metadata)
 
         model = self
+
         class Cmd(wx.Command):
             def __init__(self):
                 super().__init__(True, f"Value '{entry.path[-1]}' changed")
@@ -444,6 +445,7 @@ class ConstructEditor(wx.Panel):
 
         self._dvc_main_window: wx.Window = self._dvc.GetMainWindow()
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
+        self._dvc_main_window.Bind(wx.EVT_KEY_DOWN, self._on_dvc_key_down)
         self._last_motion_obj: Optional[EntryConstruct] = None
 
         self._dvc_header = self._dvc.FindWindowByName("wxMSWHeaderCtrl")
@@ -794,3 +796,31 @@ class ConstructEditor(wx.Panel):
         else:
             entry = None
         self.PopupMenu(ContextMenu(self, self._model, entry), event.GetPosition())
+
+    def _on_dvc_key_down(self, event: wx.KeyEvent):
+        # Ctrl+E
+        if event.ControlDown() and event.GetKeyCode() == ord("E"):
+            self.expand_all()
+
+        # Ctrl+W
+        if event.ControlDown() and event.GetKeyCode() == ord("W"):
+            self.collapse_all()
+
+        # Ctrl+Z
+        if event.ControlDown() and event.GetKeyCode() == ord("Z"):
+            self._model.command_processor.Undo()
+
+        # Ctrl+Y
+        elif event.ControlDown() and event.GetKeyCode() == ord("Y"):
+            self._model.command_processor.Redo()
+
+        # Ctrl+C
+        elif event.ControlDown() and event.GetKeyCode() == ord("C"):
+            pass  # TODO
+
+        # Ctrl+V
+        elif event.ControlDown() and event.GetKeyCode() == ord("V"):
+            pass  # TODO
+
+        else:
+            event.Skip()
