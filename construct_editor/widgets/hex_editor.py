@@ -398,6 +398,8 @@ class HexTextCtrl(wx.TextCtrl):
         elif self.mode == "hex":
             if _is_valid_hex_digit(key):
                 self.userpressed = True
+            else:
+                return
         elif self.mode != "hex":
             self.userpressed = True
         evt.Skip()
