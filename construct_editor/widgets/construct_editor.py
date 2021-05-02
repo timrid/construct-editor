@@ -106,11 +106,13 @@ class ContextMenu(wx.Menu):
         self.parent = parent
         self.model = model
 
-        item: wx.MenuItem = self.Append(wx.ID_ANY, "Expand All\tCtrl+E")
-        self.Bind(wx.EVT_MENU, self.on_expand_all, id=item.Id)
+        item: wx.MenuItem = self.Append(wx.ID_COPY, "Copy\tCtrl+C")
+        # self.Bind(wx.EVT_MENU, self.on_copy, id=item.Id)
+        item.Enable(False)
 
-        item: wx.MenuItem = self.Append(wx.ID_ANY, "Collapse All\tCtrl+W")
-        self.Bind(wx.EVT_MENU, self.on_collapse_all, id=item.Id)
+        item: wx.MenuItem = self.Append(wx.ID_PASTE, "Paste\tCtrl+V")
+        # self.Bind(wx.EVT_MENU, self.on_paste, id=item.Id)
+        item.Enable(False)  # TODO:
 
         self.AppendSeparator()
 
@@ -132,10 +134,33 @@ class ContextMenu(wx.Menu):
 
         self.AppendSeparator()
 
+        item: wx.MenuItem = self.Append(wx.ID_ANY, "Expand All\tCtrl+E")
+        self.Bind(wx.EVT_MENU, self.on_expand_all, id=item.Id)
+
+        item: wx.MenuItem = self.Append(wx.ID_ANY, "Collapse All\tCtrl+W")
+        self.Bind(wx.EVT_MENU, self.on_collapse_all, id=item.Id)
+
+        self.AppendSeparator()
+
         item: wx.MenuItem = self.AppendCheckItem(wx.ID_ANY, "Hide Protected")
         self.Bind(wx.EVT_MENU, self.on_hide_protected, id=item.Id)
         item.Check(self.parent.hide_protected)
         self.hide_protected_mi = item
+
+        self.AppendSeparator()
+
+        item: wx.MenuItem = self.AppendRadioItem(wx.ID_ANY, "Dec")
+        self.Bind(wx.EVT_MENU, self.on_intformat_dec, id=item.Id)
+        self.intformat_dec_mi = item
+
+        item: wx.MenuItem = self.AppendRadioItem(wx.ID_ANY, "Hex")
+        self.Bind(wx.EVT_MENU, self.on_intformat_hex, id=item.Id)
+        self.intformat_hex_mi = item
+
+        if self.model.integer_format is IntegerFormat.Hex:
+            self.intformat_hex_mi.Check(True)
+        else:
+            self.intformat_dec_mi.Check(True)
 
         # Add List with all currently shown list viewed items
         if len(model.list_viewed_entries) > 0:
@@ -167,6 +192,18 @@ class ContextMenu(wx.Menu):
         self.parent.hide_protected = checked
         self.parent.reload()
 
+    def on_intformat_dec(self, event: wx.CommandEvent):
+        self.intformat_dec_mi.Check(True)
+        self.model.integer_format = IntegerFormat.Dec
+        self.parent.reload()
+        event.Skip()
+
+    def on_intformat_hex(self, event: wx.CommandEvent):
+        self.intformat_hex_mi.Check(True)
+        self.model.integer_format = IntegerFormat.Hex
+        self.parent.reload()
+        event.Skip()
+
     def on_remove_list_viewed_item(self, event: wx.CommandEvent):
         entry = self.submenu_map[event.GetId()]
         self.model.list_viewed_entries.remove(entry)
@@ -176,6 +213,13 @@ class ContextMenu(wx.Menu):
 # #####################################################################################################################
 # Construct Editor Model ##############################################################################################
 # #####################################################################################################################
+
+
+class IntegerFormat(enum.Enum):
+    Dec = enum.auto()
+    Hex = enum.auto()
+
+
 class ConstructEditorColumn(enum.IntEnum):
     Name = 0
     Type = 1
@@ -211,6 +255,8 @@ class ConstructEditorModel(dv.PyDataViewModel):
         self.UseWeakRefs(True)
 
         self.command_processor = wx.CommandProcessor()
+
+        self.integer_format = IntegerFormat.Dec
 
     def get_column_count(self):
         """ Get the column count """

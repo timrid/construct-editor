@@ -22,13 +22,12 @@ def evaluate(param, context):
     return param(context) if callable(param) else param
 
 
-def int_to_str(val: int) -> str:
+def int_to_str(integer_format: "construct_editor.IntegerFormat", val: int) -> str:
     if isinstance(val, str):
         return val  # tolerate string
-    if val < 10:
-        return f"{val}"
-    else:
-        return f"{val}   /   0x{val:X}"
+    if integer_format is construct_editor.IntegerFormat.Hex:
+        return f"0x{val:X}"
+    return f"{val}"
 
 
 # #####################################################################################################################
@@ -1115,7 +1114,7 @@ class EntryFormatField(EntryConstruct):
         if (obj is None) or (self.type_infos[1] is not int):
             return str(obj)
         else:
-            return int_to_str(obj)
+            return int_to_str(self.model.integer_format, obj)
 
     @property
     def typ_str(self) -> str:
@@ -1159,7 +1158,7 @@ class EntryBytesInteger(EntryConstruct):
         if obj is None:
             return str(obj)
         else:
-            return int_to_str(obj)
+            return int_to_str(self.model.integer_format, obj)
 
     def create_obj_panel(self, parent) -> ObjPanel:
         if isinstance(self.construct.length, int):
@@ -1194,7 +1193,7 @@ class EntryBitsInteger(EntryConstruct):
         if obj is None:
             return str(obj)
         else:
-            return int_to_str(obj)
+            return int_to_str(self.model.integer_format, obj)
 
     def create_obj_panel(self, parent) -> ObjPanel:
         if isinstance(self.construct.length, int):
