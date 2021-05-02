@@ -393,6 +393,7 @@ class EntryConstruct(object):
 
         # This is set from the model, when the dvc item for this entry is created.
         self._dvc_item = None
+        self._dvc_item_expanded = False
 
     # default "parent" ########################################################
     @property
@@ -470,14 +471,38 @@ class EntryConstruct(object):
         return self._dvc_item
 
     @dvc_item.setter
-    def dvc_item(self, val) -> Any:
+    def dvc_item(self, val: Any):
         self._dvc_item = val
+
+    # default "dvc_item_expanded" #############################################
+    @property
+    def dvc_item_expanded(self) -> bool:
+        return self._dvc_item_expanded
+
+    @dvc_item_expanded.setter
+    def dvc_item_expanded(self, val: bool):
+        self._dvc_item_expanded = val
+
+    # default "dvc_item_expanded" #############################################
+    def dvc_item_restore_expansion(self):
+        """ Restore the expansion state, recursively """
+        dvc_item = self.dvc_item
+        if dvc_item is not None:
+            if self.dvc_item_expanded:
+                self.model.dvc.Expand(self.dvc_item)
+            else:
+                self.model.dvc.Collapse(self.dvc_item)
+        subentries = self.subentries
+        if subentries is not None:
+            for subentry in subentries:
+                subentry.dvc_item_restore_expansion()
 
     # default "add_nonstruct_subentries_to_list" ##############################
     def create_flat_subentry_list(self, flat_subentry_list: List["EntryConstruct"]):
-        """ Create a flat list with all subentires """
-        if self.subentries is not None:
-            for subentry in self.subentries:
+        """ Create a flat list with all subentires, recursively """
+        subentries = self.subentries
+        if subentries is not None:
+            for subentry in subentries:
                 subentry.create_flat_subentry_list(flat_subentry_list)
         else:
             flat_subentry_list.append(self)
@@ -544,6 +569,15 @@ class EntrySubconstruct(EntryConstruct):
     @dvc_item.setter
     def dvc_item(self, val: Any):
         self.subentry.dvc_item = val
+
+    # pass throught "dvc_item_expanded" to subentry ###########################
+    @property
+    def dvc_item_expanded(self) -> bool:
+        return self.subentry.dvc_item_expanded
+
+    @dvc_item_expanded.setter
+    def dvc_item_expanded(self, val: bool):
+        self.subentry.dvc_item_expanded = val
 
     # pass throught "create_obj_panel" to subentry ############################
     def create_obj_panel(self, parent) -> ObjPanel:
@@ -730,6 +764,7 @@ class EntryArray(EntrySubconstruct):
                 self.model.list_viewed_entries.remove(self)
             else:
                 self.model.list_viewed_entries.append(self)
+            self.dvc_item_expanded = True
             menu.parent.reload()
 
         menu_item = wx.MenuItem(menu, wx.ID_ANY, "Enable List View", kind=wx.ITEM_CHECK)
@@ -870,6 +905,22 @@ class EntryIfThenElse(EntryConstruct):
             subentry.dvc_item = val
 
     @property
+    def dvc_item_expanded(self) -> bool:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return self._dvc_item_expanded
+        else:
+            return subentry.dvc_item_expanded
+
+    @dvc_item_expanded.setter
+    def dvc_item_expanded(self, val: bool):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item_expanded = val
+        else:
+            subentry.dvc_item_expanded = val
+
+    @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
         subentry = self._get_subentry()
         if subentry is None:
@@ -966,6 +1017,22 @@ class EntrySwitch(EntryConstruct):
             self._dvc_item = val
         else:
             subentry.dvc_item = val
+
+    @property
+    def dvc_item_expanded(self) -> bool:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return self._dvc_item_expanded
+        else:
+            return subentry.dvc_item_expanded
+
+    @dvc_item_expanded.setter
+    def dvc_item_expanded(self, val: bool):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item_expanded = val
+        else:
+            subentry.dvc_item_expanded = val
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:

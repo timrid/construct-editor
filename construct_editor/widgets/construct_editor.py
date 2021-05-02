@@ -191,9 +191,9 @@ class ConstructEditorModel(dv.PyDataViewModel):
         2. Value: string
     """
 
-    def __init__(self):
+    def __init__(self, dvc: dv.DataViewCtrl):
         dv.PyDataViewModel.__init__(self)
-
+        self.dvc = dvc
         self.root_entry: Optional["EntryConstruct"] = None
         self.root_obj: Optional[Any] = None
 
@@ -378,12 +378,6 @@ class ConstructEditorModel(dv.PyDataViewModel):
         return False
 
 
-@dataclasses.dataclass
-class ExpansionInfo:
-    expanded: bool
-    subinfos: Dict[str, "ExpansionInfo"]
-
-
 # #####################################################################################################################
 # Construct Editor ####################################################################################################
 # #####################################################################################################################
@@ -409,7 +403,7 @@ class ConstructEditor(wx.Panel):
         vsizer.Add(self._dvc, 3, wx.ALL | wx.EXPAND, 5)
 
         # Create Model of DataViewCtrl
-        self._model = ConstructEditorModel()
+        self._model = ConstructEditorModel(self._dvc)
         self._dvc.AssociateModel(self._model)
 
         # Create InfoBars
@@ -442,6 +436,8 @@ class ConstructEditor(wx.Panel):
         )
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self._on_dvc_value_changed)
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_dvc_right_clicked)
+        self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_EXPANDED, self._on_dvc_item_expanded)
+        self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_COLLAPSED, self._on_dvc_item_collapsed)
 
         self._dvc_main_window: wx.Window = self._dvc.GetMainWindow()
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
@@ -456,93 +452,27 @@ class ConstructEditor(wx.Panel):
         self.on_root_obj_changed = RootObjChangedCallbackList()
         self.construct = construct
 
-    def _get_expansion_infos(
-        self, parent: Optional[dv.DataViewItem]
-    ) -> Dict[str, ExpansionInfo]:
-        """ Get infos about the expaneded items in the DVC """
-        infos: Dict[str, ExpansionInfo] = {}
-        childs: List[dv.DataViewItem] = []
-        self._model.GetChildren(parent, childs)
-        for child in childs:
-            if self._model.IsContainer(child):
-                expanded = self._dvc.IsExpanded(child)
-                subinfos = self._get_expansion_infos(child)
-                entry: EntryConstruct = self._model.ItemToObject(child)
-                infos[entry.name] = ExpansionInfo(expanded, subinfos)
-        return infos
-
-    def _expand_from_expansion_infos(
-        self,
-        parent: Optional[dv.DataViewItem],
-        expansion_infos: Dict[str, ExpansionInfo],
-    ):
-        """
-        Expand the DVC items from previously saved expansion infos.
-        The expansion stays the same if the name of the item is still the same. Items with
-        new name, will be collapsed.
-        """
-        childs: List[dv.DataViewItem] = []
-        self._model.GetChildren(parent, childs)
-        for child in childs:
-            if self._model.IsContainer(child):
-                entry: EntryConstruct = self._model.ItemToObject(child)
-                if entry.name in expansion_infos:
-                    info = expansion_infos[entry.name]
-                    if info.expanded:
-                        self._dvc.Expand(child)
-                    self._expand_from_expansion_infos(child, info.subinfos)
-
-    def _get_selected_entry_path(self) -> List[str]:
-        """ Get the path to the selected entry """
-        if self._dvc.HasSelection():
-            selected_entry: EntryConstruct = self._model.ItemToObject(
-                self._dvc.GetSelection()
-            )
-            return ["root"] + selected_entry.path
-        else:
-            return []
-
-    def _set_selection_from_path(
-        self, parent: Optional[dv.DataViewItem], path: List[str]
-    ):
-        """ Set the selected entry from path """
-        if len(path) == 0:
-            return
-
-        name = path.pop(0)
-
-        childs: List[dv.DataViewItem] = []
-        self._model.GetChildren(parent, childs)
-        for child in childs:
-            entry: EntryConstruct = self._model.ItemToObject(child)
-            if entry.name == name:
-                if len(path) == 0:
-                    self._dvc.Select(entry.dvc_item)
-                    self._on_dvc_selection_changed(None)
-                else:
-                    if self._model.IsContainer(child):
-                        self._set_selection_from_path(child, path)
-                return
-
     def reload(self):
         """ Reload the ConstructEditor, while remaining expaned elements and selection """
         try:
             self.Freeze()
 
-            # reload dvc columns  # TODO: Macht das hier noch probleme?
+            # reload dvc columns
             self._reload_dvc_columns()
 
-            # save settings
-            expansion_infos = self._get_expansion_infos(None)
-            selected_entry_path = self._get_selected_entry_path()
+            # save selection
+            selections = self._dvc.GetSelections()
 
-            # clear everything
+            # clear the dvc.
+            # unfortunately the selection and expanded items get lost... so we have to save and restore it manually
             self._model.Cleared()
             self._clear_status_bar()
 
-            # restore settings
-            self._expand_from_expansion_infos(None, expansion_infos)
-            self._set_selection_from_path(None, selected_entry_path)
+            # expand everything
+            self._model.root_entry.dvc_item_restore_expansion()
+
+            # restore selection
+            self._dvc.SetSelections(selections)
 
         finally:
             self.Thaw()
@@ -824,3 +754,17 @@ class ConstructEditor(wx.Panel):
 
         else:
             event.Skip()
+
+    def _on_dvc_item_expanded(self, event: dv.DataViewEvent):
+        item = event.GetItem()
+        if item.ID is None:
+            return
+        entry: EntryConstruct = self._model.ItemToObject(item)
+        entry.dvc_item_expanded = True
+
+    def _on_dvc_item_collapsed(self, event: dv.DataViewEvent):
+        item = event.GetItem()
+        if item.ID is None:
+            return
+        entry: EntryConstruct = self._model.ItemToObject(item)
+        entry.dvc_item_expanded = False
