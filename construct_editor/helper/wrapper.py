@@ -29,6 +29,17 @@ def int_to_str(integer_format: "construct_editor.IntegerFormat", val: int) -> st
         return f"0x{val:X}"
     return f"{val}"
 
+def str_to_int(s: str) -> int:
+    if len(s) == 0:
+        s = "0"
+
+    # convert string to int
+    # (base=0 means, that eg. 0x, 0b prefixes are allowed)
+    i = int(s, base=0)
+
+    return i
+
+
 
 # #####################################################################################################################
 # GUI Elements ########################################################################################################
@@ -130,13 +141,10 @@ class ObjPanel_Integer(ObjPanel):
 
     def get_new_obj(self) -> Any:
         val_str: str = self.obj_txtctrl.GetValue()
-        if len(val_str) == 0:
-            val_str = "0"
 
         try:
-            # convert string to int
-            # (base=0 means, that eg. 0x, 0b prefixes are allowed)
-            new_obj = int(val_str, base=0)
+            # convert string to integer
+            new_obj = str_to_int(val_str)
         except Exception:
             new_obj = val_str  # this will probably result in a building error
 
@@ -169,13 +177,16 @@ class ObjPanel_Enum(ObjPanel):
         items = self.entry.get_enum_items()
         for pos, item in enumerate(items):
             self.obj_combobox.Insert(
-                item=f"{item.value} ({item.name})", pos=pos, clientData=item
+                item=f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})",
+                pos=pos,
+                clientData=item,
             )
         item = self.entry.get_enum_item_from_obj()
-        self.obj_combobox.SetStringSelection(f"{item.value} ({item.name})")
-        self.obj_combobox.SetValue(
-            f"{item.value} ({item.name})"
-        )  # show even if it is not in the list
+        sel_item_str = (
+            f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})"
+        )
+        self.obj_combobox.SetStringSelection(sel_item_str)
+        self.obj_combobox.SetValue(sel_item_str)  # show even if it is not in the list
 
         self.SetSizer(hsizer)
         self.Layout()
@@ -286,7 +297,7 @@ class ObjPanel_FlagsEnum(ObjPanel):
         items = self.entry.get_flagsenum_items_from_obj()
         for pos, item in enumerate(items):
             self.popup_ctrl.clbx.Insert(
-                item=f"0x{item.value:x} ({item.name})", pos=pos, clientData=item
+                item=f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})", pos=pos, clientData=item
             )
             self.popup_ctrl.clbx.Check(pos, item.checked)
 
@@ -1464,7 +1475,7 @@ class EntryEnum(EntrySubconstruct):
     @property
     def obj_str(self) -> str:
         try:
-            return f"{int(self.obj)} ({str(self.obj)})"
+            return f"{int_to_str(self.model.integer_format, int(self.obj))} ({str(self.obj)})"
         except Exception:
             return str(self.obj)
 
@@ -1496,9 +1507,9 @@ class EntryEnum(EntrySubconstruct):
         """ Convert string (enum name or integer value) to object """
         try:
             if s in self.construct.encmapping:
-                value = self.construct.encmapping[s]
+                value = self.construct.encmapping[s]  # type: ignore
             else:
-                value = int(s)
+                value = str_to_int(s)
 
             if value in self.construct.decmapping:
                 new_obj = self.construct.decmapping[value]
@@ -1540,7 +1551,7 @@ class EntryFlagsEnum(EntrySubconstruct):
                 if obj[flag] is True:
                     flags.append(flag)
                     val |= self.construct.flags[flag]
-            return f"0x{val:x} ({' | '.join(flags)})"
+            return f"{int_to_str(self.model.integer_format, int(val))} ({' | '.join(flags)})"
         except Exception:
             return str(self.obj)
 
@@ -1585,7 +1596,7 @@ class EntryTEnum(EntrySubconstruct):
     @property
     def obj_str(self) -> str:
         try:
-            return f"{self.obj.value} ({str(self.obj)})"
+            return f"{int_to_str(self.model.integer_format, int(self.obj.value))} ({str(self.obj)})"
         except Exception:
             return str(self.obj)
 
@@ -1612,7 +1623,7 @@ class EntryTEnum(EntrySubconstruct):
             try:
                 new_obj = enum_type[s]
             except KeyError:
-                value = int(s)
+                value = str_to_int(s)
                 new_obj = enum_type(value)
         except Exception:
             new_obj = s  # this will probably result in a binary-build-error
@@ -1649,7 +1660,7 @@ class EntryTFlagsEnum(EntrySubconstruct):
                 if flag & obj == flag:
                     flags.append(flag.name)
 
-            return f"0x{int(obj):x} ({' | '.join(flags)})"
+            return f"{int_to_str(self.model.integer_format, int(obj))} ({' | '.join(flags)})"
         except Exception:
             return str(self.obj)
 
