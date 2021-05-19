@@ -94,6 +94,9 @@ class ObjPanel_Default(ObjPanel):
 
         self.SetSizer(hsizer)
         self.Layout()
+    
+    def get_new_obj(self) -> Any:
+        return self.entry.obj
 
 
 class ObjPanel_String(ObjPanel):
