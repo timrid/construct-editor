@@ -1767,8 +1767,8 @@ construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]
     # cs.StopIf
     #
     # alignment and padding #####################
-    # cs.Padded
-    # cs.Aligned
+    ClassEntryMapping(cs.Padded, EntryTransparentSubcon),
+    ClassEntryMapping(cs.Aligned, EntryTransparentSubcon),
     #
     # stream manipulation #######################
     ClassEntryMapping(cs.Pointer, EntryTransparentSubcon),
