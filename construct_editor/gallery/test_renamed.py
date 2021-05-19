@@ -24,7 +24,7 @@ class RenamedTest(cst.TContainerMixin):
     )
 
 
-constr = cst.TStruct(RenamedTest)
+constr = "renamed_test" / cst.TStruct(RenamedTest)
 
 gallery_item = GalleryItem(
     construct=constr,

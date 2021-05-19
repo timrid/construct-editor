@@ -564,12 +564,16 @@ class ConstructEditor(wx.Panel):
 
     @construct.setter
     def construct(self, val: cs.Construct):
+        # add root name, is none is available
+        if val.name is None:
+            val = "root" / val
+
         # modify the copied construct, so that each item also includes metadata for the GUI
         self._construct = include_metadata(val)
 
         # create entry from the construct
         self._model.root_entry = create_entry_from_construct(
-            self._model, None, cs.Renamed(self._construct, newname="root")
+            self._model, None, self._construct
         )
 
         self._model.list_viewed_entries.clear()
