@@ -29,6 +29,7 @@ def int_to_str(integer_format: "construct_editor.IntegerFormat", val: int) -> st
         return f"0x{val:X}"
     return f"{val}"
 
+
 def str_to_int(s: str) -> int:
     if len(s) == 0:
         s = "0"
@@ -38,7 +39,6 @@ def str_to_int(s: str) -> int:
     i = int(s, base=0)
 
     return i
-
 
 
 # #####################################################################################################################
@@ -94,7 +94,7 @@ class ObjPanel_Default(ObjPanel):
 
         self.SetSizer(hsizer)
         self.Layout()
-    
+
     def get_new_obj(self) -> Any:
         return self.entry.obj
 
@@ -300,7 +300,9 @@ class ObjPanel_FlagsEnum(ObjPanel):
         items = self.entry.get_flagsenum_items_from_obj()
         for pos, item in enumerate(items):
             self.popup_ctrl.clbx.Insert(
-                item=f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})", pos=pos, clientData=item
+                item=f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})",
+                pos=pos,
+                clientData=item,
             )
             self.popup_ctrl.clbx.Check(pos, item.checked)
 
@@ -763,7 +765,7 @@ class EntryArray(EntrySubconstruct):
         return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
 
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
-        # If the subentry has no subentries itselfe, it makes no sense to create a list view.
+        # If the subentry has no subentries itself, it makes no sense to create a list view.
         temp_subentry = create_entry_from_construct(
             self.model, self, self.construct.subcon
         )
@@ -1227,11 +1229,21 @@ class EntryBytes(EntryConstruct):
         construct: "cs.Bytes[Any, Any]",
     ):
         super().__init__(model, parent, construct)
+        self.ascii_view = False
 
     @property
     def obj_str(self) -> str:
         try:
-            return self.obj.hex(" ")
+            if self.ascii_view:
+                chars = []
+                for b in self.obj:
+                    char = chr(b)
+                    if char not in string.printable:
+                        char = "."
+                    chars.append(char)
+                return "".join(chars)
+            else:
+                return self.obj.hex(" ")
         except Exception:
             return str(self.obj)
 
@@ -1242,6 +1254,18 @@ class EntryBytes(EntryConstruct):
             return "Byte[{}]".format(len(self.obj))
         except Exception:
             return "Byte[{}]".format(str(self.construct.length))
+
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+
+        def on_menu_item_clicked(event: wx.MenuEvent):
+            self.ascii_view = not self.ascii_view
+            menu.parent.reload()
+
+        menu_item = wx.MenuItem(menu, wx.ID_ANY, "ASCII View", kind=wx.ITEM_CHECK)
+        menu.Append(menu_item)
+        menu_item.Check(self.ascii_view)
+        menu.Bind(wx.EVT_MENU, on_menu_item_clicked, menu_item)
 
 
 # EntryRenamed ########################################################################################################
