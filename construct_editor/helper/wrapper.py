@@ -426,7 +426,7 @@ class EntryConstruct(object):
         path = self.path
         obj = self.model.root_obj
         for p in path:
-            if isinstance(obj, dict):
+            if isinstance(obj, dict) or isinstance(obj, cst.TContainerMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
                 obj = obj[int(p)]
@@ -437,12 +437,12 @@ class EntryConstruct(object):
         path = self.path
         obj = self.model.root_obj
         for p in path[:-1]:
-            if isinstance(obj, dict):
+            if isinstance(obj, dict) or isinstance(obj, cst.TContainerMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
                 obj = obj[int(p)]
 
-        if isinstance(obj, dict):
+        if isinstance(obj, dict) or isinstance(obj, cst.TContainerMixin):
             obj[path[-1]] = val
         elif isinstance(obj, list):
             obj[int(path[-1])] = val
@@ -1824,7 +1824,6 @@ construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]
     # wrapper from: construct_typing ##########################################
     # #########################################################################
     ClassEntryMapping(cst.TStruct, EntryTStruct),
-    ClassEntryMapping(cst.TBitStruct, EntryTBitStruct),
     ClassEntryMapping(cst.TEnum, EntryTEnum),
     ClassEntryMapping(cst.TFlagsEnum, EntryTFlagsEnum),
     # #########################################################################

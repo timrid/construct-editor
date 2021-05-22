@@ -183,7 +183,6 @@ def include_metadata(
             cs.NullStripped,
             cs.FixedSized,
             cst.TStruct,
-            cst.TBitStruct,
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy

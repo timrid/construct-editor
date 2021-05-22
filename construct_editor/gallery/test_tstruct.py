@@ -9,6 +9,7 @@ from . import GalleryItem
 class TStructTest(cst.TContainerMixin):
     width: int = cst.sfield(cs.Int8sb, doc="Das hier ist die Dokumentation von 'width'")
     height: int = cst.sfield(cs.Int8sb, doc="Und hier von 'height")
+    update: int = cst.sfield(cs.Int8sb)
 
     @dataclasses.dataclass
     class Nested(cst.TContainerMixin):
