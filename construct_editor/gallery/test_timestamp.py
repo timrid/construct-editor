@@ -19,7 +19,7 @@ class Timestamps(cst.TContainerMixin):
     )
 
 
-constr = cst.TStruct(Timestamps)
+constr = cst.DataclassStruct(Timestamps)
 
 gallery_item = GalleryItem(
     construct=constr,

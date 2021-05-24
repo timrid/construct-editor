@@ -182,7 +182,7 @@ def include_metadata(
             cs.Peek,
             cs.NullStripped,
             cs.FixedSized,
-            cst.TStruct,
+            cst.DataclassStruct,
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
@@ -208,16 +208,6 @@ def include_metadata(
         ),  # type: ignore
     ):
         return IncludeGuiMetaData(constr)
-
-    # elif isinstance(
-    #     constr,
-    #     (
-    #         cst.TStruct,
-    #         cst.TBitStruct
-    #     ),
-    # ):
-    #     constr.subcon = include_metadata(constr.subcon)
-    #     return IncludeGuiMetaData(constr)
 
     # TODO:
     # # Grouping:

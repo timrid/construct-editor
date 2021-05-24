@@ -80,7 +80,7 @@ class Car(cst.TContainerMixin):
     long_list: LongList = cst.sfield(cst.TEnum(cs.Int8ul, LongList))
 
 
-constr = cst.TStruct(Car)
+constr = cst.DataclassStruct(Car)
 
 gallery_item = GalleryItem(
     construct=constr,

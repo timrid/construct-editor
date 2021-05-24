@@ -21,11 +21,13 @@ class IfThenElse(cst.TContainerMixin):
 
     choice: int = cst.sfield(cs.Int8ub)
     if_then_else: t.Union[Then, Else] = cst.sfield(
-        cs.IfThenElse(cs.this.choice == 0, cst.TStruct(Then), cst.TStruct(Else))
+        cs.IfThenElse(
+            cs.this.choice == 0, cst.DataclassStruct(Then), cst.DataclassStruct(Else)
+        )
     )
 
 
-constr = cst.TStruct(IfThenElse)
+constr = cst.DataclassStruct(IfThenElse)
 
 gallery_item = GalleryItem(
     construct=constr,

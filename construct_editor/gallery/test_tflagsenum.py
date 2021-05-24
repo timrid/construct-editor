@@ -83,7 +83,7 @@ class FlagsEnumTest(cst.TContainerMixin):
     long_list: LongList = cst.sfield(cst.TFlagsEnum(cs.Int64ul, LongList))
 
 
-constr = cst.TStruct(FlagsEnumTest)
+constr = cst.DataclassStruct(FlagsEnumTest)
 
 gallery_item = GalleryItem(
     construct=constr,

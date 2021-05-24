@@ -6,7 +6,7 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class TStructTest(cst.TContainerMixin):
+class ComputedTest(cst.TContainerMixin):
     type_int: int = cst.sfield(cs.Computed(lambda ctx: 50))
     type_float: float = cst.sfield(cs.Computed(lambda ctx: 80.0))
     type_bool: bool = cst.sfield(cs.Computed(lambda ctx: True))
@@ -16,7 +16,7 @@ class TStructTest(cst.TContainerMixin):
     )
 
 
-constr = cst.TStruct(TStructTest)
+constr = cst.DataclassStruct(ComputedTest)
 
 gallery_item = GalleryItem(
     construct=constr,

@@ -1435,15 +1435,15 @@ class EntryRawCopy(EntrySubconstruct):
         # change default row infos
 
 
-# EntryTStruct #######################################################################################################
-class EntryTStruct(EntrySubconstruct):
-    construct: "cst.TStruct[Any]"
+# EntryDataclassStruct ################################################################################################
+class EntryDataclassStruct(EntrySubconstruct):
+    construct: "cst.DataclassStruct[Any]"
 
     def __init__(
         self,
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cst.TStruct[Any]",
+        construct: "cst.DataclassStruct[Any]",
     ):
         super().__init__(model, parent, construct)
 
@@ -1456,31 +1456,7 @@ class EntryTStruct(EntrySubconstruct):
 
     @property
     def typ_str(self) -> str:
-        return "TStruct"
-
-
-# EntryTBitStruct #######################################################################################################
-class EntryTBitStruct(EntrySubconstruct):
-    construct: "cst.TBitStruct[Any]"
-
-    def __init__(
-        self,
-        model: "construct_editor.ConstructEditorModel",
-        parent: Optional["EntryConstruct"],
-        construct: "cst.TBitStruct[Any]",
-    ):
-        super().__init__(model, parent, construct)
-
-    @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
-        subentries = super().subentries
-        if (subentries is not None) and self.construct.reverse:
-            return list(reversed(subentries))
-        return subentries
-
-    @property
-    def typ_str(self) -> str:
-        return "TBitStruct"
+        return self.construct.dc_type.__name__
 
 
 # EntryEnum ###########################################################################################################
@@ -1823,7 +1799,7 @@ construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]
     # #########################################################################
     # wrapper from: construct_typing ##########################################
     # #########################################################################
-    ClassEntryMapping(cst.TStruct, EntryTStruct),
+    ClassEntryMapping(cst.DataclassStruct, EntryDataclassStruct),
     ClassEntryMapping(cst.TEnum, EntryTEnum),
     ClassEntryMapping(cst.TFlagsEnum, EntryTFlagsEnum),
     # #########################################################################

@@ -14,12 +14,12 @@ class TBitsStructTest(cst.TContainerMixin):
         test_bits_2: int = cst.sfield(cs.BitsInteger(6))
         test_bits_3: int = cst.sfield(cs.BitsInteger(2))
 
-    nested: Nested = cst.sfield(cs.ByteSwapped(cst.TBitStruct(Nested)))
+    nested: Nested = cst.sfield(cs.ByteSwapped(cst.DataclassBitStruct(Nested)))
 
-    nested_reverse: Nested = cst.sfield(cst.TBitStruct(Nested, reverse=True))
+    nested_reverse: Nested = cst.sfield(cst.DataclassBitStruct(Nested, reverse=True))
 
 
-constr = cst.TStruct(TBitsStructTest)
+constr = cst.DataclassStruct(TBitsStructTest)
 
 gallery_item = GalleryItem(
     construct=constr,

@@ -6,13 +6,13 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class TStructTest(cst.TContainerMixin):
+class ArrayTest(cst.TContainerMixin):
     static: t.List[int] = cst.sfield(cs.Array(5, cs.Int8sb))
     dynamic_len: int = cst.sfield(cs.Int8sb, doc="Die Länge des dynamischen Array'")
     dynamic: t.List[int] = cst.sfield(cs.Array(cs.this.dynamic_len, cs.Int8sb))
 
 
-constr = cst.TStruct(TStructTest)
+constr = cst.DataclassStruct(ArrayTest)
 
 gallery_item = GalleryItem(
     construct=constr,

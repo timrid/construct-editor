@@ -28,10 +28,10 @@ class SwitchTest(cst.TContainerMixin):
         cs.Switch(
             cs.this.choice,
             cases={
-                1: cst.TStruct(Case1),
-                2: cst.TStruct(Case2),
+                1: cst.DataclassStruct(Case1),
+                2: cst.DataclassStruct(Case2),
             },
-            default=cst.TStruct(CaseDefault),
+            default=cst.DataclassStruct(CaseDefault),
         )
     )
 
@@ -39,15 +39,15 @@ class SwitchTest(cst.TContainerMixin):
         cs.Switch(
             cs.this.choice,
             cases={
-                1: cst.TStruct(Case1),
-                2: cst.TStruct(Case2),
+                1: cst.DataclassStruct(Case1),
+                2: cst.DataclassStruct(Case2),
             },
             default=cs.Pass,
         )
     )
 
 
-constr = cst.TStruct(SwitchTest)
+constr = cst.DataclassStruct(SwitchTest)
 
 gallery_item = GalleryItem(
     construct=constr,

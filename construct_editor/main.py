@@ -16,8 +16,8 @@ import construct_editor.gallery.test_greedyrange
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
-import construct_editor.gallery.test_tstruct
-import construct_editor.gallery.test_tbitstruct
+import construct_editor.gallery.test_dataclass_struct
+import construct_editor.gallery.test_dataclass_bit_struct
 import construct_editor.gallery.test_enum
 import construct_editor.gallery.test_flagsenum
 import construct_editor.gallery.test_tenum
@@ -38,6 +38,7 @@ class ConstructGalleryFrame(wx.Frame):
         self.SetTitle("Construct Gallery")
         self.SetSize(1600, 1000)
         self.SetIcon(icon.GetIcon())
+        self.Center()
 
         self.main_panel = ConstructGallery(self)
 
@@ -73,8 +74,8 @@ class ConstructGallery(wx.Panel):
             "## structures and sequences ######": None,
             # "Test: Struct (TODO)": None,
             # "Test: Sequence (TODO)": None,
-            "Test: TStruct": construct_editor.gallery.test_tstruct.gallery_item,
-            "Test: TBitStruct": construct_editor.gallery.test_tbitstruct.gallery_item,
+            "Test: DataclassStruct": construct_editor.gallery.test_dataclass_struct.gallery_item,
+            "Test: DataclassBitStruct": construct_editor.gallery.test_dataclass_bit_struct.gallery_item,
             "## arrays ranges and repeaters ######": None,
             "Test: Array": construct_editor.gallery.test_array.gallery_item,
             "Test: GreedyRange": construct_editor.gallery.test_greedyrange.gallery_item,

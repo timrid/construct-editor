@@ -30,8 +30,8 @@ setup(
     author="Tim Riddermann",
     python_requires="==3.8.*",
     install_requires=[
-        "construct==2.10.66",
-        "construct-typing==0.4.2",
+        "construct==2.10.67",
+        "construct-typing==0.5.0",
         "wxPython>=4.1.0",
         "arrow>=1.0.0"
     ],
