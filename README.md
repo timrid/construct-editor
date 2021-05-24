@@ -4,7 +4,7 @@
 This package provides a GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data. It can either be used standalone or embedded as a widget in another application.
 
 
-![Preview](doc/preview.gif)
+![Preview](https://github.com/timrid/construct-editor/blob/main/doc/preview.gif)
 
 
 Features:
