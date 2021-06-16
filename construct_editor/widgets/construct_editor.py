@@ -551,8 +551,7 @@ class ConstructEditor(wx.Panel):
             raise e
 
         # parse the build binary, so that constructs that parses from nothing are shown correctly (eg. cs.Peek)
-        # TODO: If this is uncommented, the focus of the ObjPanel is lost every time a change is made
-        # wx.CallAfter(lambda: self.parse(binary, **contextkw))
+        wx.CallAfter(lambda: self.parse(binary, **contextkw))
 
         return binary
 
