@@ -1,2 +1,2 @@
-version = (0, 0, 6)
-version_string = "0.0.6"
+version = (0, 0, 7)
+version_string = ".".join(map(str, version))
