@@ -742,18 +742,17 @@ class EntryStruct(EntryConstruct):
 
 # EntryArray ##########################################################################################################
 class EntryArray(EntrySubconstruct):
-    construct: "cs.Array[Any, Any, Any, Any]"
+    construct: t.Union["cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"]
 
     def __init__(
         self,
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Array[Any, Any, Any, Any]",
+        construct: t.Union["cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"],
     ):
         super().__init__(model, parent, construct)
 
         self._subentries = []
-        self._list_view_frame: Optional[wx.Frame] = None
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
@@ -761,7 +760,7 @@ class EntryArray(EntrySubconstruct):
         try:
             array_len = len(self.obj)
         except Exception:
-            if isinstance(self.construct.count, int):
+            if isinstance(self.construct, cs.Array) and isinstance(self.construct.count, int):
                 array_len = self.construct.count
             else:
                 array_len = 1
@@ -784,10 +783,20 @@ class EntryArray(EntrySubconstruct):
 
     @property
     def typ_str(self) -> str:
-        try:
-            return f"Array[{len(self.obj)}]"
-        except Exception:
-            return f"Array[{str(self.construct.count)}]"
+        obj = self.obj
+
+        if isinstance(self.construct, cs.Array):
+            try:
+                metadata = get_gui_metadata(obj)
+                count = evaluate(self.construct.count, metadata.context)
+                return f"Array[{count}]"
+            except Exception:
+                return f"Array[{self.construct.count}]"
+        else:
+            try:
+                return f"Array[{len(self.obj)}]"
+            except Exception:
+                return f"GreedyRange"
 
     @property
     def obj_str(self) -> str:
@@ -818,59 +827,6 @@ class EntryArray(EntrySubconstruct):
         menu.Append(menu_item)
         menu_item.Check(self in self.model.list_viewed_entries)
         menu.Bind(wx.EVT_MENU, on_menu_item_clicked, menu_item)
-
-
-# EntryGreedyRange ####################################################################################################
-class EntryGreedyRange(EntrySubconstruct):
-    construct: "cs.GreedyRange[Any, Any, Any, Any]"
-
-    def __init__(
-        self,
-        model: "construct_editor.ConstructEditorModel",
-        parent: Optional["EntryConstruct"],
-        construct: "cs.GreedyRange[Any, Any, Any, Any]",
-    ):
-        super().__init__(model, parent, construct)
-
-        self._subentries = []
-
-    @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
-        # get length of array
-        try:
-            array_len = len(self.obj)
-        except Exception:
-            array_len = 1
-
-        # append entries if not appended yet
-        if len(self._subentries) != array_len:
-            self._subentries.clear()
-            for index in range(0, array_len):
-                self.insert_entry(index)
-
-        return self._subentries
-
-    def insert_entry(self, index: int):
-        subentry = create_entry_from_construct(
-            self.model,
-            self,
-            cs.Renamed(self.construct.subcon, newname=str(index)),
-        )
-        self._subentries.append(subentry)
-
-    @property
-    def typ_str(self) -> str:
-        try:
-            return f"GreedyRange[{len(self.obj)}]"
-        except Exception:
-            return f"GreedyRange"
-
-    @property
-    def obj_str(self) -> str:
-        return ""
-
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
 
 
 # EntryIfThenElse #####################################################################################################
@@ -1283,7 +1239,6 @@ class EntryBytes(EntryConstruct):
     def typ_str(self) -> str:
         obj = self.obj
 
-        # change default row infos
         if isinstance(self.construct, cs.Bytes):
             try:
                 metadata = get_gui_metadata(obj)
@@ -1782,7 +1737,7 @@ construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]
     #
     # arrays ranges and repeaters ###############
     ClassEntryMapping(cs.Array, EntryArray),
-    ClassEntryMapping(cs.GreedyRange, EntryGreedyRange),
+    ClassEntryMapping(cs.GreedyRange, EntryArray),
     # cs.RepeatUntil
     #
     # specials ##################################
