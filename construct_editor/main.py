@@ -11,6 +11,7 @@ from wx.lib.embeddedimage import PyEmbeddedImage
 
 import construct_editor.gallery.example_pe32coff
 import construct_editor.gallery.example_ipstack
+import construct_editor.gallery.test_bytes_greedybytes
 import construct_editor.gallery.test_array
 import construct_editor.gallery.test_greedyrange
 import construct_editor.gallery.test_renamed
@@ -56,8 +57,7 @@ class ConstructGallery(wx.Panel):
             "Example: ipstack": construct_editor.gallery.example_ipstack.gallery_item,
             "################ TESTS ####################": None,
             # "## bytes and bits ################": None,
-            # "Test: Bytes (TODO)": None,
-            # "Test: GreedyBytes (TODO)": None,
+            "Test: Bytes/GreedyBytes": construct_editor.gallery.test_bytes_greedybytes.gallery_item,
             # "## integers and floats ###########": None,
             # "Test: FormatField (TODO)": None,
             # "Test: BytesInteger (TODO)": None,

@@ -41,6 +41,9 @@ def str_to_int(s: str) -> int:
     return i
 
 
+def str_to_bytes(s: str) -> bytes:
+    return bytes.fromhex(s)
+
 # #####################################################################################################################
 # GUI Elements ########################################################################################################
 # #####################################################################################################################
@@ -148,6 +151,35 @@ class ObjPanel_Integer(ObjPanel):
         try:
             # convert string to integer
             new_obj = str_to_int(val_str)
+        except Exception:
+            new_obj = val_str  # this will probably result in a building error
+
+        return new_obj
+
+
+class ObjPanel_Bytes(ObjPanel):
+    def __init__(self, parent, entry: "EntryConstruct"):
+        super().__init__(parent)
+        self.entry = entry
+
+        # Test if the obj of the entry is available
+        if self.entry.obj is None:
+            return
+
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.obj_txtctrl = wx.TextCtrl(self, wx.ID_ANY, self.entry.obj_str)
+        hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(hsizer)
+        self.Layout()
+
+    def get_new_obj(self) -> Any:
+        val_str: str = self.obj_txtctrl.GetValue()
+
+        try:
+            # convert string to bytes
+            new_obj = str_to_bytes(val_str)
         except Exception:
             new_obj = val_str  # this will probably result in a building error
 
@@ -1220,13 +1252,13 @@ class EntryBitsInteger(EntryConstruct):
 
 # EntryBytes ##########################################################################################################
 class EntryBytes(EntryConstruct):
-    construct: "cs.Bytes[Any, Any]"
+    construct: t.Union["cs.Bytes[Any, Any]", "cs.Construct[bytes, bytes]"]
 
     def __init__(
         self,
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Bytes[Any, Any]",
+        construct: t.Union["cs.Bytes[Any, Any]", "cs.Construct[bytes, bytes]"],
     ):
         super().__init__(model, parent, construct)
         self.ascii_view = False
@@ -1249,11 +1281,24 @@ class EntryBytes(EntryConstruct):
 
     @property
     def typ_str(self) -> str:
+        obj = self.obj
+
         # change default row infos
-        try:
-            return "Byte[{}]".format(len(self.obj))
-        except Exception:
-            return "Byte[{}]".format(str(self.construct.length))
+        if isinstance(self.construct, cs.Bytes):
+            try:
+                metadata = get_gui_metadata(obj)
+                length = evaluate(self.construct.length, metadata.context)
+                return f"Byte[{length}]"
+            except Exception:
+                return f"Byte[{self.construct.length}]"
+        else:
+            try:
+                return f"Byte[{len(self.obj)}]"
+            except Exception:
+                return "GreedyBytes"
+
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Bytes(parent, self)
 
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
         menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
@@ -1713,7 +1758,7 @@ construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]
     # #########################################################################
     # bytes and bits ############################
     ClassEntryMapping(cs.Bytes, EntryBytes),
-    # cs.GreedyBytes
+    SigletonEntryMapping(cs.GreedyBytes, EntryBytes),
     # cs.Bitwise
     # cs.Bytewise
     #
