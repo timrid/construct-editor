@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import enum
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional
 
 import construct as cs
-import construct_typed as cst
 import wx
 import wx.dataview as dv
-import dataclasses
 from construct_editor.helper import CallbackList
+import textwrap
 
 from construct_editor.helper.preprocessor import include_metadata
 from construct_editor.helper.wrapper import (
@@ -753,7 +752,7 @@ class ConstructEditor(wx.Panel):
         if col.ModelColumn == ConstructEditorColumn.Name:
             # only set tooltip if the obj changed. this prevents flickering
             if self._last_motion_obj is not obj:
-                self._dvc_main_window.SetToolTip(obj.docs)
+                self._dvc_main_window.SetToolTip(textwrap.dedent(obj.docs).strip())
             self._last_motion_obj = obj
         else:
             self._dvc_main_window.SetToolTip("")
