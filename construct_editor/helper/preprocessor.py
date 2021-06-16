@@ -182,12 +182,16 @@ def include_metadata(
             cs.Peek,
             cs.NullStripped,
             cs.FixedSized,
-            cst.DataclassStruct,
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
         constr.subcon = include_metadata(constr.subcon)  # type: ignore
         return constr
+
+    elif isinstance(constr, cst.DataclassStruct):
+        constr = copy.copy(constr)  # constr is modified, so we have to make a copy
+        constr.subcon = include_metadata(constr.subcon)  # type: ignore
+        return IncludeGuiMetaData(constr)
 
     elif isinstance(
         constr,
