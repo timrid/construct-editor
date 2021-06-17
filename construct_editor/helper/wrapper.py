@@ -457,7 +457,7 @@ class EntryConstruct(object):
     def obj(self) -> Any:
         path = self.path
         obj = self.model.root_obj
-        for p in path:
+        for p in path[1:]:
             if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
@@ -468,7 +468,7 @@ class EntryConstruct(object):
     def obj(self, val: Any):
         path = self.path
         obj = self.model.root_obj
-        for p in path[:-1]:
+        for p in path[1:-1]:
             if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
@@ -570,13 +570,13 @@ class EntryConstruct(object):
         parent = self.parent
         if parent is not None:
             path = parent.path
-
-            # Append name if available
-            name = self.name
-            if name != "":
-                path.append(name)
         else:
             path = []
+
+        # Append name if available
+        name = self.name
+        if name != "":
+            path.append(name)
 
         return path
 
