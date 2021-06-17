@@ -6,9 +6,9 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class RenamedTest(cst.TContainerMixin):
-    doc: int = cst.sfield(cs.Int8sb, doc="This is a one line documentation")
-    doc_multiline: int = cst.sfield(
+class RenamedTest(cst.DataclassMixin):
+    doc: int = cst.csfield(cs.Int8sb, doc="This is a one line documentation")
+    doc_multiline: int = cst.csfield(
         cs.Int8sb,
         doc="""
         This is a multiline documentation.
@@ -18,8 +18,8 @@ class RenamedTest(cst.TContainerMixin):
         Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
         """,
     )
-    doc2: int = cst.sfield(cs.Int8sb * "This is a one line documentation")
-    doc2_multiline: int = cst.sfield(
+    doc2: int = cst.csfield(cs.Int8sb * "This is a one line documentation")
+    doc2_multiline: int = cst.csfield(
         cs.Int8sb
         * """
         This is a multiline documentation.

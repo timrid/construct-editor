@@ -73,11 +73,11 @@ class LongList(cst.EnumBase):
 
 
 @dataclasses.dataclass
-class Car(cst.TContainerMixin):
-    brand: CarBrand = cst.sfield(cst.TEnum(cs.Int8ul, CarBrand))
-    wheels: int = cst.sfield(cs.Int8ul)
-    color: CarColor = cst.sfield(cst.TEnum(cs.Int8ul, CarColor))
-    long_list: LongList = cst.sfield(cst.TEnum(cs.Int8ul, LongList))
+class Car(cst.DataclassMixin):
+    brand: CarBrand = cst.csfield(cst.TEnum(cs.Int8ul, CarBrand))
+    wheels: int = cst.csfield(cs.Int8ul)
+    color: CarColor = cst.csfield(cst.TEnum(cs.Int8ul, CarColor))
+    long_list: LongList = cst.csfield(cst.TEnum(cs.Int8ul, LongList))
 
 
 constr = cst.DataclassStruct(Car)

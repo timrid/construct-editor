@@ -458,7 +458,7 @@ class EntryConstruct(object):
         path = self.path
         obj = self.model.root_obj
         for p in path:
-            if isinstance(obj, dict) or isinstance(obj, cst.TContainerMixin):
+            if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
                 obj = obj[int(p)]
@@ -469,12 +469,12 @@ class EntryConstruct(object):
         path = self.path
         obj = self.model.root_obj
         for p in path[:-1]:
-            if isinstance(obj, dict) or isinstance(obj, cst.TContainerMixin):
+            if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
                 obj = obj[int(p)]
 
-        if isinstance(obj, dict) or isinstance(obj, cst.TContainerMixin):
+        if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
             obj[path[-1]] = val
         elif isinstance(obj, list):
             obj[int(path[-1])] = val

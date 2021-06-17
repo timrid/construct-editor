@@ -6,25 +6,25 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class SwitchTest(cst.TContainerMixin):
+class SwitchTest(cst.DataclassMixin):
     @dataclasses.dataclass
-    class Case1(cst.TContainerMixin):
-        case1_1: int = cst.sfield(cs.Int16sb)
-        case1_2: int = cst.sfield(cs.Int16sb)
+    class Case1(cst.DataclassMixin):
+        case1_1: int = cst.csfield(cs.Int16sb)
+        case1_2: int = cst.csfield(cs.Int16sb)
 
     @dataclasses.dataclass
-    class Case2(cst.TContainerMixin):
-        case2_1: int = cst.sfield(cs.Int8sb)
-        case2_2: int = cst.sfield(cs.Int8sb)
-        case2_3: int = cst.sfield(cs.Int8sb)
-        case2_4: int = cst.sfield(cs.Int8sb)
+    class Case2(cst.DataclassMixin):
+        case2_1: int = cst.csfield(cs.Int8sb)
+        case2_2: int = cst.csfield(cs.Int8sb)
+        case2_3: int = cst.csfield(cs.Int8sb)
+        case2_4: int = cst.csfield(cs.Int8sb)
 
     @dataclasses.dataclass
-    class CaseDefault(cst.TContainerMixin):
-        case_default_1: int = cst.sfield(cs.Int32sb)
+    class CaseDefault(cst.DataclassMixin):
+        case_default_1: int = cst.csfield(cs.Int32sb)
 
-    choice: int = cst.sfield(cs.Int8ub)
-    switch: t.Union[Case1, Case2, CaseDefault] = cst.sfield(
+    choice: int = cst.csfield(cs.Int8ub)
+    switch: t.Union[Case1, Case2, CaseDefault] = cst.csfield(
         cs.Switch(
             cs.this.choice,
             cases={
@@ -35,7 +35,7 @@ class SwitchTest(cst.TContainerMixin):
         )
     )
 
-    switch_without_default: t.Union[Case1, Case2, None] = cst.sfield(
+    switch_without_default: t.Union[Case1, Case2, None] = cst.csfield(
         cs.Switch(
             cs.this.choice,
             cases={

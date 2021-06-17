@@ -7,14 +7,14 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class Timestamps(cst.TContainerMixin):
-    time_int8: arrow.Arrow = cst.sfield(
+class Timestamps(cst.DataclassMixin):
+    time_int8: arrow.Arrow = cst.csfield(
         cs.Timestamp(cs.Int8ul, unit=1, epoch=arrow.Arrow(2020, 1, 1))
     )
-    time_int16: arrow.Arrow = cst.sfield(
+    time_int16: arrow.Arrow = cst.csfield(
         cs.Timestamp(cs.Int16ul, unit=1, epoch=arrow.Arrow(2019, 1, 1))
     )
-    time_int32: arrow.Arrow = cst.sfield(
+    time_int32: arrow.Arrow = cst.csfield(
         cs.Timestamp(cs.Int32ul, unit=1, epoch=arrow.Arrow(2080, 1, 1))
     )
 

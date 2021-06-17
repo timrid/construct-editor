@@ -5,18 +5,18 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class TBitsStructTest(cst.TContainerMixin):
+class TBitsStructTest(cst.DataclassMixin):
     @dataclasses.dataclass
-    class Nested(cst.TContainerMixin):
-        test_bit: int = cst.sfield(cs.Bit)
-        test_nibble: int = cst.sfield(cs.Nibble)
-        test_bits_1: int = cst.sfield(cs.BitsInteger(3))
-        test_bits_2: int = cst.sfield(cs.BitsInteger(6))
-        test_bits_3: int = cst.sfield(cs.BitsInteger(2))
+    class Nested(cst.DataclassMixin):
+        test_bit: int = cst.csfield(cs.Bit)
+        test_nibble: int = cst.csfield(cs.Nibble)
+        test_bits_1: int = cst.csfield(cs.BitsInteger(3))
+        test_bits_2: int = cst.csfield(cs.BitsInteger(6))
+        test_bits_3: int = cst.csfield(cs.BitsInteger(2))
 
-    nested: Nested = cst.sfield(cs.ByteSwapped(cst.DataclassBitStruct(Nested)))
+    nested: Nested = cst.csfield(cs.ByteSwapped(cst.DataclassBitStruct(Nested)))
 
-    nested_reverse: Nested = cst.sfield(cst.DataclassBitStruct(Nested, reverse=True))
+    nested_reverse: Nested = cst.csfield(cst.DataclassBitStruct(Nested, reverse=True))
 
 
 constr = cst.DataclassStruct(TBitsStructTest)

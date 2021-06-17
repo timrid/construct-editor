@@ -6,28 +6,28 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class ArrayTest(cst.TContainerMixin):
-    simple_static: t.List[int] = cst.sfield(cs.Array(5, cs.Int8ub))
+class ArrayTest(cst.DataclassMixin):
+    simple_static: t.List[int] = cst.csfield(cs.Array(5, cs.Int8ub))
 
-    simple_dynamic_len: int = cst.sfield(
+    simple_dynamic_len: int = cst.csfield(
         cs.Int8ub, doc="Length of the simple dynamic array"
     )
-    simple_dynamic: t.List[int] = cst.sfield(
+    simple_dynamic: t.List[int] = cst.csfield(
         cs.Array(cs.this.simple_dynamic_len, cs.Int8ub)
     )
 
     @dataclasses.dataclass
-    class Entry(cst.TContainerMixin):
-        id: int = cst.sfield(cs.Int8ub)
-        width: int = cst.sfield(cs.Int8ub)
-        height: int = cst.sfield(cs.Int8ub)
+    class Entry(cst.DataclassMixin):
+        id: int = cst.csfield(cs.Int8ub)
+        width: int = cst.csfield(cs.Int8ub)
+        height: int = cst.csfield(cs.Int8ub)
 
-    struct_static: t.List[int] = cst.sfield(cs.Array(3, cst.DataclassStruct(Entry)))
+    struct_static: t.List[int] = cst.csfield(cs.Array(3, cst.DataclassStruct(Entry)))
 
-    struct_dynamic_len: int = cst.sfield(
+    struct_dynamic_len: int = cst.csfield(
         cs.Int8ub, doc="Length of the struct dynamic array"
     )
-    struct_dynamic: t.List[int] = cst.sfield(
+    struct_dynamic: t.List[int] = cst.csfield(
         cs.Array(cs.this.struct_dynamic_len, cst.DataclassStruct(Entry))
     )
 

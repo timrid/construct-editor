@@ -77,10 +77,10 @@ class LongList(cst.FlagsEnumBase):
 
 
 @dataclasses.dataclass
-class FlagsEnumTest(cst.TContainerMixin):
-    permissions: Permission = cst.sfield(cst.TFlagsEnum(cs.Int8ul, Permission))
-    days: Day = cst.sfield(cst.TFlagsEnum(cs.Int8ul, Day))
-    long_list: LongList = cst.sfield(cst.TFlagsEnum(cs.Int64ul, LongList))
+class FlagsEnumTest(cst.DataclassMixin):
+    permissions: Permission = cst.csfield(cst.TFlagsEnum(cs.Int8ul, Permission))
+    days: Day = cst.csfield(cst.TFlagsEnum(cs.Int8ul, Day))
+    long_list: LongList = cst.csfield(cst.TFlagsEnum(cs.Int64ul, LongList))
 
 
 constr = cst.DataclassStruct(FlagsEnumTest)

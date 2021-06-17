@@ -6,21 +6,21 @@ from . import GalleryItem
 
 
 @dataclasses.dataclass
-class IfThenElse(cst.TContainerMixin):
+class IfThenElse(cst.DataclassMixin):
     @dataclasses.dataclass
-    class Then(cst.TContainerMixin):
-        then_1: int = cst.sfield(cs.Int16sb)
-        then_2: int = cst.sfield(cs.Int16sb)
+    class Then(cst.DataclassMixin):
+        then_1: int = cst.csfield(cs.Int16sb)
+        then_2: int = cst.csfield(cs.Int16sb)
 
     @dataclasses.dataclass
-    class Else(cst.TContainerMixin):
-        else_1: int = cst.sfield(cs.Int8sb)
-        else_2: int = cst.sfield(cs.Int8sb)
-        else_3: int = cst.sfield(cs.Int8sb)
-        else_4: int = cst.sfield(cs.Int8sb)
+    class Else(cst.DataclassMixin):
+        else_1: int = cst.csfield(cs.Int8sb)
+        else_2: int = cst.csfield(cs.Int8sb)
+        else_3: int = cst.csfield(cs.Int8sb)
+        else_4: int = cst.csfield(cs.Int8sb)
 
-    choice: int = cst.sfield(cs.Int8ub)
-    if_then_else: t.Union[Then, Else] = cst.sfield(
+    choice: int = cst.csfield(cs.Int8ub)
+    if_then_else: t.Union[Then, Else] = cst.csfield(
         cs.IfThenElse(
             cs.this.choice == 0, cst.DataclassStruct(Then), cst.DataclassStruct(Else)
         )
