@@ -75,9 +75,9 @@ class IncludeGuiMetaData(cs.Subconstruct):
     """ Include GUI metadata to the parsed object """
 
     def _parse(self, stream, context, path):
-        offset_start = 0#cs.stream_tell(stream, path)
+        offset_start = cs.stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)  # type: ignore
-        offset_end = 0#cs.stream_tell(stream, path)
+        offset_end = cs.stream_tell(stream, path)
 
         gui_metadata = GuiMetaData(
             offset_start=offset_start,
