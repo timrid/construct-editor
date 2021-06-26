@@ -765,25 +765,19 @@ ip_stack = layer2_ethernet
 
 
 cse_wrapper.add_adapter_mapping(
-    cse_wrapper.AdapterInstanceMapping(
-        name="MacAddress",
-        panel=cse_wrapper.AdapterPanelType.String,
-        adapter_instance=MacAddress
-    )
+    type_str="MacAddress",
+    obj_panel=cse_wrapper.AdapterPanelType.String,
+    adapter=MacAddress
 )
 cse_wrapper.add_adapter_mapping(
-    cse_wrapper.AdapterInstanceMapping(
-        name="IpAddress",
-        panel=cse_wrapper.AdapterPanelType.String,
-        adapter_instance=IpAddress
-    )
+    type_str="IpAddress",
+    obj_panel=cse_wrapper.AdapterPanelType.String,
+    adapter=IpAddress
 )
 cse_wrapper.add_adapter_mapping(
-    cse_wrapper.AdapterInstanceMapping(
-        name="Ipv6Address",
-        panel=cse_wrapper.AdapterPanelType.String,
-        adapter_instance=Ipv6Address
-    )
+    type_str="Ipv6Address",
+    obj_panel=cse_wrapper.AdapterPanelType.String,
+    adapter=Ipv6Address
 )
 
 

@@ -44,6 +44,7 @@ def str_to_int(s: str) -> int:
 def str_to_bytes(s: str) -> bytes:
     return bytes.fromhex(s)
 
+
 # #####################################################################################################################
 # GUI Elements ########################################################################################################
 # #####################################################################################################################
@@ -535,10 +536,11 @@ class EntryConstruct(object):
         """ Restore the expansion state, recursively """
         dvc_item = self.dvc_item
         if dvc_item is not None:
-            if self.dvc_item_expanded:
-                self.model.dvc.Expand(self.dvc_item)
-            else:
-                self.model.dvc.Collapse(self.dvc_item)
+            if self.subentries is not None:
+                if self.dvc_item_expanded:
+                    self.model.dvc.Expand(self.dvc_item)
+                else:
+                    self.model.dvc.Collapse(self.dvc_item)
         subentries = self.subentries
         if subentries is not None:
             for subentry in subentries:
@@ -642,28 +644,10 @@ class AdapterPanelType(enum.Enum):
     String = enum.auto()
 
 
-@dataclasses.dataclass
-class AdapterMapping:
-    name: str
-    panel: AdapterPanelType
-
-
-@dataclasses.dataclass
-class AdapterInstanceMapping(AdapterMapping):
-    """ Mapping for a Adapter Instance (normally a cs.ExprAdapter) """
-
-    adapter_instance: "cs.Adapter[Any, Any, Any, Any]"
-
-
-@dataclasses.dataclass
-class AdapterClassMapping(AdapterMapping):
-    """ Mapping for a Adapter Instance (normally a cs.Adapter) """
-
-    adapter_class: Type["cs.Adapter[Any, Any, Any, Any]"]
-
-
 def add_adapter_mapping(
-    adapter_mapping: t.Union[AdapterInstanceMapping, AdapterClassMapping]
+    type_str: str,
+    obj_panel: AdapterPanelType,
+    adapter: t.Union[Type["cs.Construct[Any, Any]"], "cs.Construct[Any, Any]"],
 ):
     """ Add a Mapping for a custom adapter construct """
 
@@ -678,30 +662,21 @@ def add_adapter_mapping(
 
         @property
         def typ_str(self) -> str:
-            return adapter_mapping.name
+            return type_str
 
         @property
         def obj_str(self) -> Any:
             return str(self.obj)
 
         def create_obj_panel(self, parent) -> ObjPanel:
-            if adapter_mapping.panel == AdapterPanelType.Integer:
+            if obj_panel == AdapterPanelType.Integer:
                 return ObjPanel_Integer(parent, self)
-            elif adapter_mapping.panel == AdapterPanelType.String:
+            elif obj_panel == AdapterPanelType.String:
                 return ObjPanel_String(parent, self)
             else:
                 return ObjPanel_Default(parent, self)
 
-    if isinstance(adapter_mapping, AdapterInstanceMapping):
-        mapping = SigletonEntryMapping(adapter_mapping.adapter_instance, EntryAdapter)
-    elif isinstance(adapter_mapping, AdapterClassMapping):
-        mapping = ClassEntryMapping(adapter_mapping.adapter_class, EntryAdapter)
-    else:
-        raise ValueError(
-            "adapter_mapping has to be of type 'AdapterInstanceMapping' or 'AdapterClassMapping'"
-        )
-
-    construct_entry_mapping.append(mapping)
+    construct_entry_mapping[adapter] = EntryAdapter
 
 
 # EntryStruct #########################################################################################################
@@ -742,13 +717,17 @@ class EntryStruct(EntryConstruct):
 
 # EntryArray ##########################################################################################################
 class EntryArray(EntrySubconstruct):
-    construct: t.Union["cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"]
+    construct: t.Union[
+        "cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"
+    ]
 
     def __init__(
         self,
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: t.Union["cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"],
+        construct: t.Union[
+            "cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"
+        ],
     ):
         super().__init__(model, parent, construct)
 
@@ -760,7 +739,9 @@ class EntryArray(EntrySubconstruct):
         try:
             array_len = len(self.obj)
         except Exception:
-            if isinstance(self.construct, cs.Array) and isinstance(self.construct.count, int):
+            if isinstance(self.construct, cs.Array) and isinstance(
+                self.construct.count, int
+            ):
                 array_len = self.construct.count
             else:
                 array_len = 1
@@ -1056,6 +1037,41 @@ class EntrySwitch(EntryConstruct):
 # EntryFormatField ####################################################################################################
 class EntryFormatField(EntryConstruct):
     construct: "cs.FormatField[Any, Any]"
+    type_mapping = {
+        ">B": ("Int8ub", int, 8, False),
+        ">H": ("Int16ub", int, 16, False),
+        ">L": ("Int32ub", int, 32, False),
+        ">Q": ("Int64ub", int, 64, False),
+        ">b": ("Int8sb", int, 8, True),
+        ">h": ("Int16sb", int, 16, True),
+        ">l": ("Int32sb", int, 32, True),
+        ">q": ("Int64sb", int, 64, True),
+        "<B": ("Int8ul", int, 8, False),
+        "<H": ("Int16ul", int, 16, False),
+        "<L": ("Int32ul", int, 32, False),
+        "<Q": ("Int64ul", int, 64, False),
+        "<b": ("Int8sl", int, 8, True),
+        "<h": ("Int16sl", int, 16, True),
+        "<l": ("Int32sl", int, 32, True),
+        "<q": ("Int64sl", int, 64, True),
+        "=B": ("Int8un", int, 8, False),
+        "=H": ("Int16un", int, 16, False),
+        "=L": ("Int32un", int, 32, False),
+        "=Q": ("Int64un", int, 64, False),
+        "=b": ("Int8sn", int, 8, True),
+        "=h": ("Int16sn", int, 16, True),
+        "=l": ("Int32sn", int, 32, True),
+        "=q": ("Int64sn", int, 64, True),
+        ">e": ("Float16b", float),
+        "<e": ("Float16l", float),
+        "=e": ("Float16n", float),
+        ">f": ("Float32b", float),
+        "<f": ("Float32l", float),
+        "=f": ("Float32n", float),
+        ">d": ("Float64b", float),
+        "<d": ("Float64l", float),
+        "=d": ("Float64n", float),
+    }
 
     def __init__(
         self,
@@ -1065,46 +1081,10 @@ class EntryFormatField(EntryConstruct):
     ):
         super().__init__(model, parent, construct)
 
-        type_mapping = {
-            ">B": ("Int8ub", int, 8, False),
-            ">H": ("Int16ub", int, 16, False),
-            ">L": ("Int32ub", int, 32, False),
-            ">Q": ("Int64ub", int, 64, False),
-            ">b": ("Int8sb", int, 8, True),
-            ">h": ("Int16sb", int, 16, True),
-            ">l": ("Int32sb", int, 32, True),
-            ">q": ("Int64sb", int, 64, True),
-            "<B": ("Int8ul", int, 8, False),
-            "<H": ("Int16ul", int, 16, False),
-            "<L": ("Int32ul", int, 32, False),
-            "<Q": ("Int64ul", int, 64, False),
-            "<b": ("Int8sl", int, 8, True),
-            "<h": ("Int16sl", int, 16, True),
-            "<l": ("Int32sl", int, 32, True),
-            "<q": ("Int64sl", int, 64, True),
-            "=B": ("Int8un", int, 8, False),
-            "=H": ("Int16un", int, 16, False),
-            "=L": ("Int32un", int, 32, False),
-            "=Q": ("Int64un", int, 64, False),
-            "=b": ("Int8sn", int, 8, True),
-            "=h": ("Int16sn", int, 16, True),
-            "=l": ("Int32sn", int, 32, True),
-            "=q": ("Int64sn", int, 64, True),
-            ">e": ("Float16b", float),
-            "<e": ("Float16l", float),
-            "=e": ("Float16n", float),
-            ">f": ("Float32b", float),
-            "<f": ("Float32l", float),
-            "=f": ("Float32n", float),
-            ">d": ("Float64b", float),
-            "<d": ("Float64l", float),
-            "=d": ("Float64n", float),
-        }
-
         # change default row infos
         self.type_infos = None
-        if construct.fmtstr in type_mapping:
-            self.type_infos = type_mapping[construct.fmtstr]
+        if construct.fmtstr in self.type_mapping:
+            self.type_infos = self.type_mapping[construct.fmtstr]
 
     def create_obj_panel(self, parent) -> ObjPanel:
         if self.type_infos[1] is int:
@@ -1695,98 +1675,89 @@ class EntryTFlagsEnum(EntrySubconstruct):
 # #####################################################################################################################
 # Entry Mapping #######################################################################################################
 # #####################################################################################################################
-@dataclasses.dataclass
-class ClassEntryMapping:
-    constr_class: Type["cs.Construct[Any, Any]"]
-    entry: Type[EntryConstruct]
-
-
-@dataclasses.dataclass
-class SigletonEntryMapping:
-    constr_instance: "cs.Construct[Any, Any]"
-    entry: Type[EntryConstruct]
-
-
-construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]] = [
+construct_entry_mapping: t.Dict[
+    t.Union[Type["cs.Construct[Any, Any]"], "cs.Construct[Any, Any]"],
+    Type[EntryConstruct],
+] = {
     # #########################################################################
     # wrapper from: construct #################################################
     # #########################################################################
     # bytes and bits ############################
-    ClassEntryMapping(cs.Bytes, EntryBytes),
-    SigletonEntryMapping(cs.GreedyBytes, EntryBytes),
+    cs.Bytes: EntryBytes,
+    cs.GreedyBytes: EntryBytes,
     # cs.Bitwise
     # cs.Bytewise
     #
     # integers and floats #######################
-    ClassEntryMapping(cs.FormatField, EntryFormatField),
-    ClassEntryMapping(cs.BytesInteger, EntryBytesInteger),
-    ClassEntryMapping(cs.BitsInteger, EntryBitsInteger),
+    cs.FormatField: EntryFormatField,
+    cs.BytesInteger: EntryBytesInteger,
+    cs.BitsInteger: EntryBitsInteger,
     #
     # strings ###################################
     # cs.StringEncoded
     #
     # mappings ##################################
     # cs.Flag
-    ClassEntryMapping(cs.Enum, EntryEnum),
-    ClassEntryMapping(cs.FlagsEnum, EntryFlagsEnum),
+    cs.Enum: EntryEnum,
+    cs.FlagsEnum: EntryFlagsEnum,
     # cs.Mapping
     #
     # structures and sequences ##################
-    ClassEntryMapping(cs.Struct, EntryStruct),
+    cs.Struct: EntryStruct,
     # cs.Sequence
     #
     # arrays ranges and repeaters ###############
-    ClassEntryMapping(cs.Array, EntryArray),
-    ClassEntryMapping(cs.GreedyRange, EntryArray),
+    cs.Array: EntryArray,
+    cs.GreedyRange: EntryArray,
     # cs.RepeatUntil
     #
     # specials ##################################
-    ClassEntryMapping(cs.Renamed, EntryRenamed),
+    cs.Renamed: EntryRenamed,
     #
     # miscellaneous #############################
-    ClassEntryMapping(cs.Const, EntryTransparentSubcon),
-    ClassEntryMapping(cs.Computed, EntryComputed),
+    cs.Const: EntryTransparentSubcon,
+    cs.Computed: EntryComputed,
     # cs.Index
     # cs.Rebuild
-    ClassEntryMapping(cs.Default, EntryTransparentSubcon),
+    cs.Default: EntryTransparentSubcon,
     # cs.Check
     # cs.Error
     # cs.FocusedSeq
     # cs.Pickled
     # cs.Numpy
     # cs.NamedTuple
-    ClassEntryMapping(cs.TimestampAdapter, EntryTimestamp),
+    cs.TimestampAdapter: EntryTimestamp,
     # cs.Hex
     # cs.HexDump
     #
     # conditional ###############################
     # cs.Union
     # cs.Select
-    ClassEntryMapping(cs.IfThenElse, EntryIfThenElse),
-    ClassEntryMapping(cs.Switch, EntrySwitch),
+    cs.IfThenElse: EntryIfThenElse,
+    cs.Switch: EntrySwitch,
     # cs.StopIf
     #
     # alignment and padding #####################
-    ClassEntryMapping(cs.Padded, EntryTransparentSubcon),
-    ClassEntryMapping(cs.Aligned, EntryTransparentSubcon),
+    cs.Padded: EntryTransparentSubcon,
+    cs.Aligned: EntryTransparentSubcon,
     #
     # stream manipulation #######################
-    ClassEntryMapping(cs.Pointer, EntryTransparentSubcon),
-    ClassEntryMapping(cs.Peek, EntryPeek),
-    ClassEntryMapping(cs.Seek, EntrySeek),
-    SigletonEntryMapping(cs.Tell, EntryTell),
-    SigletonEntryMapping(cs.Pass, EntryPass),
+    cs.Pointer: EntryTransparentSubcon,
+    cs.Peek: EntryPeek,
+    cs.Seek: EntrySeek,
+    cs.Tell: EntryTell,
+    cs.Pass: EntryPass,
     # cs.Terminated
     #
     # tunneling and byte/bit swapping ###########
-    ClassEntryMapping(cs.RawCopy, EntryRawCopy),
+    cs.RawCopy: EntryRawCopy,
     # cs.Prefixed
     # cs.FixedSized
     # cs.NullTerminated
     # cs.NullStripped
     # cs.RestreamData
-    ClassEntryMapping(cs.Transformed, EntryTransparentSubcon),
-    ClassEntryMapping(cs.Restreamed, EntryTransparentSubcon),
+    cs.Transformed: EntryTransparentSubcon,
+    cs.Restreamed: EntryTransparentSubcon,
     # cs.ProcessXor
     # cs.ProcessRotateLeft
     # cs.Checksum
@@ -1799,18 +1770,18 @@ construct_entry_mapping: t.List[t.Union[ClassEntryMapping, SigletonEntryMapping]
     # #########################################################################
     # wrapper from: construct_typing ##########################################
     # #########################################################################
-    ClassEntryMapping(cst.DataclassStruct, EntryDataclassStruct),
-    ClassEntryMapping(cst.TEnum, EntryTEnum),
-    ClassEntryMapping(cst.TFlagsEnum, EntryTFlagsEnum),
+    cst.DataclassStruct: EntryDataclassStruct,
+    cst.TEnum: EntryTEnum,
+    cst.TFlagsEnum: EntryTFlagsEnum,
     # #########################################################################
     #
     #
     # #########################################################################
     # wrapper from: construct_editor ##########################################
     # #########################################################################
-    ClassEntryMapping(IncludeGuiMetaData, EntryTransparentSubcon),
+    IncludeGuiMetaData: EntryTransparentSubcon,
     # #########################################################################
-]
+}
 
 
 def create_entry_from_construct(
@@ -1819,23 +1790,21 @@ def create_entry_from_construct(
     subcon: "cs.Construct[Any, Any]",
 ) -> "EntryConstruct":
 
-    # at first check singleton mappings
-    for mapping in construct_entry_mapping:
-        if (
-            isinstance(mapping, SigletonEntryMapping)
-            and subcon is mapping.constr_instance
-        ):
-            return mapping.entry(model, parent, subcon)
+    # check for instance-mappings
+    if subcon in construct_entry_mapping:
+        return construct_entry_mapping[subcon](model, parent, subcon)
 
-    # then check class mappings
-    for mapping in construct_entry_mapping:
-        if isinstance(mapping, ClassEntryMapping) and isinstance(
-            subcon, mapping.constr_class
-        ):
-            return mapping.entry(model, parent, subcon)
+    # check for class-mappings
+    if type(subcon) in construct_entry_mapping:
+        return construct_entry_mapping[type(subcon)](model, parent, subcon)
 
-    # use fallback, if no mapping is found
+    # iterate through all mappings and check if the subcon inherits from a known mapping
+    for key, value in construct_entry_mapping.items():
+        if isinstance(key, type) and isinstance(subcon, key):  # type: ignore
+            return value(model, parent, subcon)
+
+    # use fallback, if no entry found in the mapping
     if isinstance(subcon, cs.Construct):
         return EntryConstruct(model, parent, subcon)
 
-    raise ValueError("subcon type {} is not implemented".format(repr(subcon)))
+    raise ValueError(f"subcon type {repr(subcon)} is not implemented")
