@@ -546,16 +546,17 @@ class EntryConstruct(object):
     def dvc_item_restore_expansion(self):
         """ Restore the expansion state, recursively """
         dvc_item = self.dvc_item
-        if dvc_item is not None:
-            if self.subentries is not None:
+        subentries = self.subentries
+        if subentries is not None:
+            if dvc_item is not None:
                 if self.dvc_item_expanded:
                     self.model.dvc.Expand(self.dvc_item)
                 else:
                     self.model.dvc.Collapse(self.dvc_item)
-        subentries = self.subentries
-        if subentries is not None:
+
             for subentry in subentries:
-                subentry.dvc_item_restore_expansion()
+                if subentry.subentries is not None:
+                    subentry.dvc_item_restore_expansion()
 
     # default "add_nonstruct_subentries_to_list" ##############################
     def create_flat_subentry_list(self, flat_subentry_list: List["EntryConstruct"]):
@@ -772,15 +773,16 @@ class EntryArray(EntrySubconstruct):
         if len(self._subentries) != array_len:
             self._subentries.clear()
             for index in range(0, array_len):
-                self.insert_entry(index)
+                subentry = create_entry_from_construct(
+                    self.model,
+                    self,
+                    self.construct.subcon,
+                    str(index),
+                    "",
+                )
+                self._subentries.append(subentry)
 
         return self._subentries
-
-    def insert_entry(self, index: int):
-        subentry = create_entry_from_construct(
-            self.model, self, self.construct.subcon, str(index), ""
-        )
-        self._subentries.append(subentry)
 
     @property
     def typ_str(self) -> str:
