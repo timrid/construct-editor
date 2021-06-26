@@ -571,7 +571,7 @@ class ConstructEditor(wx.Panel):
 
         # create entry from the construct
         self._model.root_entry = create_entry_from_construct(
-            self._model, None, self._construct
+            self._model, None, self._construct, None, ""
         )
 
         self._model.list_viewed_entries.clear()
