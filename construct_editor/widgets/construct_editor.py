@@ -723,8 +723,8 @@ class ConstructEditor(wx.Panel):
         bytes_info = ""
         metadata = entry.obj_metadata
         if metadata is not None:
-            start = metadata.offset_start
-            end = metadata.offset_end - 1
+            start = metadata["offset_start"]
+            end = metadata["offset_end"] - 1
             size = end - start + 1
             if size > 0:
                 bytes_info = f"Bytes: {start}-{end} ({size})"

@@ -789,7 +789,7 @@ class EntryArray(EntrySubconstruct):
         if isinstance(self.construct, cs.Array):
             try:
                 metadata = get_gui_metadata(obj)
-                count = evaluate(self.construct.count, metadata.context)
+                count = evaluate(self.construct.count, metadata["context"])
                 return f"Array[{count}]"
             except Exception:
                 return f"Array[{self.construct.count}]"
@@ -873,7 +873,7 @@ class EntryIfThenElse(EntryConstruct):
             return None
         else:
             metadata = get_gui_metadata(obj)
-            cond = evaluate(self.construct.condfunc, metadata.context)
+            cond = evaluate(self.construct.condfunc, metadata["context"])
             if cond:
                 return self._subentry_then
             else:
@@ -989,7 +989,7 @@ class EntrySwitch(EntryConstruct):
             return None
         else:
             metadata = get_gui_metadata(obj)
-            key = evaluate(self.construct.keyfunc, metadata.context)
+            key = evaluate(self.construct.keyfunc, metadata["context"])
             if key in self._subentry_cases:
                 return self._subentry_cases[key]
             else:
@@ -1255,7 +1255,7 @@ class EntryBytes(EntryConstruct):
         if isinstance(self.construct, cs.Bytes):
             try:
                 metadata = get_gui_metadata(obj)
-                length = evaluate(self.construct.length, metadata.context)
+                length = evaluate(self.construct.length, metadata["context"])
                 return f"Byte[{length}]"
             except Exception:
                 return f"Byte[{self.construct.length}]"

@@ -1,17 +1,13 @@
-import dataclasses
 import construct as cs
 import construct_typed as cst
 import typing as t
 import copy
 
 
-@dataclasses.dataclass
-class GuiMetaData:
+class GuiMetaData(t.TypedDict):
     offset_start: int
     offset_end: int
-    length: int
     construct: cs.Construct
-    index: t.Optional[int]
     context: "cs.Context"
 
 
@@ -49,28 +45,28 @@ def get_gui_metadata(obj: t.Any) -> t.Optional[GuiMetaData]:
 
 def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
     """ Append the private field "__gui_metadata" to an object """
-    try:
+    if isinstance(obj, int):
+        obj = IntWithGuiMetadata(obj)
         obj.__gui_metadata = gui_metadata  # type: ignore
-    except AttributeError:
-        if isinstance(obj, int):
-            obj = IntWithGuiMetadata(obj)
+    elif isinstance(obj, float):
+        obj = FloatWithGuiMetadata(obj)
+        obj.__gui_metadata = gui_metadata  # type: ignore
+    elif isinstance(obj, bytes):
+        obj = BytesWithGuiMetadata(obj)
+        obj.__gui_metadata = gui_metadata  # type: ignore
+    elif isinstance(obj, bytearray):
+        obj = BytearrayWithGuiMetadata(obj)
+        obj.__gui_metadata = gui_metadata  # type: ignore
+    elif isinstance(obj, str):
+        obj = StrWithGuiMetadata(obj)
+        obj.__gui_metadata = gui_metadata  # type: ignore
+    elif obj is None:
+        obj = NoneWithGuiMetadata()
+        obj.__gui_metadata = gui_metadata  # type: ignore
+    else:
+        try:
             obj.__gui_metadata = gui_metadata  # type: ignore
-        elif isinstance(obj, float):
-            obj = FloatWithGuiMetadata(obj)
-            obj.__gui_metadata = gui_metadata  # type: ignore
-        elif isinstance(obj, bytes):
-            obj = BytesWithGuiMetadata(obj)
-            obj.__gui_metadata = gui_metadata  # type: ignore
-        elif isinstance(obj, bytearray):
-            obj = BytearrayWithGuiMetadata(obj)
-            obj.__gui_metadata = gui_metadata  # type: ignore
-        elif isinstance(obj, str):
-            obj = StrWithGuiMetadata(obj)
-            obj.__gui_metadata = gui_metadata  # type: ignore
-        elif obj is None:
-            obj = NoneWithGuiMetadata()
-            obj.__gui_metadata = gui_metadata  # type: ignore
-        else:
+        except AttributeError:
             raise ValueError(f"add_gui_metadata dont work with type of {type(obj)}")
     return obj
 
@@ -79,22 +75,14 @@ class IncludeGuiMetaData(cs.Subconstruct):
     """ Include GUI metadata to the parsed object """
 
     def _parse(self, stream, context, path):
-        # Get Index if we are in an Array, Sequence, ...
-        if hasattr(context, "_index"):
-            index = context._index
-        else:
-            index = None
-
-        offset_start = cs.stream_tell(stream, path)
+        offset_start = 0#cs.stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)  # type: ignore
-        offset_end = cs.stream_tell(stream, path)
+        offset_end = 0#cs.stream_tell(stream, path)
 
         gui_metadata = GuiMetaData(
             offset_start=offset_start,
             offset_end=offset_end,
-            length=offset_end - offset_start,
             construct=self.subcon,
-            index=index,
             context=context,
         )
 
