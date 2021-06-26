@@ -19,6 +19,7 @@ import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_dataclass_struct
 import construct_editor.gallery.test_dataclass_bit_struct
+import construct_editor.gallery.test_flag
 import construct_editor.gallery.test_enum
 import construct_editor.gallery.test_flagsenum
 import construct_editor.gallery.test_tenum
@@ -65,7 +66,7 @@ class ConstructGallery(wx.Panel):
             # "## strings #######################": None,
             # "Test: StringEncoded (TODO)": None,
             "## mappings ######################": None,
-            # "Test: Flag (TODO)": None,
+            "Test: Flag": construct_editor.gallery.test_flag.gallery_item,
             "Test: Enum": construct_editor.gallery.test_enum.gallery_item,
             "Test: FlagsEnum": construct_editor.gallery.test_flagsenum.gallery_item,
             "Test: TEnum": construct_editor.gallery.test_tenum.gallery_item,

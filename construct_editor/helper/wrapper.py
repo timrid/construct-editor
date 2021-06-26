@@ -158,6 +158,40 @@ class ObjPanel_Integer(ObjPanel):
         return new_obj
 
 
+class ObjPanel_Flag(ObjPanel):
+    true_strings = ["t", "true", "1"]
+    false_strings = ["f", "false", "0"]
+
+    def __init__(self, parent, entry: "EntryConstruct"):
+        super().__init__(parent)
+        self.entry = entry
+
+        # Test if the obj of the entry is available
+        if self.entry.obj is None:
+            return
+
+        # Obj
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.obj_txtctrl = wx.TextCtrl(self, wx.ID_ANY, self.entry.obj_str)
+        hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.SetSizer(hsizer)
+        self.Layout()
+
+    def get_new_obj(self) -> Any:
+        val_str: str = self.obj_txtctrl.GetValue()
+
+        val_str = val_str.lower()
+        if val_str in self.true_strings:
+            new_obj = True
+        elif val_str in self.false_strings:
+            new_obj = False
+        else:
+            new_obj = val_str  # this will probably result in a building error
+
+        return new_obj
+
+
 class ObjPanel_Bytes(ObjPanel):
     def __init__(self, parent, entry: "EntryConstruct"):
         super().__init__(parent)
@@ -1460,6 +1494,33 @@ class EntryDataclassStruct(EntrySubconstruct):
         return self.construct.dc_type.__name__
 
 
+# EntryFlag ####################################################################################################
+class EntryFlag(EntryConstruct):
+    construct: "cs.FormatField[Any, Any]"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.FormatField[Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+    def create_obj_panel(self, parent) -> ObjPanel:
+        return ObjPanel_Flag(parent, self)
+
+    @property
+    def obj_str(self) -> str:
+        obj = self.obj
+        return str(bool(obj))
+
+    @property
+    def typ_str(self) -> str:
+        return "Flag"
+
+
 # EntryEnum ###########################################################################################################
 class EntryEnum(EntrySubconstruct):
     construct: "cs.Enum"
@@ -1726,7 +1787,7 @@ construct_entry_mapping: t.Dict[
     # cs.StringEncoded
     #
     # mappings ##################################
-    # cs.Flag
+    cs.Flag: EntryFlag,
     cs.Enum: EntryEnum,
     cs.FlagsEnum: EntryFlagsEnum,
     # cs.Mapping
