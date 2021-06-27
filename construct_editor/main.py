@@ -126,6 +126,17 @@ class ConstructGallery(wx.Panel):
             # "Test: Compressed (TODO)": None,
             # "Test: CompressedLZ4 (TODO)": None,
             # "Test: Rebuffered (TODO)": None,
+            # "## lazy equivalents ##########################": None,
+            # "Test: Lazy (TODO)": None,
+            # "Test: LazyStruct (TODO)": None,
+            # "Test: LazyArray (TODO)": None,
+            # "Test: LazyBound (TODO)": None,
+            # "## adapters and validators ##########################": None,
+            # "Test: ExprAdapter (TODO)": None,
+            # "Test: ExprSymmetricAdapter (TODO)": None,
+            # "Test: ExprValidator (TODO)": None,
+            # "Test: Slicing (TODO)": None,
+            # "Test: Indexing (TODO)": None,
         }
         self.gallery_selection = 1
         default_gallery = list(self.construct_gallery.keys())[self.gallery_selection]
@@ -355,6 +366,7 @@ def main():
     inspect = False
     if inspect is True:
         import wx.lib.mixins.inspection as wit
+
         app = wit.InspectableApp()
     else:
         app = wx.App(False)

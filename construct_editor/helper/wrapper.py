@@ -1901,6 +1901,12 @@ construct_entry_mapping: t.Dict[
     # cs.Compressed
     # cs.CompressedLZ4
     # cs.Rebuffered
+    #
+    # lazy equivalents ##########################
+    # cs.Lazy
+    # cs.LazyStruct
+    # cs.LazyArray
+    # cs.LazyBound
     # #########################################################################
     #
     #
