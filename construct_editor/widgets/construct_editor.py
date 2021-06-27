@@ -237,7 +237,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
         # so any Python object can be used as data nodes. If the data nodes
         # are weak-referencable then the objmapper can use a
         # WeakValueDictionary instead.
-        self.UseWeakRefs(True)
+        # self.UseWeakRefs(True)  # weak refs are slower when creating a large number of items
 
         self.command_processor = wx.CommandProcessor()
 
@@ -283,9 +283,10 @@ class ConstructEditorModel(dv.PyDataViewModel):
 
         if not parent:
             entry = self.root_entry
-            item = self.ObjectToItem(entry)
-            entry.dvc_item = item
-            children.append(item)
+            if entry.dvc_item is None:
+                item = self.ObjectToItem(entry)
+                entry.dvc_item = item
+            children.append(entry.dvc_item)
             return 1
 
         parent_entry = self.ItemToObject(parent)
@@ -297,9 +298,10 @@ class ConstructEditorModel(dv.PyDataViewModel):
                 name = entry.name
                 if (self.hide_protected == True) and (name.startswith("_") or name == ""):
                     continue
-                item = self.ObjectToItem(entry)
-                entry.dvc_item = item
-                children.append(item)
+                if entry.dvc_item is None:
+                    item = self.ObjectToItem(entry)
+                    entry.dvc_item = item
+                children.append(entry.dvc_item)
         return len(children)
 
     def IsContainer(self, item):

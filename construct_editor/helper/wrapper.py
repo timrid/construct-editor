@@ -968,7 +968,7 @@ class EntryIfThenElse(EntryConstruct):
     def dvc_item(self) -> Any:
         subentry = self._get_subentry()
         if subentry is None:
-            return self._dvc_item
+            return super().dvc_item
         else:
             return subentry.dvc_item
 
@@ -1091,7 +1091,7 @@ class EntrySwitch(EntryConstruct):
     def dvc_item(self) -> Any:
         subentry = self._get_subentry()
         if subentry is None:
-            return self._dvc_item
+            return super().dvc_item
         else:
             return subentry.dvc_item
 
