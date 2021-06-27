@@ -45,24 +45,25 @@ def get_gui_metadata(obj: t.Any) -> t.Optional[GuiMetaData]:
 
 def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
     """ Append the private field "__gui_metadata" to an object """
-    if isinstance(obj, int):
+    obj_type = type(obj)
+    if (obj_type is int) or (obj_type is bool):
         obj = IntWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata  # type: ignore
-    elif isinstance(obj, float):
+        obj.__gui_metadata = gui_metadata
+    elif obj_type is float:
         obj = FloatWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata  # type: ignore
-    elif isinstance(obj, bytes):
+        obj.__gui_metadata = gui_metadata
+    elif obj_type is bytes:
         obj = BytesWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata  # type: ignore
-    elif isinstance(obj, bytearray):
+        obj.__gui_metadata = gui_metadata
+    elif obj_type is bytearray:
         obj = BytearrayWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata  # type: ignore
-    elif isinstance(obj, str):
+        obj.__gui_metadata = gui_metadata
+    elif obj_type is str:
         obj = StrWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata  # type: ignore
+        obj.__gui_metadata = gui_metadata
     elif obj is None:
         obj = NoneWithGuiMetadata()
-        obj.__gui_metadata = gui_metadata  # type: ignore
+        obj.__gui_metadata = gui_metadata
     else:
         try:
             obj.__gui_metadata = gui_metadata  # type: ignore

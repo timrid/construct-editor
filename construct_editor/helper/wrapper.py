@@ -287,7 +287,7 @@ class FlagsEnumComboPopup(wx.ComboPopup):
         super().__init__()
         self.combo_ctrl = combo_ctrl
         self.entry = entry
-        self.clbx: Optional[wx.CheckListBox] = None
+        self.clbx: wx.CheckListBox
 
     def on_motion(self, evt):
         item = self.clbx.HitTest(evt.GetPosition())
