@@ -133,14 +133,6 @@ class ContextMenu(wx.Menu):
 
         self.AppendSeparator()
 
-        item: wx.MenuItem = self.Append(wx.ID_ANY, "Expand All\tCtrl+E")
-        self.Bind(wx.EVT_MENU, self.on_expand_all, id=item.Id)
-
-        item: wx.MenuItem = self.Append(wx.ID_ANY, "Collapse All\tCtrl+W")
-        self.Bind(wx.EVT_MENU, self.on_collapse_all, id=item.Id)
-
-        self.AppendSeparator()
-
         item: wx.MenuItem = self.AppendCheckItem(wx.ID_ANY, "Hide Protected")
         self.Bind(wx.EVT_MENU, self.on_hide_protected, id=item.Id)
         item.Check(self.parent.hide_protected)
@@ -179,12 +171,6 @@ class ContextMenu(wx.Menu):
         # Add additional items for this entry
         if entry is not None:
             entry.modify_context_menu(self)
-
-    def on_expand_all(self, event):
-        self.parent.expand_all()
-
-    def on_collapse_all(self, event):
-        self.parent.collapse_all()
 
     def on_hide_protected(self, event):
         checked = self.hide_protected_mi.IsChecked()
@@ -306,13 +292,14 @@ class ConstructEditorModel(dv.PyDataViewModel):
         if not isinstance(parent_entry, EntryConstruct):
             raise ValueError(f"{repr(parent_entry)} is no valid entry")
 
-        for entry in parent_entry.subentries:
-            name = entry.name
-            if (self.hide_protected == True) and (name.startswith("_") or name == ""):
-                continue
-            item = self.ObjectToItem(entry)
-            entry.dvc_item = item
-            children.append(item)
+        if parent_entry.subentries is not None:
+            for entry in parent_entry.subentries:
+                name = entry.name
+                if (self.hide_protected == True) and (name.startswith("_") or name == ""):
+                    continue
+                item = self.ObjectToItem(entry)
+                entry.dvc_item = item
+                children.append(item)
         return len(children)
 
     def IsContainer(self, item):
@@ -514,7 +501,8 @@ class ConstructEditor(wx.Panel):
             self._clear_status_bar()
 
             # expand everything
-            self._model.root_entry.dvc_item_restore_expansion()
+            if self._model.root_entry is not None:
+                self._model.root_entry.dvc_item_restore_expansion()
 
             # restore selection
             self._dvc.SetSelections(selections)
@@ -595,21 +583,21 @@ class ConstructEditor(wx.Panel):
         self._model.hide_protected = value
         self.reload()
 
+    # expand_children #########################################################
+    def expand_children(self, entry: EntryConstruct):
+        if entry.subentries is not None:
+            if entry.dvc_item is not None:
+                self._dvc.Expand(entry.dvc_item)
+            for sub_entry in entry.subentries:
+                self.expand_children(sub_entry)
+
     # expand_all ##############################################################
     def expand_all(self):
         """
         Expand all Entries
         """
-
-        def dvc_expand(entry: EntryConstruct):
-            if entry.subentries is not None:
-                if entry.dvc_item is not None:
-                    self._dvc.Expand(entry.dvc_item)
-                for sub_entry in entry.subentries:
-                    dvc_expand(sub_entry)
-
         if self._model.root_entry:
-            dvc_expand(self._model.root_entry)
+            self.expand_children(self._model.root_entry)
 
     # expand_level ############################################################
     def expand_level(self, level: int):
@@ -631,22 +619,22 @@ class ConstructEditor(wx.Panel):
             dvc_expand(self._model.root_entry, 1)
 
     # collapse_all ############################################################
+    def collapse_children(self, entry: EntryConstruct):
+        subentries = entry.subentries
+        dvc_item = entry.dvc_item
+        if subentries is not None:
+            for sub_entry in subentries:
+                self.collapse_children(sub_entry)
+            if dvc_item is not None:
+                self._dvc.Collapse(dvc_item)
+
+    # collapse_all ############################################################
     def collapse_all(self):
         """
         Collapse all Entries
         """
-
-        def dvc_collapse(entry: EntryConstruct):
-            subentries = entry.subentries
-            dvc_item = entry.dvc_item
-            if subentries is not None:
-                for sub_entry in subentries:
-                    dvc_collapse(sub_entry)
-                if dvc_item is not None:
-                    self._dvc.Collapse(dvc_item)
-
         if self._model.root_entry:
-            dvc_collapse(self._model.root_entry)
+            self.collapse_children(self._model.root_entry)
 
         # expand the root entry again
         self.expand_level(1)
@@ -669,10 +657,11 @@ class ConstructEditor(wx.Panel):
 
         list_cols = 0
         for list_viewed_entry in self._model.list_viewed_entries:
-            for subentry in list_viewed_entry.subentries:
-                flat_list = []
-                subentry.create_flat_subentry_list(flat_list)
-                list_cols = max(list_cols, len(flat_list))
+            if list_viewed_entry.subentries is not None:
+                for subentry in list_viewed_entry.subentries:
+                    flat_list = []
+                    subentry.create_flat_subentry_list(flat_list)
+                    list_cols = max(list_cols, len(flat_list))
 
         for list_col in range(list_cols):
             self._dvc.AppendTextColumn(

@@ -769,6 +769,23 @@ class EntryStruct(EntryConstruct):
     def create_obj_panel(self, parent) -> ObjPanel:
         return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Struct
 
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+
+        def on_expand_children_clicked(event: wx.MenuEvent):
+            menu.parent.expand_children(self)
+
+        def on_collapse_children_clicked(event: wx.MenuEvent):
+            menu.parent.collapse_children(self)
+
+        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Expand Children")
+        menu.Append(menu_item)
+        menu.Bind(wx.EVT_MENU, on_expand_children_clicked, menu_item)
+
+        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Collapse Children")
+        menu.Append(menu_item)
+        menu.Bind(wx.EVT_MENU, on_collapse_children_clicked, menu_item)
+
 
 # EntryArray ##########################################################################################################
 class EntryArray(EntrySubconstruct):
@@ -843,6 +860,22 @@ class EntryArray(EntrySubconstruct):
         return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
 
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+
+        def on_expand_children_clicked(event: wx.MenuEvent):
+            menu.parent.expand_children(self)
+
+        def on_collapse_children_clicked(event: wx.MenuEvent):
+            menu.parent.collapse_children(self)
+
+        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Expand Children")
+        menu.Append(menu_item)
+        menu.Bind(wx.EVT_MENU, on_expand_children_clicked, menu_item)
+
+        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Collapse Children")
+        menu.Append(menu_item)
+        menu.Bind(wx.EVT_MENU, on_collapse_children_clicked, menu_item)
+
         # If the subentry has no subentries itself, it makes no sense to create a list view.
         temp_subentry = create_entry_from_construct(
             self.model, self, self.construct.subcon, None, ""
@@ -978,6 +1011,13 @@ class EntryIfThenElse(EntryConstruct):
         else:
             return subentry.create_obj_panel(parent)
 
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        subentry = self._get_subentry()
+        if subentry is None:
+            return
+        else:
+            return subentry.modify_context_menu(menu)
+
 
 # EntrySwitch #########################################################################################################
 class EntrySwitch(EntryConstruct):
@@ -1093,6 +1133,13 @@ class EntrySwitch(EntryConstruct):
             return ObjPanel_Default(parent, self)
         else:
             return subentry.create_obj_panel(parent)
+
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        subentry = self._get_subentry()
+        if subentry is None:
+            return
+        else:
+            return subentry.modify_context_menu(menu)
 
 
 # EntryFormatField ####################################################################################################
