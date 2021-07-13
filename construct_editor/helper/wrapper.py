@@ -67,7 +67,7 @@ class ObjPanel_Empty(ObjPanel):
             wx.EmptyString,
             wx.DefaultPosition,
             wx.Size(-1, -1),
-            wx.TE_READONLY,
+            style=wx.TE_READONLY,
         )
         hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -92,7 +92,7 @@ class ObjPanel_Default(ObjPanel):
             self.entry.obj_str,
             wx.DefaultPosition,
             wx.Size(-1, -1),
-            wx.TE_READONLY,
+            style=wx.TE_READONLY,
         )
         hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -118,6 +118,7 @@ class ObjPanel_String(ObjPanel):
             self,
             wx.ID_ANY,
             self.entry.obj_str,
+            style=wx.TE_PROCESS_ENTER,
         )
         hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -140,7 +141,12 @@ class ObjPanel_Integer(ObjPanel):
 
         # Obj
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txtctrl = wx.TextCtrl(self, wx.ID_ANY, self.entry.obj_str)
+        self.obj_txtctrl = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            self.entry.obj_str,
+            style=wx.TE_PROCESS_ENTER,
+        )
         hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(hsizer)
@@ -172,7 +178,12 @@ class ObjPanel_Flag(ObjPanel):
 
         # Obj
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txtctrl = wx.TextCtrl(self, wx.ID_ANY, self.entry.obj_str)
+        self.obj_txtctrl = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            self.entry.obj_str,
+            style=wx.TE_PROCESS_ENTER,
+        )
         hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(hsizer)
@@ -203,7 +214,12 @@ class ObjPanel_Bytes(ObjPanel):
 
         # Obj
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txtctrl = wx.TextCtrl(self, wx.ID_ANY, self.entry.obj_str)
+        self.obj_txtctrl = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            self.entry.obj_str,
+            style=wx.TE_PROCESS_ENTER,
+        )
         hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(hsizer)
@@ -240,7 +256,7 @@ class ObjPanel_Enum(ObjPanel):
 
         self.obj_combobox = wx.ComboBox(
             self,
-            style=wx.CB_DROPDOWN,
+            style=wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER,
         )
         hsizer.Add(self.obj_combobox, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -436,7 +452,7 @@ class ObjPanel_Timestamp(ObjPanel):
             self.entry.obj_str,
             wx.DefaultPosition,
             wx.DefaultSize,
-            wx.TE_READONLY,
+            style=wx.TE_READONLY,
         )
         hsizer.Add(self.obj_txtctrl, 1, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
 
