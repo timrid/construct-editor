@@ -244,11 +244,11 @@ class ConstructEditorModel(dv.PyDataViewModel):
         self.integer_format = IntegerFormat.Dec
 
     def get_column_count(self):
-        """ Get the column count """
+        """Get the column count"""
         return 3
 
     def get_column_name(self, selected_item, col):
-        """ Get the name of the column. The column name depends on the selected item """
+        """Get the name of the column. The column name depends on the selected item"""
         entry = self.ItemToObject(selected_item)
         if not isinstance(entry, EntryConstruct):
             raise ValueError(f"{repr(entry)} is no valid entry")
@@ -296,7 +296,9 @@ class ConstructEditorModel(dv.PyDataViewModel):
         if parent_entry.subentries is not None:
             for entry in parent_entry.subentries:
                 name = entry.name
-                if (self.hide_protected == True) and (name.startswith("_") or name == ""):
+                if (self.hide_protected == True) and (
+                    name.startswith("_") or name == ""
+                ):
                     continue
                 if entry.dvc_item is None:
                     item = self.ObjectToItem(entry)
@@ -487,7 +489,7 @@ class ConstructEditor(wx.Panel):
         self.construct = construct
 
     def reload(self):
-        """ Reload the ConstructEditor, while remaining expaned elements and selection """
+        """Reload the ConstructEditor, while remaining expaned elements and selection"""
         try:
             self.Freeze()
 
@@ -513,7 +515,7 @@ class ConstructEditor(wx.Panel):
             self.Thaw()
 
     def parse(self, binary: bytes, **contextkw: Any):
-        """ Parse binary data to struct. """
+        """Parse binary data to struct."""
         try:
             self._model.root_obj = self._construct.parse(binary, **contextkw)
             self._parse_error_info_bar.Dismiss()
@@ -528,7 +530,7 @@ class ConstructEditor(wx.Panel):
         self.reload()
 
     def build(self, **contextkw: Any) -> bytes:
-        """ Build binary data from struct. """
+        """Build binary data from struct."""
         try:
             binary = self._construct.build(self.root_obj, **contextkw)
             self._build_error_info_bar.Dismiss()
@@ -547,7 +549,7 @@ class ConstructEditor(wx.Panel):
     # Property: construct #####################################################
     @property
     def construct(self) -> cs.Construct:
-        """ Construct that is used for displaying. """
+        """Construct that is used for displaying."""
         return self._construct
 
     @construct.setter
@@ -643,7 +645,7 @@ class ConstructEditor(wx.Panel):
 
     # Internals ###############################################################
     def _reload_dvc_columns(self):
-        """ Reload the dvc columns """
+        """Reload the dvc columns"""
         self._dvc.ClearColumns()
 
         self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=160)
@@ -671,7 +673,7 @@ class ConstructEditor(wx.Panel):
             )
 
     def _rename_dvc_columns(self, entry: EntryConstruct):
-        """ Rename the dvc columns """
+        """Rename the dvc columns"""
 
         flat_list: List["EntryConstruct"] = []
         if (entry.parent is not None) and (
@@ -713,9 +715,9 @@ class ConstructEditor(wx.Panel):
         self._status_bar.SetStatusText("->".join(entry.path), 0)
         bytes_info = ""
         metadata = entry.obj_metadata
-        if metadata is not None:
-            start = metadata["offset_start"]
-            end = metadata["offset_end"] - 1
+        if (metadata is not None) and (metadata["byte_range"] is not None):
+            start = metadata["byte_range"][0]
+            end = metadata["byte_range"][1] - 1
             size = end - start + 1
             if size > 0:
                 bytes_info = f"Bytes: {start}-{end} ({size})"
@@ -726,7 +728,7 @@ class ConstructEditor(wx.Panel):
         self._status_bar.SetStatusText("", 1)
 
     def _on_dvc_value_changed(self, event: dv.DataViewEvent):
-        """ This method is called, if a value in the dvc has changed. """
+        """This method is called, if a value in the dvc has changed."""
         if event.Column == ConstructEditorColumn.Value:
             self.on_root_obj_changed.fire(self._model.root_obj)
 

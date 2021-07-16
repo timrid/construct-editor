@@ -70,14 +70,14 @@ class ConstructHexEditor(wx.Panel):
         self.Layout()
 
     def refresh(self):
-        """ Refresh the content of the construct view """
+        """Refresh the content of the construct view"""
         self.Freeze()
         self.hex_editor.refresh()
         self._convert_binary_to_struct()
         self.Thaw()
 
     def toggle_hex_visibility(self):
-        """ Toggle the visibility of the HexEditor """
+        """Toggle the visibility of the HexEditor"""
         if self._hex_editor_visible:
             self.hex_editor.HideWithEffect(wx.SHOW_EFFECT_ROLL_TO_LEFT)
             self.toggle_hex_visibility_btn.SetLabelText("»")
@@ -94,7 +94,7 @@ class ConstructHexEditor(wx.Panel):
     # Property: construct #####################################################
     @property
     def construct(self) -> cs.Construct:
-        """ construct used for parsing """
+        """construct used for parsing"""
         return self.construct_editor.construct
 
     @construct.setter
@@ -104,7 +104,7 @@ class ConstructHexEditor(wx.Panel):
     # Property: contextkw #####################################################
     @property
     def contextkw(self) -> dict:
-        """ contextkw used for parsing the construct """
+        """contextkw used for parsing the construct"""
         return self._contextkw
 
     @contextkw.setter
@@ -127,7 +127,7 @@ class ConstructHexEditor(wx.Panel):
 
     # Internals ###############################################################
     def _convert_binary_to_struct(self):
-        """ Convert binary to construct object """
+        """Convert binary to construct object"""
         if self._converting:
             return
         try:
@@ -137,7 +137,7 @@ class ConstructHexEditor(wx.Panel):
             self._converting = False
 
     def _convert_struct_to_binary(self):
-        """ Convert construct object to binary """
+        """Convert construct object to binary"""
         try:
             self._converting = True
             binary = self.construct_editor.build(**self.contextkw)
@@ -149,10 +149,12 @@ class ConstructHexEditor(wx.Panel):
 
     def _on_entry_selected(self, entry: EntryConstruct):
         metadata = entry.obj_metadata
-        if metadata is not None:
-            self.hex_editor.colorise(metadata["offset_start"], metadata["offset_end"], refresh=False)
-            self.hex_editor.scroll_to_idx(metadata["offset_end"] - 1, refresh=False)
-            self.hex_editor.scroll_to_idx(metadata["offset_start"], refresh=False)
+        if (metadata is not None) and (metadata["byte_range"] is not None):
+            start = metadata["byte_range"][0]
+            end = metadata["byte_range"][1]
+            self.hex_editor.colorise(start, end, refresh=False)
+            self.hex_editor.scroll_to_idx(end - 1, refresh=False)
+            self.hex_editor.scroll_to_idx(start, refresh=False)
             self.hex_editor.refresh()
         else:
             self.hex_editor.colorise(0, 0)
