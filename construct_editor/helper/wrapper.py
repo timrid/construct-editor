@@ -1903,7 +1903,7 @@ construct_entry_mapping: t.Dict[
     # tunneling and byte/bit swapping ###########
     cs.RawCopy: EntryRawCopy,
     # cs.Prefixed
-    # cs.FixedSized
+    cs.FixedSized: EntryTransparentSubcon,
     # cs.NullTerminated
     # cs.NullStripped
     # cs.RestreamData

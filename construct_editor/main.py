@@ -30,6 +30,7 @@ import construct_editor.gallery.test_padded
 import construct_editor.gallery.test_aligned
 import construct_editor.gallery.test_pointer_peek_seek_tell
 import construct_editor.gallery.test_pass
+import construct_editor.gallery.test_fixedsized
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
@@ -111,10 +112,10 @@ class ConstructGallery(wx.Panel):
             "Test: Pointer/Peek/Seek/Tell": construct_editor.gallery.test_pointer_peek_seek_tell.gallery_item,
             "Test: Pass": construct_editor.gallery.test_pass.gallery_item,
             # "Test: Terminated (TODO)": None,
-            # "## tunneling and byte/bit swapping ##########################": None,
+            "## tunneling and byte/bit swapping ##########################": None,
             # "Test: RawCopy (TODO)": None,
             # "Test: Prefixed (TODO)": None,
-            # "Test: FixedSized (TODO)": None,
+            "Test: FixedSized": construct_editor.gallery.test_fixedsized.gallery_item,
             # "Test: NullTerminated (TODO)": None,
             # "Test: NullStripped (TODO)": None,
             # "Test: RestreamData (TODO)": None,
