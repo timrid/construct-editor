@@ -462,7 +462,8 @@ class ObjPanel_Timestamp(ObjPanel):
     def get_new_obj(self) -> Any:
         date: wx.DateTime = self.date_picker.GetValue()
         time: wx.DateTime = self.time_picker.GetValue()
-        new_obj = arrow.Arrow(
+        obj_type = type(self.entry.obj)
+        new_obj = obj_type(
             year=date.year,
             month=date.month + 1,  # in wx.adc.DatePickerCtrl the month start with 0
             day=date.day,
@@ -1479,10 +1480,7 @@ class EntryTimestamp(EntrySubconstruct):
 
     @property
     def obj_str(self) -> str:
-        if isinstance(self.obj, (arrow.Arrow)):
-            return self.obj.format("YYYY-MM-DD HH:mm:ss ZZ")
-        else:
-            return str(self.obj)
+        return str(self.obj)
 
     def create_obj_panel(self, parent) -> ObjPanel:
         return ObjPanel_Timestamp(parent, self)
