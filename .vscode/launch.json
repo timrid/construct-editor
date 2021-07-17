@@ -16,7 +16,7 @@
             "name": "Python: main.py",
             "type": "python",
             "request": "launch",
-            "program": "construct_editor/main.py",
+            "program": "${workspaceFolder}/construct_editor/main.py",
             "console": "integratedTerminal",
             "justMyCode": false
         },
