@@ -37,11 +37,8 @@ class HexEditorBinaryData:
     This class is used mainly to track changes and notiy everyone
     """
 
-    def __init__(self, binary: Optional[bytes] = None) -> None:
-        if binary is None:
-            self._binary = bytearray()
-        else:
-            self._binary = bytearray(binary)
+    def __init__(self, binary: bytes) -> None:
+        self._binary = bytearray(binary)
 
         self.on_binary_changed = BinaryChangedCallbackList()
         self.command_processor = wx.CommandProcessor()
@@ -1045,7 +1042,7 @@ class HexEditor(wx.Panel):
     def __init__(
         self,
         parent,
-        binary: Optional[bytes] = None,
+        binary: bytes = b"",
         format: Optional[HexEditorFormat] = None,
     ):
         super().__init__(parent)
