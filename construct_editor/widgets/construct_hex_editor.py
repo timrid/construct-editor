@@ -194,34 +194,6 @@ class ConstructHexEditor(wx.Panel):
         finally:
             self._converting = False
 
-    def _on_entry_selected2(self, entry: EntryConstruct):
-        #     pass
-
-        self.Freeze()
-        self.hex_panel.clear_sub_panels()
-
-        metadata = entry.obj_metadata
-        if metadata is None:
-            self.hex_panel.hex_editor.colorise(0, 0)
-            return
-
-        stream_nesting = metadata["stream_nesting"]
-        for i in range(stream_nesting):
-            self.hex_panel.create_sub_panel()
-            self.hex_panel.sub_panel.set_name("->".join(entry.path))
-
-        ctx = metadata["context"]
-        print(ctx)
-
-        start = metadata["byte_range"][0]
-        end = metadata["byte_range"][1]
-        self.hex_panel.hex_editor.colorise(start, end, refresh=False)
-        self.hex_panel.hex_editor.scroll_to_idx(end - 1, refresh=False)
-        self.hex_panel.hex_editor.scroll_to_idx(start, refresh=False)
-        self.hex_panel.hex_editor.refresh()
-
-        self.Thaw()
-
     def _on_entry_selected(self, entry: EntryConstruct):
         self.Freeze()
         self.hex_panel.clear_sub_panels()
@@ -241,10 +213,8 @@ class ConstructHexEditor(wx.Panel):
             self.hex_panel.hex_editor.colorise(0, 0)
             return (self.hex_panel, "")
 
-        # When another stream is used, the position of the nested stream in the parent stream has parent has to be shown too.
         nested_stream_ctr = metadata["nested_stream_ctr"]
         context = metadata["context"]
-
         if nested_stream_ctr == 0:
             # The root stream is used
             hex_pnl = self.hex_panel
@@ -262,7 +232,7 @@ class ConstructHexEditor(wx.Panel):
             if child_nested_stream_ctr != nested_stream_ctr:
                 hex_pnl = hex_pnl.create_sub_panel()
                 hex_pnl.set_name(parent_stream_name)
-                
+
                 stream: io.BinaryIO = context._io
                 if not isinstance(stream, io.BytesIO):
                     raise RuntimeError("stream has to be io.BytesIO")
