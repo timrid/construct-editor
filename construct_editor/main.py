@@ -31,6 +31,7 @@ import construct_editor.gallery.test_aligned
 import construct_editor.gallery.test_pointer_peek_seek_tell
 import construct_editor.gallery.test_pass
 import construct_editor.gallery.test_fixedsized
+import construct_editor.gallery.test_checksum
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
@@ -123,7 +124,7 @@ class ConstructGallery(wx.Panel):
             # "Test: Restreamed (TODO)": None,
             # "Test: ProcessXor (TODO)": None,
             # "Test: ProcessRotateLeft (TODO)": None,
-            # "Test: Checksum (TODO)": None,
+            "Test: Checksum": construct_editor.gallery.test_checksum.gallery_item,
             # "Test: Compressed (TODO)": None,
             # "Test: CompressedLZ4 (TODO)": None,
             # "Test: Rebuffered (TODO)": None,

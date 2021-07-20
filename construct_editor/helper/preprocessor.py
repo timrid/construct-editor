@@ -170,6 +170,11 @@ def include_metadata(
             constr.default = include_metadata(constr.default, stream_nesting)
         return IncludeGuiMetaData(constr, stream_nesting)
 
+    elif isinstance(constr, cs.Checksum):
+        constr = copy.copy(constr)  # constr is modified, so we have to make a copy
+        constr.checksumfield = include_metadata(constr.checksumfield, stream_nesting)
+        return IncludeGuiMetaData(constr, stream_nesting)
+
     elif isinstance(
         constr,
         (

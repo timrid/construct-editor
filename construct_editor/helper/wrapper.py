@@ -49,7 +49,7 @@ def str_to_bytes(s: str) -> bytes:
 # GUI Elements ########################################################################################################
 # #####################################################################################################################
 class ObjPanel(wx.Panel):
-    """ Base class for a panel that shows the value and allows modifications of it. """
+    """Base class for a panel that shows the value and allows modifications of it."""
 
     def get_new_obj(self) -> Any:
         raise NotImplementedError()
@@ -595,7 +595,7 @@ class EntryConstruct(object):
 
     # default "dvc_item_expanded" #############################################
     def dvc_item_restore_expansion(self):
-        """ Restore the expansion state, recursively """
+        """Restore the expansion state, recursively"""
         dvc_item = self.dvc_item
         subentries = self.subentries
         if subentries is not None:
@@ -611,7 +611,7 @@ class EntryConstruct(object):
 
     # default "add_nonstruct_subentries_to_list" ##############################
     def create_flat_subentry_list(self, flat_subentry_list: List["EntryConstruct"]):
-        """ Create a flat list with all subentires, recursively """
+        """Create a flat list with all subentires, recursively"""
         subentries = self.subentries
         if subentries is not None:
             for subentry in subentries:
@@ -621,12 +621,12 @@ class EntryConstruct(object):
 
     # default "create_obj_panel" ##############################################
     def create_obj_panel(self, parent) -> ObjPanel:
-        """ This method is called, when the user clicks an entry """
+        """This method is called, when the user clicks an entry"""
         return ObjPanel_Default(parent, self)
 
     # default "modify_context_menu" ###########################################
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
-        """ This method is called, when the user right clicks an entry and a ContextMenu is created """
+        """This method is called, when the user right clicks an entry and a ContextMenu is created"""
         pass
 
     # default "path" ##########################################################
@@ -717,7 +717,7 @@ def add_adapter_mapping(
     obj_panel: AdapterPanelType,
     adapter: t.Union[Type["cs.Construct[Any, Any]"], "cs.Construct[Any, Any]"],
 ):
-    """ Add a Mapping for a custom adapter construct """
+    """Add a Mapping for a custom adapter construct"""
 
     class EntryAdapter(EntryConstruct):
         def __init__(
@@ -953,7 +953,7 @@ class EntryIfThenElse(EntryConstruct):
         ]
 
     def _get_subentry(self) -> "Optional[EntryConstruct]":
-        """ Evaluate the conditional function to detect the type of the subentry """
+        """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
             return None
@@ -1076,7 +1076,7 @@ class EntrySwitch(EntryConstruct):
             self._subentries.append(self._subentry_default)
 
     def _get_subentry(self) -> "Optional[EntryConstruct]":
-        """ Evaluate the conditional function to detect the type of the subentry """
+        """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
             return None
@@ -1498,6 +1498,25 @@ class EntryTransparentSubcon(EntrySubconstruct):
     ):
         super().__init__(model, parent, construct, name, docs)
 
+# EntryChecksumSubcon #################################################################################################
+class EntryChecksumSubcon(EntrySubconstruct):
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Checksum[Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        # Don't access EntrySubconstruct's __init__() via super(), because "subcon" is no member of "cs.Checksum"
+        # So we call directly the parents parent __init__() method
+        EntryConstruct.__init__(self, model, parent, construct, name, docs)
+
+        self.subentry = create_entry_from_construct(
+            model, self, construct.checksumfield, None, ""
+        )
+
+
 
 # EntryPeek ###########################################################################################################
 class EntryPeek(EntrySubconstruct):
@@ -1611,7 +1630,7 @@ class EntryEnum(EntrySubconstruct):
         return ObjPanel_Enum(parent, self)
 
     def get_enum_items(self) -> t.List[EnumItem]:
-        """ Get items to show in the ComboBox """
+        """Get items to show in the ComboBox"""
         items: t.List[EnumItem] = []
         enums = self.construct.encmapping
         for name, value in enums.items():
@@ -1619,7 +1638,7 @@ class EntryEnum(EntrySubconstruct):
         return items
 
     def get_enum_item_from_obj(self) -> EnumItem:
-        """ Get items to select in the ComboBox """
+        """Get items to select in the ComboBox"""
         obj = self.obj
         if isinstance(obj, int):
             if obj in self.construct.decmapping:
@@ -1632,7 +1651,7 @@ class EntryEnum(EntrySubconstruct):
             return EnumItem(name=str(obj), value=int(self.construct.encmapping[obj]))
 
     def conv_str_to_obj(self, s: str) -> Any:
-        """ Convert string (enum name or integer value) to object """
+        """Convert string (enum name or integer value) to object"""
         try:
             if s in self.construct.encmapping:
                 value = self.construct.encmapping[s]  # type: ignore
@@ -1686,7 +1705,7 @@ class EntryFlagsEnum(EntrySubconstruct):
             return str(self.obj)
 
     def get_flagsenum_items_from_obj(self) -> t.List[FlagsEnumItem]:
-        """ Get items to show in the ComboBox """
+        """Get items to show in the ComboBox"""
         items: t.List[FlagsEnumItem] = []
         flags = self.construct.flags
         obj = self.obj
@@ -1697,7 +1716,7 @@ class EntryFlagsEnum(EntrySubconstruct):
         return items
 
     def conv_flagsenum_items_to_obj(self, items: t.List[FlagsEnumItem]) -> Any:
-        """ Convert flagsenum items to object """
+        """Convert flagsenum items to object"""
         new_obj = cs.Container()
         for item in items:
             if item.checked:
@@ -1736,7 +1755,7 @@ class EntryTEnum(EntrySubconstruct):
         return ObjPanel_Enum(parent, self)
 
     def get_enum_items(self) -> t.List[EnumItem]:
-        """ Get items to show in the ComboBox """
+        """Get items to show in the ComboBox"""
         items: t.List[EnumItem] = []
         enum_type: t.Type[cst.EnumBase] = self.construct.enum_type
         for e in enum_type:
@@ -1744,12 +1763,12 @@ class EntryTEnum(EntrySubconstruct):
         return items
 
     def get_enum_item_from_obj(self) -> EnumItem:
-        """ Get items to select in the ComboBox """
+        """Get items to select in the ComboBox"""
         obj: cst.EnumBase = self.obj
         return EnumItem(name=str(obj), value=obj.value)
 
     def conv_str_to_obj(self, s: str) -> Any:
-        """ Convert string (enum name or integer value) to object """
+        """Convert string (enum name or integer value) to object"""
         enum_type: t.Type[cst.EnumBase] = self.construct.enum_type
         try:
             try:
@@ -1799,7 +1818,7 @@ class EntryTFlagsEnum(EntrySubconstruct):
             return str(self.obj)
 
     def get_flagsenum_items_from_obj(self) -> t.List[FlagsEnumItem]:
-        """ Get items to show in the ComboBox """
+        """Get items to show in the ComboBox"""
         items: t.List[FlagsEnumItem] = []
         enum_type: t.Type[cst.FlagsEnumBase] = self.construct.enum_type
         obj: cst.FlagsEnumBase = self.obj
@@ -1814,7 +1833,7 @@ class EntryTFlagsEnum(EntrySubconstruct):
         return items
 
     def conv_flagsenum_items_to_obj(self, items: t.List[FlagsEnumItem]) -> Any:
-        """ Convert flagsenum items to object """
+        """Convert flagsenum items to object"""
         enum_type: t.Type[cst.FlagsEnumBase] = self.construct.enum_type
         new_obj = enum_type(0)
         for item in items:
@@ -1911,7 +1930,7 @@ construct_entry_mapping: t.Dict[
     cs.Restreamed: EntryTransparentSubcon,
     # cs.ProcessXor
     # cs.ProcessRotateLeft
-    # cs.Checksum
+    cs.Checksum: EntryChecksumSubcon,
     # cs.Compressed
     # cs.CompressedLZ4
     # cs.Rebuffered
