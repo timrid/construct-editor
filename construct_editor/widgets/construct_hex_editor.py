@@ -195,55 +195,70 @@ class ConstructHexEditor(wx.Panel):
             self._converting = False
 
     def _on_entry_selected(self, entry: EntryConstruct):
-        self.Freeze()
-        self.hex_panel.clear_sub_panels()
-        self._show_byte_range(entry, None)
-        self.Thaw()
+        try:
+            self.Freeze()
+            self.hex_panel.clear_sub_panels()
+            self._show_byte_range(entry, None)
+        finally:
+            self.Thaw()
 
     def _show_byte_range(
-        self, entry: EntryConstruct, child_nested_stream_ctr: t.Optional[int]
-    ) -> t.Tuple[HexEditorPanel, str]:
+        self, entry: EntryConstruct, child_stream: t.Optional[t.BinaryIO]
+    ) -> HexEditorPanel:
         """
         Show the Position in the binary data of the HexEditor.
         If nested streams are used, sub-HexEditors are created.
         """
+        parent_stream_name = "---"
+        create_sub_hex_editor = False
+        show_position = False
+
         # Get GUI-Metadata. If not existing, nothing is shown.
         metadata = entry.obj_metadata
         if metadata is None:
             self.hex_panel.hex_editor.colorise(0, 0)
-            return (self.hex_panel, "")
+            return self.hex_panel
 
-        nested_stream_ctr = metadata["nested_stream_ctr"]
         context = metadata["context"]
-        if nested_stream_ctr == 0:
+        stream = context._io  # TODO: Klappt nicht beim Root Item
+        root_stream = context._root._io
+        if stream == root_stream:
             # The root stream is used
             hex_pnl = self.hex_panel
+            show_position = True
         else:
             # A nested stream is used
 
             # Show position of parent entry in the parent stream
             if entry.parent is None:
                 raise RuntimeError("parent can't be None in stream nesting")
-            hex_pnl, parent_stream_name = self._show_byte_range(
-                entry.parent, nested_stream_ctr
-            )
+            hex_pnl = self._show_byte_range(entry.parent, stream)
 
-            # The parent stream is different from the current -> create a new sub HexEditor
-            if child_nested_stream_ctr != nested_stream_ctr:
-                hex_pnl = hex_pnl.create_sub_panel()
-                hex_pnl.set_name(parent_stream_name)
+            if child_stream == stream:
+                # A Sub-HexEditor for this Stream already exists. Nothing to do here
+                create_sub_hex_editor = False
+                show_position = False
+            else:
+                create_sub_hex_editor = True
+                show_position = True
 
-                stream: io.BinaryIO = context._io
-                if not isinstance(stream, io.BytesIO):
-                    raise RuntimeError("stream has to be io.BytesIO")
-                hex_pnl.hex_editor.binary = stream.getvalue()
+        if create_sub_hex_editor is True:
+            # Create a new Sub-HexEditor
+            hex_pnl = hex_pnl.create_sub_panel()
 
-        # Show the byte range in the corresponding HexEditor
+            stream: io.BinaryIO = context._io
+            if not isinstance(stream, io.BytesIO):
+                raise RuntimeError("stream has to be io.BytesIO")
+            hex_pnl.hex_editor.binary = stream.getvalue()
+
         start = metadata["byte_range"][0]
         end = metadata["byte_range"][1]
-        hex_pnl.hex_editor.colorise(start, end, refresh=False)
-        hex_pnl.hex_editor.scroll_to_idx(end - 1, refresh=False)
-        hex_pnl.hex_editor.scroll_to_idx(start, refresh=False)
-        hex_pnl.hex_editor.refresh()
+        if show_position is True:
+            # Show the byte range in the corresponding HexEditor
+            hex_pnl.set_name(entry.path[-2])
+            hex_pnl.hex_editor.colorise(start, end, refresh=False)
+            hex_pnl.hex_editor.scroll_to_idx(end - 1, refresh=False)
+            hex_pnl.hex_editor.scroll_to_idx(start, refresh=False)
+            hex_pnl.hex_editor.refresh()
 
-        return hex_pnl, entry.name
+        return hex_pnl
