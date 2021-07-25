@@ -15,7 +15,7 @@ from construct_editor.widgets.hex_editor import (
 
 
 class HexEditorPanel(wx.SplitterWindow):
-    def __init__(self, parent, name: str):
+    def __init__(self, parent, name: str, read_only: bool = False):
         super().__init__(parent, style=wx.SP_LIVE_UPDATE)
         self.SetSashGravity(0.5)
         self.SetMinimumPaneSize(100)
@@ -31,6 +31,7 @@ class HexEditorPanel(wx.SplitterWindow):
             panel,
             b"",
             HexEditorFormat(width=16),
+            read_only=read_only,
         )
         hsizer.Add(self.hex_editor, 1, wx.EXPAND | wx.ALL, 5)
         panel.SetSizer(hsizer)
@@ -48,7 +49,7 @@ class HexEditorPanel(wx.SplitterWindow):
     def create_sub_panel(self, name: str) -> "HexEditorPanel":
         """Create a new sub-panel"""
         if self.sub_panel is None:
-            self.sub_panel = HexEditorPanel(self, name)
+            self.sub_panel = HexEditorPanel(self, name, read_only=True)
             self.SplitHorizontally(self.GetWindow1(), self.sub_panel)
             return self.sub_panel
         else:

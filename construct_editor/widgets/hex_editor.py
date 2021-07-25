@@ -44,7 +44,7 @@ class HexEditorBinaryData:
         self.command_processor = wx.CommandProcessor()
 
     def overwrite_all(self, byts: bytes):
-        """ overwrite the complete data with the new ones """
+        """overwrite the complete data with the new ones"""
         obj = self
 
         class Cmd(wx.Command):
@@ -67,7 +67,7 @@ class HexEditorBinaryData:
         self.command_processor.Submit(Cmd())
 
     def overwrite_range(self, idx: int, byts: bytes):
-        """ overwrite byte range beginning from the given index """
+        """overwrite byte range beginning from the given index"""
         obj = self
 
         class Cmd(wx.Command):
@@ -92,7 +92,7 @@ class HexEditorBinaryData:
         self.command_processor.Submit(Cmd())
 
     def insert_range(self, idx: int, byts: bytes):
-        """ inserts byte range at the given index """
+        """inserts byte range at the given index"""
         obj = self
 
         class Cmd(wx.Command):
@@ -114,7 +114,7 @@ class HexEditorBinaryData:
         self.command_processor.Submit(Cmd())
 
     def remove_range(self, idx: int, length: int):
-        """ remove the bytes at at the given range """
+        """remove the bytes at at the given range"""
         obj = self
 
         class Cmd(wx.Command):
@@ -136,15 +136,15 @@ class HexEditorBinaryData:
         self.command_processor.Submit(Cmd())
 
     def get_value(self, idx: int):
-        """ get the value at the given index """
+        """get the value at the given index"""
         return self._binary[idx]
 
     def get_range(self, idx: int, len: int):
-        """ get the value at the given index """
+        """get the value at the given index"""
         return bytes(self._binary[idx : idx + len])
 
     def get_bytes(self) -> bytes:
-        """ return readonly version of the data """
+        """return readonly version of the data"""
         return bytes(self._binary)
 
     def __len__(self):
@@ -605,11 +605,13 @@ class HexEditorGrid(Grid.Grid):
         editor: "HexEditor",
         table: HexEditorTable,
         binary_data: HexEditorBinaryData,
+        read_only: bool = False,
     ):
         super().__init__(editor)
         self._editor = editor
         self._table = table
         self._binary_data = binary_data
+        self.read_only = read_only
 
         # The second parameter means that the grid is to take
         # ownership of the table and will destroy it when done.
@@ -621,6 +623,7 @@ class HexEditorGrid(Grid.Grid):
         self.EnableDragGridSize(False)
         self.EnableDragRowSize(False)
         self.EnableDragColSize(False)
+        self.EnableEditing(not self.read_only)
 
         self.SetRowLabelSize(50)
         self.SetColLabelSize(20)
@@ -728,14 +731,14 @@ class HexEditorGrid(Grid.Grid):
             event.Skip()
 
     def _on_select_cell(self, event: Grid.GridEvent):
-        """ Single cell selected """
+        """Single cell selected"""
         idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
         self.ClearSelection()
         self._selection = (idx, None)
         self.on_selection_changed.fire(start_idx=idx, end_idx=None)
 
     def _on_range_selecting_mouse(self, event):
-        """ Change selection from a rectangular block to a range between two indexes """
+        """Change selection from a rectangular block to a range between two indexes"""
         # get the first selected item
         row1, col1 = self.GetGridCursorCoords()
 
@@ -752,7 +755,7 @@ class HexEditorGrid(Grid.Grid):
         self.select_range(idx1, idx2)
 
     def _on_range_selecting_keyboard(self, row_diff: int = 0, col_diff: int = 0):
-        """ Change selection from the keyboard """
+        """Change selection from the keyboard"""
         sel = self._selection
         if sel[0] is None:
             return  # nothing is currently selected
@@ -777,7 +780,7 @@ class HexEditorGrid(Grid.Grid):
         self.select_range(cursor_idx, other_idx)
 
     def select_range(self, idx1: int, idx2: int):
-        """ Select the range between two byte indexes. """
+        """Select the range between two byte indexes."""
         if idx1 < 0 or idx2 < 0:
             return
         idx1 = min(idx1, len(self._binary_data) - 1)
@@ -807,13 +810,34 @@ class HexEditorGrid(Grid.Grid):
         self._selection = (idx1, idx2)
         self.on_selection_changed.fire(start_idx=idx1, end_idx=idx2)
 
-    def _cut_selection(self):
-        """ Copy the selected data to the clipboard and remove it from the binary data """
-        if self._copy_selection():
-            self._remove_selection()
+    def _cut_selection(self) -> bool:
+        """
+        Copy the selected data to the clipboard and remove it from the binary data
+        
+        Return:
+         - true if copy is okay
+         - false if an error occured
+        """
+        if self.read_only is True:
+            return False
+
+        if self._copy_selection() is False:
+            return False
+        if self._remove_selection() is False:
+            return False
+        return True
 
     def _remove_selection(self) -> bool:
-        """ Remove the selected bytes """
+        """
+        Remove the selected bytes
+        
+        Return:
+         - true if copy is okay
+         - false if an error occured
+        """
+        if self.read_only is True:
+            return False
+
         sel = self._selection
         if sel[0] is None:
             return False
@@ -832,7 +856,13 @@ class HexEditorGrid(Grid.Grid):
         return True
 
     def _copy_selection(self) -> bool:
-        """ Copy the selected data to the clipboard """
+        """
+        Copy the selected data to the clipboard
+
+        Return:
+         - true if copy is okay
+         - false if an error occured
+        """
         sel = self._selection
         if sel[0] is None:
             return False
@@ -863,6 +893,9 @@ class HexEditorGrid(Grid.Grid):
         If insert=True: Insert new bytes to the binary data. The binary data is always
                         increased by the size of the data from the clipboard.
         """
+        if self.read_only is True:
+            return False
+
         # check if somethis is selected
         sel = self._selection
         if sel[0] is None:
@@ -975,7 +1008,7 @@ class HexEditorGrid(Grid.Grid):
             event.Skip()
 
     def _on_cell_right_click(self, event: Grid.GridEvent):
-        """ Show context menu """
+        """Show context menu"""
         # Check if the click is inside the current selection.
         # If not, select the current cell
         sel = self._selection
@@ -989,19 +1022,19 @@ class HexEditorGrid(Grid.Grid):
             self.SetGridCursor(event.GetRow(), event.GetCol())
 
         menus = [
-            (wx.ID_CUT, "Cut\tCtrl+X", lambda event: self._cut_selection(), True),
+            (wx.ID_CUT, "Cut\tCtrl+X", lambda event: self._cut_selection(), not self.read_only),
             (wx.ID_COPY, "Copy\tCtrl+C", lambda event: self._copy_selection(), True),
             (
                 wx.ID_PASTE,
                 "Paste (overwrite)\tCtrl+V",
                 lambda event: self._paste(overwrite=True),
-                True,
+                not self.read_only,
             ),
             (
                 wx.ID_PASTE,
                 "Paste (insert)\tCtrl+Shift+V",
                 lambda event: self._paste(insert=True),
-                True,
+                not self.read_only,
             ),
             None,
             (
@@ -1044,6 +1077,7 @@ class HexEditor(wx.Panel):
         parent,
         binary: bytes = b"",
         format: Optional[HexEditorFormat] = None,
+        read_only: bool = False,
     ):
         super().__init__(parent)
 
@@ -1058,7 +1092,7 @@ class HexEditor(wx.Panel):
 
         # create HexEditorTable & HexEditorGrid
         self._table = HexEditorTable(self, self._binary_data)
-        self._grid = HexEditorGrid(self, self._table, self._binary_data)
+        self._grid = HexEditorGrid(self, self._table, self._binary_data, read_only)
         sizer.Add(self._grid, 1, wx.ALL | wx.EXPAND, 0)
 
         # create status bar
@@ -1092,14 +1126,14 @@ class HexEditor(wx.Panel):
         self._status_bar.SetStatusText(msg, 1)
 
     def colorise(self, start: int, end: int, refresh: bool = True):
-        """ Colorize a byte range in the Hex Editor. Only a singe range can be colorized """
+        """Colorize a byte range in the Hex Editor. Only a singe range can be colorized"""
         self._table.selections = [(start, end)]
 
         if refresh:
             self.refresh()
 
     def scroll_to_idx(self, idx: int, refresh: bool = True):
-        """ Scroll to a specific byte index in the Hex Editor """
+        """Scroll to a specific byte index in the Hex Editor"""
         row, col = self._table.get_byte_rowcol(idx)
 
         self._grid.MakeCellVisible(row, col)
@@ -1108,13 +1142,13 @@ class HexEditor(wx.Panel):
             self.refresh()
 
     def refresh(self):
-        """ Refresh the Grid, when some values have canged """
+        """Refresh the Grid, when some values have canged"""
         self._grid.refresh()
 
     # Property: binary ########################################################
     @property
     def binary(self) -> bytes:
-        """ Binary data, that is shown in the HexEditor. """
+        """Binary data, that is shown in the HexEditor."""
         return self._binary_data.get_bytes()
 
     @binary.setter
@@ -1126,7 +1160,7 @@ class HexEditor(wx.Panel):
     # Property: format ##################################################
     @property
     def format(self) -> HexEditorFormat:
-        """ Format of the HexEditor. """
+        """Format of the HexEditor."""
         return self._format
 
     @format.setter
@@ -1148,7 +1182,7 @@ class HexEditor(wx.Panel):
 if __name__ == "__main__":
 
     class MyFrame(wx.Frame):
-        """ We simply derive a new class of Frame. """
+        """We simply derive a new class of Frame."""
 
         def __init__(self, parent, title):
             wx.Frame.__init__(self, parent, title=title, size=(420, 800))
