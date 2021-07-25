@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import enum
 from typing import Any, Callable, Dict, List, Optional
-
+import typing as t
 import construct as cs
 import wx
 import wx.dataview as dv
@@ -478,7 +478,9 @@ class ConstructEditor(wx.Panel):
         self._dvc_main_window: wx.Window = self._dvc.GetMainWindow()
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
         self._dvc_main_window.Bind(wx.EVT_KEY_DOWN, self._on_dvc_key_down)
-        self._last_motion_obj: Optional[EntryConstruct] = None
+        self._last_tooltip: Optional[
+            t.Tuple[EntryConstruct, ConstructEditorColumn]
+        ] = None
 
         self._dvc_header = self._dvc.FindWindowByName("wxMSWHeaderCtrl")
         if self._dvc_header is not None:
@@ -744,16 +746,21 @@ class ConstructEditor(wx.Panel):
         if item.GetID() is None:
             self._dvc_main_window.SetToolTip("")
             return
-        obj: EntryConstruct = self._model.ItemToObject(item)
+        entry: EntryConstruct = self._model.ItemToObject(item)
 
         if col.ModelColumn == ConstructEditorColumn.Name:
             # only set tooltip if the obj changed. this prevents flickering
-            if self._last_motion_obj is not obj:
-                self._dvc_main_window.SetToolTip(textwrap.dedent(obj.docs).strip())
-            self._last_motion_obj = obj
+            if self._last_tooltip != (entry, ConstructEditorColumn.Name):
+                self._dvc_main_window.SetToolTip(textwrap.dedent(entry.docs).strip())
+            self._last_tooltip = (entry, ConstructEditorColumn.Name)
+        elif col.ModelColumn == ConstructEditorColumn.Type:
+            # only set tooltip if the obj changed. this prevents flickering
+            if self._last_tooltip != (entry, ConstructEditorColumn.Type):
+                self._dvc_main_window.SetToolTip(str(entry.construct))
+            self._last_tooltip = (entry, ConstructEditorColumn.Type)
         else:
             self._dvc_main_window.SetToolTip("")
-            self._last_motion_obj = None
+            self._last_tooltip = None
 
     def _on_dvc_header_motion(self, event: wx.MouseEvent):
         event.Skip()  # TODO: Create Tooltip for DVC-Header
