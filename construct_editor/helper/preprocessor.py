@@ -126,7 +126,7 @@ def include_metadata(
     ):
         return IncludeGuiMetaData(constr)
 
-    # ########## Simple Subconstructs #########################################
+    # ########## Subconstructs ################################################
     elif isinstance(
         constr,
         (
@@ -140,16 +140,6 @@ def include_metadata(
             cst.DataclassStruct,
             cs.Array,
             cs.GreedyRange,
-        ),
-    ):
-        constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = include_metadata(constr.subcon)  # type: ignore
-        return IncludeGuiMetaData(constr)
-
-    # ########## Stream Manipulating Subconstructs ############################
-    elif isinstance(
-        constr,
-        (
             cs.Restreamed,
             cs.Transformed,
             cs.Tunnel,
@@ -158,8 +148,6 @@ def include_metadata(
             cs.NullStripped,
         ),
     ):
-        # these constructs manipulate the stream, so the offsets of all nested subcons are wrong.
-        # to detect this a counter is incremented for every nested stream
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
         constr.subcon = include_metadata(constr.subcon)  # type: ignore
         return IncludeGuiMetaData(constr)
