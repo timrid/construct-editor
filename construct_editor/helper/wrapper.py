@@ -481,7 +481,7 @@ class ObjPanel_Timestamp(ObjPanel):
 @dataclasses.dataclass
 class StreamInfo:
     stream: io.BytesIO
-    name: str
+    path: List[str]
     byte_range: t.Tuple[int, int]
 
 
@@ -679,7 +679,7 @@ class EntryConstruct(object):
             stream_infos.append(
                 StreamInfo(
                     stream=stream,
-                    name=self.path[-2],
+                    path=self.path[:-1],
                     byte_range=(metadata["byte_range"]),
                 )
             )

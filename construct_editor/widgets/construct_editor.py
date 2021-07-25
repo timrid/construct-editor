@@ -160,7 +160,7 @@ class ContextMenu(wx.Menu):
             submenu = wx.Menu()
             self.submenu_map: Dict[Any, EntryConstruct] = {}
             for e in model.list_viewed_entries:
-                name = "->".join(e.path)
+                name = ".".join(e.path)
                 item: wx.MenuItem = submenu.AppendCheckItem(wx.ID_ANY, name)
                 self.submenu_map[item.GetId()] = e
                 self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, item)
@@ -256,7 +256,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
         flat_subentry_list: List["EntryConstruct"] = []
         entry.create_flat_subentry_list(flat_subentry_list)
 
-        return "->".join(flat_subentry_list[col].path)
+        return ".".join(flat_subentry_list[col].path)
 
     # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
@@ -691,7 +691,7 @@ class ConstructEditor(wx.Panel):
             if list_col < len(flat_list):
                 path = flat_list[list_col].path
                 path = path[len(entry.path) :]  # remove the path from the parent
-                dvc_column.SetTitle("->".join(path))
+                dvc_column.SetTitle(".".join(path))
             else:
                 dvc_column.SetTitle(str(list_col))
 
@@ -714,7 +714,7 @@ class ConstructEditor(wx.Panel):
             self._clear_status_bar()
 
     def _refresh_status_bar(self, entry: EntryConstruct):
-        self._status_bar.SetStatusText("->".join(entry.path), 0)
+        self._status_bar.SetStatusText(".".join(entry.path), 0)
         bytes_info = ""
         stream_infos = entry.get_stream_infos()
 

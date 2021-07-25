@@ -207,7 +207,7 @@ class ConstructHexEditor(wx.Panel):
         hex_pnl = self.hex_panel
         for idx, stream_info in enumerate(stream_infos):
             if idx != 0:  # dont create Sub-Panel for the root stream
-                hex_pnl = hex_pnl.create_sub_panel(stream_info.name)
+                hex_pnl = hex_pnl.create_sub_panel(".".join(stream_info.path))
                 hex_pnl.hex_editor.binary = stream_info.stream.getvalue()
 
             start = stream_info.byte_range[0]
