@@ -18,23 +18,38 @@ class HexEditorPanel(wx.SplitterWindow):
     def __init__(self, parent, name: str, read_only: bool = False):
         super().__init__(parent, style=wx.SP_LIVE_UPDATE)
         self.SetSashGravity(0.5)
-        self.SetMinimumPaneSize(100)
+        
+        panel = wx.Panel(self)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Create Name if available
+        if name != "":
+            line = wx.StaticLine(panel, style=wx.LI_HORIZONTAL)
+            vsizer.Add(line, 0, wx.EXPAND)
+            self._name_txt = wx.StaticText(self, wx.ID_ANY)
+            self._name_txt.SetFont(
+                wx.Font(
+                    10,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD,
+                    underline=True,
+                )
+            )
+            vsizer.Add(self._name_txt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+            self._name_txt.SetLabelText(name)
 
         # Create HexEditor
-        panel = wx.Panel(self, style=wx.BORDER_THEME)
-        hsizer = wx.BoxSizer(wx.VERTICAL)
-        if name != "":
-            self._name_txt = wx.StaticText(self, wx.ID_ANY)
-            hsizer.Add(self._name_txt, 0, wx.ALL, 5)
-            self._name_txt.SetLabelText(name)
         self.hex_editor = HexEditor(
             panel,
             b"",
             HexEditorFormat(width=16),
             read_only=read_only,
         )
-        hsizer.Add(self.hex_editor, 1, wx.EXPAND | wx.ALL, 5)
-        panel.SetSizer(hsizer)
+        vsizer.Add(self.hex_editor, 1)
+        panel.SetSizer(vsizer)
+
+        
         self.Initialize(panel)
 
         self.sub_panel: t.Optional["HexEditorPanel"] = None
@@ -85,7 +100,7 @@ class ConstructHexEditor(wx.Panel):
     def _init_gui_hex_editor_splitter(self, hsizer: wx.BoxSizer, binary: bytes):
         # Create Splitter for showing one or multiple HexEditors
         self.hex_panel = HexEditorPanel(self, "")
-        hsizer.Add(self.hex_panel, 0, wx.EXPAND | wx.ALL, 5)
+        hsizer.Add(self.hex_panel, 0, wx.EXPAND, 0)
 
         # Init Root HexEditor
         self.hex_panel.hex_editor.binary = binary
@@ -107,7 +122,7 @@ class ConstructHexEditor(wx.Panel):
             self,
             construct,
         )
-        hsizer.Add(self.construct_editor, 1, wx.ALL | wx.EXPAND, 5)
+        hsizer.Add(self.construct_editor, 1, wx.EXPAND, 0)
         self.construct_editor.on_root_obj_changed.append(
             lambda _: self._convert_struct_to_binary()
         )

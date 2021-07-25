@@ -375,6 +375,8 @@ def main():
 
     frame = ConstructGalleryFrame(None)
     frame.Show(True)
+    if inspect is True:
+        wit.InspectionTool().Show()
     app.MainLoop()
 
 

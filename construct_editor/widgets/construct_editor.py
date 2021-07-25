@@ -436,7 +436,7 @@ class ConstructEditor(wx.Panel):
             style=dv.DV_VERT_RULES | dv.DV_ROW_LINES,
             name="construct_editor",
         )
-        vsizer.Add(self._dvc, 3, wx.ALL | wx.EXPAND, 5)
+        vsizer.Add(self._dvc, 3, wx.EXPAND, 0)
 
         # Create Model of DataViewCtrl
         self._model = ConstructEditorModel(self._dvc)
