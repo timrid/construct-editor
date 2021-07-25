@@ -5,7 +5,7 @@ import typing as t
 import construct as cs
 import wx
 
-from construct_editor.helper.wrapper import EntryConstruct
+from construct_editor.helper.wrapper import EntryConstruct, StreamInfo
 from construct_editor.widgets.construct_editor import ConstructEditor
 from construct_editor.widgets.hex_editor import (
     HexEditor,
@@ -15,7 +15,7 @@ from construct_editor.widgets.hex_editor import (
 
 
 class HexEditorPanel(wx.SplitterWindow):
-    def __init__(self, parent):
+    def __init__(self, parent, name: str):
         super().__init__(parent, style=wx.SP_LIVE_UPDATE)
         self.SetSashGravity(0.5)
         self.SetMinimumPaneSize(100)
@@ -23,8 +23,10 @@ class HexEditorPanel(wx.SplitterWindow):
         # Create HexEditor
         panel = wx.Panel(self, style=wx.BORDER_THEME)
         hsizer = wx.BoxSizer(wx.VERTICAL)
-        self._name_txt = wx.StaticText(self, wx.ID_ANY)
-        hsizer.Add(self._name_txt, 0, wx.ALL, 5)
+        if name != "":
+            self._name_txt = wx.StaticText(self, wx.ID_ANY)
+            hsizer.Add(self._name_txt, 0, wx.ALL, 5)
+            self._name_txt.SetLabelText(name)
         self.hex_editor = HexEditor(
             panel,
             b"",
@@ -36,9 +38,6 @@ class HexEditorPanel(wx.SplitterWindow):
 
         self.sub_panel: t.Optional["HexEditorPanel"] = None
 
-    def set_name(self, name: str):
-        self._name_txt.SetLabelText(name)
-
     def clear_sub_panels(self):
         """Clears all sub-panels recursivly"""
         if self.sub_panel is not None:
@@ -46,10 +45,10 @@ class HexEditorPanel(wx.SplitterWindow):
             self.sub_panel.Destroy()
             self.sub_panel = None
 
-    def create_sub_panel(self) -> "HexEditorPanel":
+    def create_sub_panel(self, name: str) -> "HexEditorPanel":
         """Create a new sub-panel"""
         if self.sub_panel is None:
-            self.sub_panel = HexEditorPanel(self)
+            self.sub_panel = HexEditorPanel(self, name)
             self.SplitHorizontally(self.GetWindow1(), self.sub_panel)
             return self.sub_panel
         else:
@@ -84,8 +83,7 @@ class ConstructHexEditor(wx.Panel):
 
     def _init_gui_hex_editor_splitter(self, hsizer: wx.BoxSizer, binary: bytes):
         # Create Splitter for showing one or multiple HexEditors
-        self.hex_panel = HexEditorPanel(self)
-        self.hex_panel.set_name("asdf")
+        self.hex_panel = HexEditorPanel(self, "")
         hsizer.Add(self.hex_panel, 0, wx.EXPAND | wx.ALL, 5)
 
         # Init Root HexEditor
@@ -198,67 +196,24 @@ class ConstructHexEditor(wx.Panel):
         try:
             self.Freeze()
             self.hex_panel.clear_sub_panels()
-            self._show_byte_range(entry, None)
+            # self._show_byte_range(entry, None)
+            stream_infos = entry.get_stream_infos()
+            self._show_stream_infos(stream_infos)
         finally:
             self.Thaw()
 
-    def _show_byte_range(
-        self, entry: EntryConstruct, child_stream: t.Optional[t.BinaryIO]
-    ) -> HexEditorPanel:
-        """
-        Show the Position in the binary data of the HexEditor.
-        If nested streams are used, sub-HexEditors are created.
-        """
-        parent_stream_name = "---"
-        create_sub_hex_editor = False
-        show_position = False
+    def _show_stream_infos(self, stream_infos: t.List[StreamInfo]):
+        hex_pnl = self.hex_panel
+        for idx, stream_info in enumerate(stream_infos):
+            if idx != 0:  # dont create Sub-Panel for the root stream
+                hex_pnl = hex_pnl.create_sub_panel(stream_info.name)
+                hex_pnl.hex_editor.binary = stream_info.stream.getvalue()
 
-        # Get GUI-Metadata. If not existing, nothing is shown.
-        metadata = entry.obj_metadata
-        if metadata is None:
-            self.hex_panel.hex_editor.colorise(0, 0)
-            return self.hex_panel
+            start = stream_info.byte_range[0]
+            end = stream_info.byte_range[1]
 
-        context = metadata["context"]
-        stream = context._io  # TODO: Klappt nicht beim Root Item
-        root_stream = context._root._io
-        if stream == root_stream:
-            # The root stream is used
-            hex_pnl = self.hex_panel
-            show_position = True
-        else:
-            # A nested stream is used
-
-            # Show position of parent entry in the parent stream
-            if entry.parent is None:
-                raise RuntimeError("parent can't be None in stream nesting")
-            hex_pnl = self._show_byte_range(entry.parent, stream)
-
-            if child_stream == stream:
-                # A Sub-HexEditor for this Stream already exists. Nothing to do here
-                create_sub_hex_editor = False
-                show_position = False
-            else:
-                create_sub_hex_editor = True
-                show_position = True
-
-        if create_sub_hex_editor is True:
-            # Create a new Sub-HexEditor
-            hex_pnl = hex_pnl.create_sub_panel()
-
-            stream: io.BinaryIO = context._io
-            if not isinstance(stream, io.BytesIO):
-                raise RuntimeError("stream has to be io.BytesIO")
-            hex_pnl.hex_editor.binary = stream.getvalue()
-
-        start = metadata["byte_range"][0]
-        end = metadata["byte_range"][1]
-        if show_position is True:
             # Show the byte range in the corresponding HexEditor
-            hex_pnl.set_name(entry.path[-2])
             hex_pnl.hex_editor.colorise(start, end, refresh=False)
             hex_pnl.hex_editor.scroll_to_idx(end - 1, refresh=False)
             hex_pnl.hex_editor.scroll_to_idx(start, refresh=False)
             hex_pnl.hex_editor.refresh()
-
-        return hex_pnl
