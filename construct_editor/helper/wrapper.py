@@ -1538,6 +1538,25 @@ class EntryTransparentSubcon(EntrySubconstruct):
     ):
         super().__init__(model, parent, construct, name, docs)
 
+# EntryChecksumSubcon #################################################################################################
+class EntryChecksumSubcon(EntrySubconstruct):
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Checksum[Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        # Don't access EntrySubconstruct's __init__() via super(), because "subcon" is no member of "cs.Checksum"
+        # So we call directly the parents parent __init__() method
+        EntryConstruct.__init__(self, model, parent, construct, name, docs)
+
+        self.subentry = create_entry_from_construct(
+            model, self, construct.checksumfield, None, ""
+        )
+
+
 
 # EntryPeek ###########################################################################################################
 class EntryPeek(EntrySubconstruct):
@@ -1951,7 +1970,7 @@ construct_entry_mapping: t.Dict[
     cs.Restreamed: EntryTransparentSubcon,
     # cs.ProcessXor
     # cs.ProcessRotateLeft
-    # cs.Checksum
+    cs.Checksum: EntryChecksumSubcon,
     cs.Compressed: EntryTransparentSubcon,
     # cs.CompressedLZ4
     # cs.Rebuffered

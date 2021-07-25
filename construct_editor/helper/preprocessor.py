@@ -179,6 +179,12 @@ def include_metadata(
             constr.default = include_metadata(constr.default)
         return IncludeGuiMetaData(constr)
 
+    # Checksum #################################################################
+    elif isinstance(constr, cs.Checksum):
+        constr = copy.copy(constr)  # constr is modified, so we have to make a copy
+        constr.checksumfield = include_metadata(constr.checksumfield)
+        return IncludeGuiMetaData(constr)
+
     # Renamed #################################################################
     elif isinstance(constr, cs.Renamed):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
