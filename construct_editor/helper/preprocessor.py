@@ -8,7 +8,6 @@ class GuiMetaData(t.TypedDict):
     byte_range: t.Tuple[int, int]
     construct: cs.Construct
     context: "cs.Context"
-    nested_stream_ctr: int
 
 
 class IntWithGuiMetadata(int):
@@ -75,9 +74,8 @@ def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
 class IncludeGuiMetaData(cs.Subconstruct):
     """Include GUI metadata to the parsed object"""
 
-    def __init__(self, subcon, nested_stream_ctr: int):
+    def __init__(self, subcon):
         super().__init__(subcon)  # type: ignore
-        self.nested_stream_ctr = nested_stream_ctr
 
     def _parse(self, stream, context, path):
         offset_start = cs.stream_tell(stream, path)
@@ -88,7 +86,6 @@ class IncludeGuiMetaData(cs.Subconstruct):
             byte_range=(offset_start, offset_end),
             construct=self.subcon,
             context=context,
-            nested_stream_ctr=self.nested_stream_ctr,
         )
 
         return add_gui_metadata(obj, gui_metadata)
@@ -100,7 +97,7 @@ class IncludeGuiMetaData(cs.Subconstruct):
 
 # #############################################################################
 def include_metadata(
-    constr: "cs.Construct[t.Any, t.Any]", nested_stream_ctr: int = 0
+    constr: "cs.Construct[t.Any, t.Any]",
 ) -> "cs.Construct[t.Any, t.Any]":
     """
     Surrond all named entries of a construct with offsets, so that
@@ -127,7 +124,7 @@ def include_metadata(
             cs.Seek,
         ),
     ):
-        return IncludeGuiMetaData(constr, nested_stream_ctr)
+        return IncludeGuiMetaData(constr)
 
     # ########## Simple Subconstructs #########################################
     elif isinstance(
@@ -146,8 +143,8 @@ def include_metadata(
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = include_metadata(constr.subcon, nested_stream_ctr)  # type: ignore
-        return IncludeGuiMetaData(constr, nested_stream_ctr)
+        constr.subcon = include_metadata(constr.subcon)  # type: ignore
+        return IncludeGuiMetaData(constr)
 
     # ########## Stream Manipulating Subconstructs ############################
     elif isinstance(
@@ -164,40 +161,40 @@ def include_metadata(
         # these constructs manipulate the stream, so the offsets of all nested subcons are wrong.
         # to detect this a counter is incremented for every nested stream
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = include_metadata(constr.subcon, nested_stream_ctr + 1)  # type: ignore
-        return IncludeGuiMetaData(constr, nested_stream_ctr)
+        constr.subcon = include_metadata(constr.subcon)  # type: ignore
+        return IncludeGuiMetaData(constr)
 
     # Struct ##################################################################
     elif isinstance(constr, cs.Struct):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
         new_subcons = []
         for subcon in constr.subcons:
-            new_subcons.append(include_metadata(subcon, nested_stream_ctr))
+            new_subcons.append(include_metadata(subcon))
         constr.subcons = new_subcons
-        return IncludeGuiMetaData(constr, nested_stream_ctr)
+        return IncludeGuiMetaData(constr)
 
     # IfThenElse ##############################################################
     elif isinstance(constr, cs.IfThenElse):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.thensubcon = include_metadata(constr.thensubcon, nested_stream_ctr)
-        constr.elsesubcon = include_metadata(constr.elsesubcon, nested_stream_ctr)
-        return IncludeGuiMetaData(constr, nested_stream_ctr)
+        constr.thensubcon = include_metadata(constr.thensubcon)
+        constr.elsesubcon = include_metadata(constr.elsesubcon)
+        return IncludeGuiMetaData(constr)
 
     # Switch ##################################################################
     elif isinstance(constr, cs.Switch):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
         new_cases = {}
         for key, subcon in constr.cases.items():
-            new_cases[key] = include_metadata(subcon, nested_stream_ctr)
+            new_cases[key] = include_metadata(subcon)
         constr.cases = new_cases
         if constr.default is not None:
-            constr.default = include_metadata(constr.default, nested_stream_ctr)
-        return IncludeGuiMetaData(constr, nested_stream_ctr)
+            constr.default = include_metadata(constr.default)
+        return IncludeGuiMetaData(constr)
 
     # Renamed #################################################################
     elif isinstance(constr, cs.Renamed):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = include_metadata(constr.subcon, nested_stream_ctr)  # type: ignore
+        constr.subcon = include_metadata(constr.subcon)  # type: ignore
         return constr
 
     # Misc ####################################################################
@@ -219,7 +216,7 @@ def include_metadata(
             type(cs.Terminated),
         ),
     ):
-        return IncludeGuiMetaData(constr, nested_stream_ctr)
+        return IncludeGuiMetaData(constr)
 
     # TODO:
     # # Grouping:

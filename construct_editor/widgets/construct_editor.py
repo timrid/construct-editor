@@ -714,10 +714,13 @@ class ConstructEditor(wx.Panel):
     def _refresh_status_bar(self, entry: EntryConstruct):
         self._status_bar.SetStatusText("->".join(entry.path), 0)
         bytes_info = ""
-        metadata = entry.obj_metadata
-        if (metadata is not None) and (metadata["byte_range"] is not None):
-            start = metadata["byte_range"][0]
-            end = metadata["byte_range"][1] - 1
+        stream_infos = entry.get_stream_infos()
+
+        # Show byte range only when no nested streams are used
+        if len(stream_infos) == 1:
+            byte_range = stream_infos[0].byte_range
+            start = byte_range[0]
+            end = byte_range[1] - 1
             size = end - start + 1
             if size > 0:
                 bytes_info = f"Bytes: {start}-{end} ({size})"
