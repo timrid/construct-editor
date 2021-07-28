@@ -17,6 +17,7 @@ import construct_editor.gallery.test_greedyrange
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
+import construct_editor.gallery.test_switch_dataclass
 import construct_editor.gallery.test_dataclass_struct
 import construct_editor.gallery.test_dataclass_bit_struct
 import construct_editor.gallery.test_flag
@@ -106,6 +107,7 @@ class ConstructGallery(wx.Panel):
             # "Test: Select (TODO)": None,
             "Test: IfThenElse": construct_editor.gallery.test_ifthenelse.gallery_item,
             "Test: Switch": construct_editor.gallery.test_switch.gallery_item,
+            "Test: Switch (Dataclass)": construct_editor.gallery.test_switch_dataclass.gallery_item,
             # "Test: StopIf (TODO)": None,
             "## alignment and padding ##########################": None,
             "Test: Padded": construct_editor.gallery.test_padded.gallery_item,
