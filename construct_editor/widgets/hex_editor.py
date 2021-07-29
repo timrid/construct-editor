@@ -813,7 +813,7 @@ class HexEditorGrid(Grid.Grid):
     def _cut_selection(self) -> bool:
         """
         Copy the selected data to the clipboard and remove it from the binary data
-        
+
         Return:
          - true if copy is okay
          - false if an error occured
@@ -830,7 +830,7 @@ class HexEditorGrid(Grid.Grid):
     def _remove_selection(self) -> bool:
         """
         Remove the selected bytes
-        
+
         Return:
          - true if copy is okay
          - false if an error occured
@@ -1022,7 +1022,12 @@ class HexEditorGrid(Grid.Grid):
             self.SetGridCursor(event.GetRow(), event.GetCol())
 
         menus = [
-            (wx.ID_CUT, "Cut\tCtrl+X", lambda event: self._cut_selection(), not self.read_only),
+            (
+                wx.ID_CUT,
+                "Cut\tCtrl+X",
+                lambda event: self._cut_selection(),
+                not self.read_only,
+            ),
             (wx.ID_COPY, "Copy\tCtrl+C", lambda event: self._copy_selection(), True),
             (
                 wx.ID_PASTE,
@@ -1153,6 +1158,7 @@ class HexEditor(wx.Panel):
 
     @binary.setter
     def binary(self, val: bytes):
+        self.colorise(0, 0, True)
         self._binary_data.overwrite_all(val)
         # clear all commands, when new data is set from external
         self._binary_data.command_processor.ClearCommands()

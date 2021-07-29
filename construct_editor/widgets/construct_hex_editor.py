@@ -118,7 +118,7 @@ class ConstructHexEditor(wx.Panel):
         )
 
     def _init_gui_construct_editor(self, hsizer: wx.BoxSizer, construct: cs.Construct):
-        self.construct_editor = ConstructEditor(
+        self.construct_editor: ConstructEditor = ConstructEditor(
             self,
             construct,
         )
@@ -182,6 +182,7 @@ class ConstructHexEditor(wx.Panel):
 
     @binary.setter
     def binary(self, val: bytes):
+        self.hex_panel.clear_sub_panels()
         self.hex_panel.hex_editor.binary = val
 
     # Internals ###############################################################
