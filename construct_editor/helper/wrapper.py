@@ -660,12 +660,12 @@ class EntryConstruct(object):
         """
         stream_infos: t.List[StreamInfo] = []
 
-        # If no GUI-Metadata or no stream is available, StreamInfos cannot be created
+        # If no GUI-Metadata is available, StreamInfos cannot be created
         metadata = self.obj_metadata
-        if (metadata is None) or ("_io" not in metadata["context"]):
+        if metadata is None:
             return stream_infos
 
-        stream = metadata["context"]._io
+        stream = metadata["stream"]
 
         # Add StreamInfos from parent, if a parent exists
         if self.parent is not None:
@@ -1538,6 +1538,7 @@ class EntryTransparentSubcon(EntrySubconstruct):
     ):
         super().__init__(model, parent, construct, name, docs)
 
+
 # EntryChecksumSubcon #################################################################################################
 class EntryChecksumSubcon(EntrySubconstruct):
     def __init__(
@@ -1555,7 +1556,6 @@ class EntryChecksumSubcon(EntrySubconstruct):
         self.subentry = create_entry_from_construct(
             model, self, construct.checksumfield, None, ""
         )
-
 
 
 # EntryPeek ###########################################################################################################

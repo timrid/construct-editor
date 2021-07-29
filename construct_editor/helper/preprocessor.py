@@ -1,3 +1,4 @@
+import io
 import construct as cs
 import construct_typed as cst
 import typing as t
@@ -8,6 +9,7 @@ class GuiMetaData(t.TypedDict):
     byte_range: t.Tuple[int, int]
     construct: cs.Construct
     context: "cs.Context"
+    stream: io.BytesIO
 
 
 class IntWithGuiMetadata(int):
@@ -86,6 +88,7 @@ class IncludeGuiMetaData(cs.Subconstruct):
             byte_range=(offset_start, offset_end),
             construct=self.subcon,
             context=context,
+            stream=stream,
         )
 
         return add_gui_metadata(obj, gui_metadata)
