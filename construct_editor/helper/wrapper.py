@@ -11,12 +11,7 @@ import construct_editor.widgets.construct_editor as construct_editor
 import construct_typed as cst
 import wx
 import wx.adv
-from construct_editor.helper.preprocessor import (
-    GuiMetaData,
-    IncludeGuiMetaData,
-    add_gui_metadata,
-    get_gui_metadata,
-)
+from construct_editor.helper.preprocessor import GuiMetadata
 
 
 def evaluate(param, context):
@@ -555,8 +550,27 @@ class EntryConstruct(object):
 
     # default "obj_metadata" ##################################################
     @property
-    def obj_metadata(self) -> t.Optional[GuiMetaData]:
-        return get_gui_metadata(self.obj)
+    def obj_metadata(self) -> t.Optional[GuiMetadata]:
+        parent = self.parent
+        if parent is None:
+            return None
+
+        if self.name == "":
+            return parent.obj_metadata
+
+        parent_obj = parent.obj
+        try:
+            parent_gui_metadata = parent_obj._gui_metadata
+            if isinstance(parent_gui_metadata, dict):
+                metadata = parent_gui_metadata[self.name]  # type: ignore
+            elif isinstance(parent_obj, list):
+                metadata = parent_gui_metadata[int(self.name)]  # type: ignore
+            else:
+                return None
+        except Exception:
+            return None
+
+        return metadata
 
     # default "name" ##########################################################
     @property
@@ -654,22 +668,29 @@ class EntryConstruct(object):
 
     def get_stream_infos(
         self, child_stream: t.Optional[t.BinaryIO] = None
-    ) -> t.List[StreamInfo]:
+    ) -> t.Optional[t.List[StreamInfo]]:
         """
         Get infos about the current and parent streams.
         """
-        stream_infos: t.List[StreamInfo] = []
+        # This is the root entry
+        if self.parent is None:
+            return []
 
         # If no GUI-Metadata or no stream is available, StreamInfos cannot be created
-        metadata = self.obj_metadata
-        if (metadata is None) or ("_io" not in metadata["context"]):
-            return stream_infos
+        obj_metadata = self.obj_metadata
+        if (obj_metadata is None) or ("_io" not in obj_metadata.context):
+            return None
 
-        stream = metadata["context"]._io
+        stream = obj_metadata.context._io
+        stream_infos: t.List[StreamInfo] = []
 
         # Add StreamInfos from parent, if a parent exists
         if self.parent is not None:
-            stream_infos.extend(self.parent.get_stream_infos(stream))
+            parent_stream_infos = self.parent.get_stream_infos(stream)
+            if parent_stream_infos is None:
+                return None
+
+            stream_infos.extend(parent_stream_infos)
 
         # Create new StreamInfo for the stream
         if child_stream != stream:
@@ -680,7 +701,7 @@ class EntryConstruct(object):
                 StreamInfo(
                     stream=stream,
                     path=self.path[:-1],
-                    byte_range=(metadata["byte_range"]),
+                    byte_range=(obj_metadata.byte_range),
                 )
             )
 
@@ -898,8 +919,11 @@ class EntryArray(EntrySubconstruct):
 
         if isinstance(self.construct, cs.Array):
             try:
-                metadata = get_gui_metadata(obj)
-                count = evaluate(self.construct.count, metadata["context"])
+                obj_metadata = self.obj_metadata
+                if obj_metadata is None:
+                    raise ValueError
+
+                count = evaluate(self.construct.count, obj_metadata.context)
                 return f"Array[{count}]"
             except Exception:
                 return f"Array[{self.construct.count}]"
@@ -994,16 +1018,15 @@ class EntryIfThenElse(EntryConstruct):
 
     def _get_subentry(self) -> "Optional[EntryConstruct]":
         """Evaluate the conditional function to detect the type of the subentry"""
-        obj = self.obj
-        if obj is None:
+        obj_metadata = self.obj_metadata
+        if obj_metadata is None:
             return None
+
+        cond = evaluate(self.construct.condfunc, obj_metadata.context)
+        if cond:
+            return self._subentry_then
         else:
-            metadata = get_gui_metadata(obj)
-            cond = evaluate(self.construct.condfunc, metadata["context"])
-            if cond:
-                return self._subentry_then
-            else:
-                return self._subentry_else
+            return self._subentry_else
 
     @property
     def obj_str(self) -> str:
@@ -1117,16 +1140,15 @@ class EntrySwitch(EntryConstruct):
 
     def _get_subentry(self) -> "Optional[EntryConstruct]":
         """Evaluate the conditional function to detect the type of the subentry"""
-        obj = self.obj
-        if obj is None:
+        obj_metadata = self.obj_metadata
+        if obj_metadata is None:
             return None
+
+        key = evaluate(self.construct.keyfunc, obj_metadata.context)
+        if key in self._subentry_cases:
+            return self._subentry_cases[key]
         else:
-            metadata = get_gui_metadata(obj)
-            key = evaluate(self.construct.keyfunc, metadata["context"])
-            if key in self._subentry_cases:
-                return self._subentry_cases[key]
-            else:
-                return self._subentry_default
+            return self._subentry_default
 
     @property
     def obj_str(self) -> str:
@@ -1394,8 +1416,11 @@ class EntryBytes(EntryConstruct):
 
         if isinstance(self.construct, cs.Bytes):
             try:
-                metadata = get_gui_metadata(obj)
-                length = evaluate(self.construct.length, metadata["context"])
+                obj_metadata = self.obj_metadata
+                if obj_metadata is None:
+                    raise ValueError
+
+                length = evaluate(self.construct.length, obj_metadata.context)
                 return f"Byte[{length}]"
             except Exception:
                 return f"Byte[{self.construct.length}]"
@@ -1538,13 +1563,14 @@ class EntryTransparentSubcon(EntrySubconstruct):
     ):
         super().__init__(model, parent, construct, name, docs)
 
+
 # EntryChecksumSubcon #################################################################################################
 class EntryChecksumSubcon(EntrySubconstruct):
     def __init__(
         self,
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Checksum[Any, Any]",
+        construct: "cs.Checksum[Any, Any, Any]",
         name: NameType,
         docs: str,
     ):
@@ -1555,7 +1581,6 @@ class EntryChecksumSubcon(EntrySubconstruct):
         self.subentry = create_entry_from_construct(
             model, self, construct.checksumfield, None, ""
         )
-
 
 
 # EntryPeek ###########################################################################################################
@@ -2016,10 +2041,6 @@ def create_entry_from_construct(
         if subcon.docs != "":
             docs = subcon.docs
 
-        return create_entry_from_construct(model, parent, subcon.subcon, name, docs)
-
-    # Skip IncludeGuiMetaData, to fasten up large arrays
-    if isinstance(subcon, IncludeGuiMetaData):
         return create_entry_from_construct(model, parent, subcon.subcon, name, docs)
 
     # check for instance-mappings

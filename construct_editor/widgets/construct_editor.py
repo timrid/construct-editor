@@ -13,8 +13,6 @@ from construct_editor.helper.wrapper import (
     ObjPanel,
     EntryConstruct,
     create_entry_from_construct,
-    get_gui_metadata,
-    add_gui_metadata,
 )
 
 
@@ -378,11 +376,6 @@ class ConstructEditorModel(dv.PyDataViewModel):
         # get the current object
         obj = entry.obj
 
-        # link the metadata from the current object to the new one
-        metadata = get_gui_metadata(obj)
-        if metadata is not None:
-            new_obj = add_gui_metadata(new_obj, metadata)
-
         model = self
 
         class Cmd(wx.Command):
@@ -527,6 +520,8 @@ class ConstructEditor(wx.Panel):
                 wx.ICON_WARNING,
             )
             self._model.root_obj = None
+            import traceback
+            traceback.print_exc()
         # clear all commands, when new data is set from external
         self._model.command_processor.ClearCommands()
         self.reload()
@@ -719,7 +714,7 @@ class ConstructEditor(wx.Panel):
         stream_infos = entry.get_stream_infos()
 
         # Show byte range only when no nested streams are used
-        if len(stream_infos) == 1:
+        if (stream_infos is not None) and (len(stream_infos) == 1):
             byte_range = stream_infos[0].byte_range
             start = byte_range[0]
             end = byte_range[1] - 1

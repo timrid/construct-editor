@@ -204,7 +204,8 @@ class ConstructHexEditor(wx.Panel):
             binary = self.construct_editor.build(**self.contextkw)
             self.hex_panel.hex_editor.binary = binary
         except Exception:
-            pass  # ignore errors, because they are already shown in the gui
+            raise
+            # pass  # ignore errors, because they are already shown in the gui
         finally:
             self._converting = False
 
@@ -214,7 +215,8 @@ class ConstructHexEditor(wx.Panel):
             self.hex_panel.clear_sub_panels()
             # self._show_byte_range(entry, None)
             stream_infos = entry.get_stream_infos()
-            self._show_stream_infos(stream_infos)
+            if stream_infos is not None:
+                self._show_stream_infos(stream_infos)
         finally:
             self.Thaw()
 
