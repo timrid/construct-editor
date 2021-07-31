@@ -19,10 +19,6 @@ from construct_editor.helper.preprocessor import (
 )
 
 
-def evaluate(param, context):
-    return param(context) if callable(param) else param
-
-
 def int_to_str(integer_format: "construct_editor.IntegerFormat", val: int) -> str:
     if isinstance(val, str):
         return val  # tolerate string
@@ -899,7 +895,7 @@ class EntryArray(EntrySubconstruct):
         if isinstance(self.construct, cs.Array):
             try:
                 metadata = get_gui_metadata(obj)
-                count = evaluate(self.construct.count, metadata["context"])
+                count = cs.evaluate(self.construct.count, metadata["context"])
                 return f"Array[{count}]"
             except Exception:
                 return f"Array[{self.construct.count}]"
@@ -999,7 +995,7 @@ class EntryIfThenElse(EntryConstruct):
             return None
         else:
             metadata = get_gui_metadata(obj)
-            cond = evaluate(self.construct.condfunc, metadata["context"])
+            cond = cs.evaluate(self.construct.condfunc, metadata["context"])
             if cond:
                 return self._subentry_then
             else:
@@ -1122,7 +1118,7 @@ class EntrySwitch(EntryConstruct):
             return None
         else:
             metadata = get_gui_metadata(obj)
-            key = evaluate(self.construct.keyfunc, metadata["context"])
+            key = cs.evaluate(self.construct.keyfunc, metadata["context"])
             if key in self._subentry_cases:
                 return self._subentry_cases[key]
             else:
@@ -1395,7 +1391,7 @@ class EntryBytes(EntryConstruct):
         if isinstance(self.construct, cs.Bytes):
             try:
                 metadata = get_gui_metadata(obj)
-                length = evaluate(self.construct.length, metadata["context"])
+                length = cs.evaluate(self.construct.length, metadata["context"])
                 return f"Byte[{length}]"
             except Exception:
                 return f"Byte[{self.construct.length}]"
