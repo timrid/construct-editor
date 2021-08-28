@@ -589,6 +589,10 @@ class ConstructEditor(wx.Panel):
         self._model.hide_protected = value
         self.reload()
 
+    # expand_entry ############################################################
+    def expand_entry(self, entry: EntryConstruct):
+        self._dvc.Expand(entry.dvc_item)
+
     # expand_children #########################################################
     def expand_children(self, entry: EntryConstruct):
         if entry.subentries is not None:

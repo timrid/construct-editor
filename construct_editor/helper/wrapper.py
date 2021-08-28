@@ -1502,6 +1502,37 @@ class EntryComputed(EntryConstruct):
             return str(self.obj)
 
 
+# EntryDefault ##############################################################################################
+class EntryDefault(EntrySubconstruct):
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Subconstruct[Any, Any, Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        self.subentry.modify_context_menu(menu)
+
+        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
+
+        def on_default_clicked(event: wx.MenuEvent):
+            self.obj = None
+            menu.model.ValueChanged(
+                self.dvc_item, construct_editor.ConstructEditorColumn.Value
+            )
+            # menu.model.ItemChanged(self.dvc_item)
+            # menu.parent.expand_entry(self)
+            # menu.parent.reload()
+
+        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Set to default")
+        menu.Append(menu_item)
+        menu.Bind(wx.EVT_MENU, on_default_clicked, menu_item)
+
+
 # EntryTimestamp ###########################################################################################################
 class EntryTimestamp(EntrySubconstruct):
     def __init__(
@@ -1925,7 +1956,7 @@ construct_entry_mapping: t.Dict[
     cs.Computed: EntryComputed,
     # cs.Index
     # cs.Rebuild
-    cs.Default: EntryTransparentSubcon,
+    cs.Default: EntryDefault,
     # cs.Check
     # cs.Error
     # cs.FocusedSeq

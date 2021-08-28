@@ -16,37 +16,52 @@ constr = cs.Struct(
     / cs.Switch(
         cs.this.choice,
         cases={
-            "USE_CHOICE1": cs.Struct(
-                "case1_1" / cs.Default(cs.Int16sb, 0),
-                "case1_2" / cs.Default(cs.Int16sb, 0),
+            "USE_CHOICE1": cs.Default(
+                cs.Struct(
+                    "case1_1" / cs.Int16sb,
+                    "case1_2" / cs.Int16sb,
+                ),
+                dict(case1_1=0, case1_2=0),
             ),
-            "USE_CHOICE2": cs.Struct(
-                "case2_1" / cs.Int8sb,
-                "case2_2" / cs.Int8sb,
-                "case2_3" / cs.Int8sb,
-                "case2_4" / cs.Int8sb,
+            "USE_CHOICE2": cs.Default(
+                cs.Struct(
+                    "case2_1" / cs.Int8sb,
+                    "case2_2" / cs.Int8sb,
+                    "case2_3" / cs.Int8sb,
+                    "case2_4" / cs.Int8sb,
+                ),
+                dict(case2_1=0, case2_2=0, case2_3=0, case2_4=0),
             ),
         },
-        default=cs.Struct(
-            "case_default_1" / cs.Int32sb,
+        default=cs.Default(
+            cs.Struct(
+                "case_default_1" / cs.Int32sb,
+            ),
+            dict(case_default_1=0),
         ),
     ),
     "switch_without_default"
     / cs.Switch(
         cs.this.choice,
         cases={
-            "USE_CHOICE1": cs.Struct(
-                "case1_1" / cs.Int16sb,
-                "case1_2" / cs.Int16sb,
+            "USE_CHOICE1": cs.Default(
+                cs.Struct(
+                    "case1_1" / cs.Int16sb,
+                    "case1_2" / cs.Int16sb,
+                ),
+                dict(case1_1=0, case1_2=0),
             ),
-            "USE_CHOICE2": cs.Struct(
-                "case2_1" / cs.Int8sb,
-                "case2_2" / cs.Int8sb,
-                "case2_3" / cs.Int8sb,
-                "case2_4" / cs.Int8sb,
+            "USE_CHOICE2": cs.Default(
+                cs.Struct(
+                    "case2_1" / cs.Int8sb,
+                    "case2_2" / cs.Int8sb,
+                    "case2_3" / cs.Int8sb,
+                    "case2_4" / cs.Int8sb,
+                ),
+                dict(case2_1=0, case2_2=0, case2_3=0, case2_4=0),
             ),
         },
-        default=cs.Pass,
+        default=cs.Default(cs.Pass, None),
     ),
 )
 
