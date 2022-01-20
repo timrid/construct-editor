@@ -192,21 +192,25 @@ class ConstructHexEditor(wx.Panel):
             return
         try:
             self._converting = True
+            self.Freeze()
             self.construct_editor.parse(
                 self.hex_panel.hex_editor.binary, **self.contextkw
             )
         finally:
+            self.Thaw()
             self._converting = False
 
     def _convert_struct_to_binary(self):
         """Convert construct object to binary"""
         try:
             self._converting = True
+            self.Freeze()
             binary = self.construct_editor.build(**self.contextkw)
             self.hex_panel.hex_editor.binary = binary
         except Exception:
             pass  # ignore errors, because they are already shown in the gui
         finally:
+            self.Thaw()
             self._converting = False
 
     def _on_entry_selected(self, entry: EntryConstruct):
