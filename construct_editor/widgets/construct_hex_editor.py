@@ -40,7 +40,7 @@ class HexEditorPanel(wx.SplitterWindow):
             self._name_txt.SetLabelText(name)
 
         # Create HexEditor
-        self.hex_editor = HexEditor(
+        self.hex_editor: HexEditor = HexEditor(
             panel,
             b"",
             HexEditorFormat(width=16),
@@ -99,7 +99,7 @@ class ConstructHexEditor(wx.Panel):
 
     def _init_gui_hex_editor_splitter(self, hsizer: wx.BoxSizer, binary: bytes):
         # Create Splitter for showing one or multiple HexEditors
-        self.hex_panel = HexEditorPanel(self, "")
+        self.hex_panel: HexEditorPanel = HexEditorPanel(self, "")
         hsizer.Add(self.hex_panel, 0, wx.EXPAND, 0)
 
         # Init Root HexEditor
@@ -225,11 +225,20 @@ class ConstructHexEditor(wx.Panel):
 
     def _show_stream_infos(self, stream_infos: t.List[StreamInfo]):
         hex_pnl = self.hex_panel
+        panel_stream_mapping: t.List[t.Tuple[HexEditorPanel, StreamInfo]] = []
+
+        # Create all Sub-Panels
         for idx, stream_info in enumerate(stream_infos):
             if idx != 0:  # dont create Sub-Panel for the root stream
                 hex_pnl = hex_pnl.create_sub_panel(".".join(stream_info.path))
                 hex_pnl.hex_editor.binary = stream_info.stream.getvalue()
 
+            panel_stream_mapping.append((hex_pnl, stream_info))
+
+        # Mark to correct bytes in the stream.
+        # Can only be made when alls sub-panels are created. Otherwise "scroll_to_idx"
+        # does not work properly because the size of the HexEditorPanel may change.
+        for hex_pnl, stream_info in panel_stream_mapping:
             start = stream_info.byte_range[0]
             end = stream_info.byte_range[1]
 
