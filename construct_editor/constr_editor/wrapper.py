@@ -7,11 +7,11 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 import arrow
 import construct as cs
-import construct_editor.widgets.construct_editor as construct_editor
+import construct_editor.constr_editor.construct_editor as construct_editor
 import construct_typed as cst
 import wx
 import wx.adv
-from construct_editor.helper.preprocessor import (
+from construct_editor.constr_editor.preprocessor import (
     GuiMetaData,
     IncludeGuiMetaData,
     add_gui_metadata,

@@ -35,7 +35,7 @@ import construct_editor.gallery.test_pass
 import construct_editor.gallery.test_fixedsized
 import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
-from construct_editor.construct_hex_editor.construct_hex_editor import ConstructHexEditor
+from construct_editor.constr_hex_editor.construct_hex_editor import ConstructHexEditor
 
 
 class ConstructGalleryFrame(wx.Frame):

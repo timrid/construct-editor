@@ -6,6 +6,7 @@ This package provides a GUI (based on wxPython) for 'construct', which is a powe
 
 ![Preview](https://raw.githubusercontent.com/timrid/construct-editor/main/doc/preview.gif)
 
+This widget is compareable to many other tools (kaitai viewer, 010 Editor, ...) which parse binary data and show it in a structured way according to a defined format. But in comparison to the other tools which are primary for viewing the parsed binary data, this tool one can also be used to modify the parsed values and build binary data from it. This works by using the construct library, which can parse and build binary data.
 
 Features:
 - show documentation as tooltip

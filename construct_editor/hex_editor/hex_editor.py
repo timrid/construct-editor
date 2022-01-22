@@ -10,7 +10,7 @@ from typing import Optional, Callable, List
 import math
 import typing as t
 
-from construct_editor.helper import CallbackList
+from construct_editor.constr_editor import CallbackList
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False

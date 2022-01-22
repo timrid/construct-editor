@@ -5,70 +5,9 @@ import typing as t
 import construct as cs
 import wx
 
-from construct_editor.helper.wrapper import EntryConstruct, StreamInfo
-from construct_editor.widgets.construct_editor import ConstructEditor
-from construct_editor.widgets.hex_editor import (
-    HexEditor,
-    HexEditorBinaryData,
-    HexEditorFormat,
-)
-
-
-class HexEditorPanel(wx.SplitterWindow):
-    def __init__(self, parent, name: str, read_only: bool = False):
-        super().__init__(parent, style=wx.SP_LIVE_UPDATE)
-        self.SetSashGravity(0.5)
-        
-        panel = wx.Panel(self)
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-
-        # Create Name if available
-        if name != "":
-            line = wx.StaticLine(panel, style=wx.LI_HORIZONTAL)
-            vsizer.Add(line, 0, wx.EXPAND)
-            self._name_txt = wx.StaticText(self, wx.ID_ANY)
-            self._name_txt.SetFont(
-                wx.Font(
-                    10,
-                    wx.FONTFAMILY_DEFAULT,
-                    wx.FONTSTYLE_NORMAL,
-                    wx.FONTWEIGHT_BOLD,
-                    underline=True,
-                )
-            )
-            vsizer.Add(self._name_txt, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-            self._name_txt.SetLabelText(name)
-
-        # Create HexEditor
-        self.hex_editor = HexEditor(
-            panel,
-            b"",
-            HexEditorFormat(width=16),
-            read_only=read_only,
-        )
-        vsizer.Add(self.hex_editor, 1)
-        panel.SetSizer(vsizer)
-
-        
-        self.Initialize(panel)
-
-        self.sub_panel: t.Optional["HexEditorPanel"] = None
-
-    def clear_sub_panels(self):
-        """Clears all sub-panels recursivly"""
-        if self.sub_panel is not None:
-            self.Unsplit(self.sub_panel)
-            self.sub_panel.Destroy()
-            self.sub_panel = None
-
-    def create_sub_panel(self, name: str) -> "HexEditorPanel":
-        """Create a new sub-panel"""
-        if self.sub_panel is None:
-            self.sub_panel = HexEditorPanel(self, name, read_only=True)
-            self.SplitHorizontally(self.GetWindow1(), self.sub_panel)
-            return self.sub_panel
-        else:
-            raise RuntimeError("sub-panel already created")
+from construct_editor.constr_editor.wrapper import EntryConstruct, StreamInfo
+from construct_editor.constr_editor.construct_editor import ConstructEditor
+from construct_editor.hex_editor.stackable_hex_editor import StackableHexEditorPanel
 
 
 class ConstructHexEditor(wx.Panel):
@@ -99,7 +38,7 @@ class ConstructHexEditor(wx.Panel):
 
     def _init_gui_hex_editor_splitter(self, hsizer: wx.BoxSizer, binary: bytes):
         # Create Splitter for showing one or multiple HexEditors
-        self.hex_panel = HexEditorPanel(self, "")
+        self.hex_panel = StackableHexEditorPanel(self, "")
         hsizer.Add(self.hex_panel, 0, wx.EXPAND, 0)
 
         # Init Root HexEditor

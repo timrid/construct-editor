@@ -8,9 +8,6 @@ setup(
     version=version_string,  # type: ignore
     packages=[
         "construct_editor",
-        "construct_editor.gallery",
-        "construct_editor.helper",
-        "construct_editor.widgets",
     ],
     package_data={
         "construct_editor": ["py.typed"],

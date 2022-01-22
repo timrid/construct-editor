@@ -6,7 +6,7 @@ WARNING: before parsing the application layer over a TCP stream, you must first 
 
 from construct import *
 from construct.lib import *
-import construct_editor.helper.wrapper as cse_wrapper
+import construct_editor.constr_editor.wrapper as cse_wrapper
 from . import GalleryItem
 
 
