@@ -14,6 +14,7 @@ import construct_editor.gallery.example_ipstack
 import construct_editor.gallery.test_bytes_greedybytes
 import construct_editor.gallery.test_array
 import construct_editor.gallery.test_greedyrange
+import construct_editor.gallery.test_bitwise
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
@@ -34,7 +35,7 @@ import construct_editor.gallery.test_pass
 import construct_editor.gallery.test_fixedsized
 import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
-from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
+from construct_editor.construct_hex_editor.construct_hex_editor import ConstructHexEditor
 
 
 class ConstructGalleryFrame(wx.Frame):
@@ -67,6 +68,7 @@ class ConstructGallery(wx.Panel):
             # "Test: FormatField (TODO)": None,
             # "Test: BytesInteger (TODO)": None,
             # "Test: BitsInteger (TODO)": None,
+            "Test: Bitwiese": construct_editor.gallery.test_bitwise.gallery_item,
             # "## strings #######################": None,
             # "Test: StringEncoded (TODO)": None,
             "## mappings ######################": None,
