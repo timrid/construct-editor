@@ -1,21 +1,24 @@
 # -*- coding: utf-8 -*-
 import enum
-from typing import Any, Callable, Dict, List, Optional
+import textwrap
 import typing as t
+from typing import Any, Callable, Dict, List, Optional
+
 import construct as cs
 import wx
-import wx.dataview as dv
-from construct_editor.constr_editor import CallbackList
-import textwrap
 
+import wx.dataview as dv
+from construct_editor.constr_editor.infobar import CustomInfoBar
+from construct_editor.constr_editor import CallbackList
 from construct_editor.constr_editor.preprocessor import include_metadata
 from construct_editor.constr_editor.wrapper import (
-    ObjPanel,
     EntryConstruct,
+    ObjPanel,
+    add_gui_metadata,
     create_entry_from_construct,
     get_gui_metadata,
-    add_gui_metadata,
 )
+from construct_editor.constr_editor.threads import ParserThread, BuilderThread
 
 
 class RootObjChangedCallbackList(CallbackList[Callable[[Any], None]]):
@@ -443,11 +446,8 @@ class ConstructEditor(wx.Panel):
         self._dvc.AssociateModel(self._model)
 
         # Create InfoBars
-        self._parse_error_info_bar = wx.InfoBar(self)
-        vsizer.Add(self._parse_error_info_bar, 0, wx.EXPAND)
-
-        self._build_error_info_bar = wx.InfoBar(self)
-        vsizer.Add(self._build_error_info_bar, 0, wx.EXPAND)
+        self._info_bar = CustomInfoBar(self)
+        vsizer.Add(self._info_bar, 0, wx.EXPAND)
 
         # create status bar
         self._status_bar = wx.StatusBar(
@@ -490,6 +490,9 @@ class ConstructEditor(wx.Panel):
         self.on_root_obj_changed = RootObjChangedCallbackList()
         self.construct = construct
 
+        self._parser_thread: t.Optional[ParserThread] = None
+        self._builder_thread: t.Optional[BuilderThread] = None
+
     def reload(self):
         """Reload the ConstructEditor, while remaining expaned elements and selection"""
         try:
@@ -516,37 +519,85 @@ class ConstructEditor(wx.Panel):
         finally:
             self.Thaw()
 
-    def parse(self, binary: bytes, **contextkw: Any):
+    def parse(
+        self,
+        binary: bytes,
+        contextkw: t.Dict[str, t.Any],
+        on_done: t.Callable[[t.Union[t.Any, Exception]], None],
+    ):
         """Parse binary data to struct."""
-        try:
-            self._model.root_obj = self._construct.parse(binary, **contextkw)
-            self._parse_error_info_bar.Dismiss()
-        except Exception as e:
-            self._parse_error_info_bar.ShowMessage(
-                f"Error while parsing binary data: {type(e).__name__}\n{str(e)}",
-                wx.ICON_WARNING,
-            )
-            self._model.root_obj = None
-        # clear all commands, when new data is set from external
-        self._model.command_processor.ClearCommands()
-        self.reload()
+        if (self._parser_thread is not None) and self._parser_thread.is_alive():
+            # parsing is currently ongoing. abort it.
+            self._parser_thread.terminate()
+            self._parser_thread.join()
 
-    def build(self, **contextkw: Any) -> bytes:
+        def on_parsing_done(obj_or_ex: t.Union[t.Any, Exception]):
+            if isinstance(obj_or_ex, Exception):
+                ex = obj_or_ex
+
+                self._info_bar.show_parsing_error(ex)
+                self._model.root_obj = None
+
+                # clear all commands, when new data is set from external
+                self._model.command_processor.ClearCommands()
+            else:
+                obj = obj_or_ex
+
+                self._info_bar.show_info("Reloading...")
+                wx.Yield()
+
+                self._model.root_obj = obj
+                self.reload()
+
+                self._info_bar.Dismiss()
+
+                # clear all commands, when new data is set from external
+                self._model.command_processor.ClearCommands()
+
+            on_done(obj_or_ex)
+
+        self._parser_thread = ParserThread(
+            self._construct,
+            binary,
+            contextkw,
+            lambda obj_or_ex: wx.CallAfter(on_parsing_done, obj_or_ex),
+        )
+        self._info_bar.show_info("Parsing...")
+        wx.Yield()
+        self._parser_thread.start()
+
+    def build(
+        self,
+        contextkw: t.Dict[str, t.Any],
+        on_done: t.Callable[[t.Union[bytes, Exception]], None],
+    ):
         """Build binary data from struct."""
-        try:
-            binary = self._construct.build(self.root_obj, **contextkw)
-            self._build_error_info_bar.Dismiss()
-        except Exception as e:
-            self._build_error_info_bar.ShowMessage(
-                f"Error while building binary data: {type(e).__name__}\n{str(e)}",
-                wx.ICON_WARNING,
-            )
-            raise e
+        if (self._builder_thread is not None) and self._builder_thread.is_alive():
+            # building is currently ongoing. abort it.
+            self._builder_thread.terminate()
+            self._builder_thread.join()
 
-        # parse the build binary, so that constructs that parses from nothing are shown correctly (eg. cs.Peek)
-        wx.CallAfter(lambda: self.parse(binary, **contextkw))
+        def on_building_done(byts_or_ex: t.Union[bytes, Exception]):
+            if isinstance(byts_or_ex, Exception):
+                ex = byts_or_ex
+                self._info_bar.show_building_error(ex)
+            else:
+                byts = byts_or_ex
 
-        return binary
+                # parse the build binary, so that constructs that parses from nothing are shown correctly (eg. cs.Peek)
+                self.parse(byts, contextkw, lambda obj_or_ex: None)
+
+            on_done(byts_or_ex)
+
+        self._builder_thread = BuilderThread(
+            self._construct,
+            self.root_obj,
+            contextkw,
+            lambda byts_or_ex: wx.CallAfter(on_building_done, byts_or_ex),
+        )
+        self._info_bar.show_info("Building...")
+        wx.Yield()
+        self._builder_thread.start()
 
     # Property: construct #####################################################
     @property

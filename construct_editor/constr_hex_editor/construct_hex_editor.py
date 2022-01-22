@@ -129,24 +129,27 @@ class ConstructHexEditor(wx.Panel):
         """Convert binary to construct object"""
         if self._converting:
             return
-        try:
-            self._converting = True
-            self.construct_editor.parse(
-                self.hex_panel.hex_editor.binary, **self.contextkw
-            )
-        finally:
+
+        def on_done(obj_or_ex: t.Union[t.Any, Exception]):
             self._converting = False
+
+        self._converting = True
+        self.construct_editor.parse(
+            self.hex_panel.hex_editor.binary, self.contextkw, on_done
+        )
 
     def _convert_struct_to_binary(self):
         """Convert construct object to binary"""
-        try:
-            self._converting = True
-            binary = self.construct_editor.build(**self.contextkw)
-            self.hex_panel.hex_editor.binary = binary
-        except Exception:
-            pass  # ignore errors, because they are already shown in the gui
-        finally:
+
+        def on_done(byts_or_ex: t.Union[bytes, Exception]):
+            if isinstance(byts_or_ex, Exception):
+                pass  # ignore errors, because they are already shown in the gui
+            else:
+                self.hex_panel.hex_editor.binary = byts_or_ex
             self._converting = False
+
+        self._converting = True
+        self.construct_editor.build(self.contextkw, on_done)
 
     def _on_entry_selected(self, entry: EntryConstruct):
         try:
