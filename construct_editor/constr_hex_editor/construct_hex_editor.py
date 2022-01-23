@@ -127,9 +127,6 @@ class ConstructHexEditor(wx.Panel):
     # Internals ###############################################################
     def _convert_binary_to_struct(self):
         """Convert binary to construct object"""
-        if self._converting:
-            return
-
         def on_done(obj_or_ex: t.Union[t.Any, Exception]):
             self._converting = False
 
