@@ -899,7 +899,8 @@ class EntryArray(EntrySubconstruct):
         if isinstance(self.construct, cs.Array):
             try:
                 metadata = get_gui_metadata(obj)
-                count = evaluate(self.construct.count, metadata["context"])
+                ctx = metadata["context"] if metadata is not None else None
+                count = evaluate(self.construct.count, ctx)
                 return f"Array[{count}]"
             except Exception:
                 return f"Array[{self.construct.count}]"
@@ -999,7 +1000,8 @@ class EntryIfThenElse(EntryConstruct):
             return None
         else:
             metadata = get_gui_metadata(obj)
-            cond = evaluate(self.construct.condfunc, metadata["context"])
+            ctx = metadata["context"] if metadata is not None else None
+            cond = evaluate(self.construct.condfunc, ctx)
             if cond:
                 return self._subentry_then
             else:
@@ -1122,7 +1124,8 @@ class EntrySwitch(EntryConstruct):
             return None
         else:
             metadata = get_gui_metadata(obj)
-            key = evaluate(self.construct.keyfunc, metadata["context"])
+            ctx = metadata["context"] if metadata is not None else None
+            key = evaluate(self.construct.keyfunc, ctx)
             if key in self._subentry_cases:
                 return self._subentry_cases[key]
             else:
@@ -1200,42 +1203,52 @@ class EntrySwitch(EntryConstruct):
 
 
 # EntryFormatField ####################################################################################################
+@dataclasses.dataclass
+class FormatFieldInt:
+    name: str
+    bits: int
+    signed: bool
+
+@dataclasses.dataclass()
+class FormatFieldFloat:
+    name: str
+
 class EntryFormatField(EntryConstruct):
     construct: "cs.FormatField[Any, Any]"
-    type_mapping = {
-        ">B": ("Int8ub", int, 8, False),
-        ">H": ("Int16ub", int, 16, False),
-        ">L": ("Int32ub", int, 32, False),
-        ">Q": ("Int64ub", int, 64, False),
-        ">b": ("Int8sb", int, 8, True),
-        ">h": ("Int16sb", int, 16, True),
-        ">l": ("Int32sb", int, 32, True),
-        ">q": ("Int64sb", int, 64, True),
-        "<B": ("Int8ul", int, 8, False),
-        "<H": ("Int16ul", int, 16, False),
-        "<L": ("Int32ul", int, 32, False),
-        "<Q": ("Int64ul", int, 64, False),
-        "<b": ("Int8sl", int, 8, True),
-        "<h": ("Int16sl", int, 16, True),
-        "<l": ("Int32sl", int, 32, True),
-        "<q": ("Int64sl", int, 64, True),
-        "=B": ("Int8un", int, 8, False),
-        "=H": ("Int16un", int, 16, False),
-        "=L": ("Int32un", int, 32, False),
-        "=Q": ("Int64un", int, 64, False),
-        "=b": ("Int8sn", int, 8, True),
-        "=h": ("Int16sn", int, 16, True),
-        "=l": ("Int32sn", int, 32, True),
-        "=q": ("Int64sn", int, 64, True),
-        ">e": ("Float16b", float),
-        "<e": ("Float16l", float),
-        "=e": ("Float16n", float),
-        ">f": ("Float32b", float),
-        "<f": ("Float32l", float),
-        "=f": ("Float32n", float),
-        ">d": ("Float64b", float),
-        "<d": ("Float64l", float),
-        "=d": ("Float64n", float),
+    type_mapping: t.Dict[str, t.Union[FormatFieldInt, FormatFieldFloat]] = {
+        ">B": FormatFieldInt("Int8ub", 8, False),
+        ">H": FormatFieldInt("Int16ub", 16, False),
+        ">L": FormatFieldInt("Int32ub", 32, False),
+        ">Q": FormatFieldInt("Int64ub", 64, False),
+        ">b": FormatFieldInt("Int8sb", 8, True),
+        ">h": FormatFieldInt("Int16sb", 16, True),
+        ">l": FormatFieldInt("Int32sb", 32, True),
+        ">q": FormatFieldInt("Int64sb", 64, True),
+        "<B": FormatFieldInt("Int8ul", 8, False),
+        "<H": FormatFieldInt("Int16ul", 16, False),
+        "<L": FormatFieldInt("Int32ul", 32, False),
+        "<Q": FormatFieldInt("Int64ul", 64, False),
+        "<b": FormatFieldInt("Int8sl", 8, True),
+        "<h": FormatFieldInt("Int16sl", 16, True),
+        "<l": FormatFieldInt("Int32sl", 32, True),
+        "<q": FormatFieldInt("Int64sl", 64, True),
+        "=B": FormatFieldInt("Int8un", 8, False),
+        "=H": FormatFieldInt("Int16un", 16, False),
+        "=L": FormatFieldInt("Int32un", 32, False),
+        "=Q": FormatFieldInt("Int64un", 64, False),
+        "=b": FormatFieldInt("Int8sn", 8, True),
+        "=h": FormatFieldInt("Int16sn", 16, True),
+        "=l": FormatFieldInt("Int32sn", 32, True),
+        "=q": FormatFieldInt("Int64sn", 64, True),
+        ">e": FormatFieldFloat("Float16b"),
+        "<e": FormatFieldFloat("Float16l"),
+        "=e": FormatFieldFloat("Float16n"),
+        ">f": FormatFieldFloat("Float32b"),
+        "<f": FormatFieldFloat("Float32l"),
+        "=f": FormatFieldFloat("Float32n"),
+        ">d": FormatFieldFloat("Float64b"),
+        "<d": FormatFieldFloat("Float64l"),
+        "=d": FormatFieldFloat("Float64n"),
     }
 
     def __init__(
@@ -1254,23 +1267,27 @@ class EntryFormatField(EntryConstruct):
             self.type_infos = self.type_mapping[construct.fmtstr]
 
     def create_obj_panel(self, parent) -> ObjPanel:
-        if self.type_infos[1] is int:
+        if isinstance(self.type_infos, FormatFieldInt):
             return ObjPanel_Integer(parent, self)
+        elif isinstance(self.type_infos, FormatFieldFloat):
+            return ObjPanel_Default(parent, self)  # TODO: ObjPanel_Float
         else:
-            return ObjPanel_Default(parent, self)  # TODO: float
+            return ObjPanel_Default(parent, self)
 
     @property
     def obj_str(self) -> str:
         obj = self.obj
-        if (obj is None) or (self.type_infos[1] is not int):
-            return str(obj)
-        else:
+        if isinstance(self.type_infos, FormatFieldInt) and (obj is not None):
             return int_to_str(self.model.integer_format, obj)
+        elif isinstance(self.type_infos, FormatFieldFloat) and (obj is not None):
+            return str(obj) # TODO: float_to_str
+        else:
+            return str(obj)
 
     @property
     def typ_str(self) -> str:
         if self.type_infos is not None:
-            return self.type_infos[0]
+            return self.type_infos.name
         else:
             return "FormatField[{}]".format(repr(self.construct.fmtstr))
 
@@ -1395,7 +1412,8 @@ class EntryBytes(EntryConstruct):
         if isinstance(self.construct, cs.Bytes):
             try:
                 metadata = get_gui_metadata(obj)
-                length = evaluate(self.construct.length, metadata["context"])
+                ctx = metadata["context"] if metadata is not None else None
+                length = evaluate(self.construct.length, ctx)
                 return f"Byte[{length}]"
             except Exception:
                 return f"Byte[{self.construct.length}]"
@@ -1576,7 +1594,7 @@ class EntryChecksumSubcon(EntrySubconstruct):
         self,
         model: "construct_editor.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Checksum[Any, Any]",
+        construct: "cs.Checksum[Any, Any, Any]",
         name: NameType,
         docs: str,
     ):

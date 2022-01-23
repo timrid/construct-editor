@@ -376,11 +376,12 @@ def main():
 
         app = wit.InspectableApp()
     else:
+        wit = None
         app = wx.App(False)
 
     frame = ConstructGalleryFrame(None)
     frame.Show(True)
-    if inspect is True:
+    if wit is not None:
         wit.InspectionTool().Show()
     app.MainLoop()
 

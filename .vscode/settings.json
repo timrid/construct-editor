@@ -21,6 +21,7 @@
         "reportPrivateUsage": "information",
         "reportUntypedNamedTuple": "information",
     },
+    "python.analysis.diagnosticMode": "workspace",
     "files.exclude": {
         ".venv/": true,
         "**/__pycache__": true,
