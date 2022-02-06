@@ -33,6 +33,8 @@ import construct_editor.gallery.test_aligned
 import construct_editor.gallery.test_pointer_peek_seek_tell
 import construct_editor.gallery.test_pass
 import construct_editor.gallery.test_fixedsized
+import construct_editor.gallery.test_nullstripped
+import construct_editor.gallery.test_nullterminated
 import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
@@ -122,8 +124,8 @@ class ConstructGallery(wx.Panel):
             # "Test: RawCopy (TODO)": None,
             # "Test: Prefixed (TODO)": None,
             "Test: FixedSized": construct_editor.gallery.test_fixedsized.gallery_item,
-            # "Test: NullTerminated (TODO)": None,
-            # "Test: NullStripped (TODO)": None,
+            "Test: NullTerminated": construct_editor.gallery.test_nullterminated.gallery_item,
+            "Test: NullStripped": construct_editor.gallery.test_nullstripped.gallery_item,
             # "Test: RestreamData (TODO)": None,
             # "Test: Transformed (TODO)": None,
             # "Test: Restreamed (TODO)": None,

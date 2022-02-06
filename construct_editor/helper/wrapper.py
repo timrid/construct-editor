@@ -1515,6 +1515,44 @@ class EntryTransparentSubcon(EntrySubconstruct):
         super().__init__(model, parent, construct, name, docs)
 
 
+# EntryNullStripped ###################################################################################################
+class EntryNullStripped(EntrySubconstruct):
+    construct: "cs.NullStripped[Any, Any]"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.NullStripped[Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def typ_str(self) -> str:
+        return f"NullStripped[{self.subentry.typ_str}, Pad={self.construct.pad}]"
+
+
+# EntryNullTerminated #################################################################################################
+class EntryNullTerminated(EntrySubconstruct):
+    construct: "cs.NullTerminated[Any, Any]"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.NullTerminated[Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def typ_str(self) -> str:
+        return f"NullTerminated[{self.subentry.typ_str}, Term={self.construct.term}]"
+
+
 # EntryChecksumSubcon #################################################################################################
 class EntryChecksumSubcon(EntrySubconstruct):
     def __init__(
@@ -1939,8 +1977,8 @@ construct_entry_mapping: t.Dict[
     cs.RawCopy: EntryRawCopy,
     cs.Prefixed: EntryTransparentSubcon,
     cs.FixedSized: EntryTransparentSubcon,
-    # cs.NullTerminated
-    # cs.NullStripped
+    cs.NullTerminated: EntryNullTerminated,
+    cs.NullStripped: EntryNullStripped,
     # cs.RestreamData
     cs.Transformed: EntryTransparentSubcon,
     cs.Restreamed: EntryTransparentSubcon,

@@ -149,6 +149,7 @@ def include_metadata(
             cs.Prefixed,
             cs.FixedSized,
             cs.NullStripped,
+            cs.NullTerminated,
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
