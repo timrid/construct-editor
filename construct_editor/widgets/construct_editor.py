@@ -10,7 +10,7 @@ import textwrap
 
 from construct_editor.helper.preprocessor import include_metadata
 from construct_editor.helper.wrapper import (
-    ObjPanel,
+    ObjEditorMixin,
     EntryConstruct,
     create_entry_from_construct,
     get_gui_metadata,
@@ -78,12 +78,12 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         return True
 
     def CreateEditorCtrl(self, parent, labelRect: wx.Rect, value: EntryConstruct):
-        editor: ObjPanel = value.create_obj_panel(parent)
+        editor: ObjEditorMixin = value.create_obj_panel(parent)
         editor.SetPosition(labelRect.Position)
         editor.SetSize(labelRect.Size)
         return editor
 
-    def GetValueFromEditorCtrl(self, editor: ObjPanel):
+    def GetValueFromEditorCtrl(self, editor: ObjEditorMixin):
         new_obj = editor.get_new_obj()
         # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
         # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type

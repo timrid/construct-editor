@@ -49,112 +49,71 @@ def str_to_bytes(s: str) -> bytes:
 # #####################################################################################################################
 # GUI Elements ########################################################################################################
 # #####################################################################################################################
-class ObjPanel(wx.Panel):
-    """Base class for a panel that shows the value and allows modifications of it."""
+class ObjEditorMixin(wx.Window):
+    """Mixin class for a wx.Window that shows the value and allows modifications of it."""
 
     def get_new_obj(self) -> Any:
         raise NotImplementedError()
 
 
-class ObjPanel_Empty(ObjPanel):
+class ObjEditor_Empty(wx.TextCtrl, ObjEditorMixin):
     def __init__(self, parent):
-        super().__init__(parent)
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txt = wx.TextCtrl(
-            self,
+        super().__init__(
+            parent,
             wx.ID_ANY,
             wx.EmptyString,
             wx.DefaultPosition,
             wx.Size(-1, -1),
             style=wx.TE_READONLY,
         )
-        hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.SetSizer(hsizer)
-        self.Layout()
 
 
-class ObjPanel_Default(ObjPanel):
+class ObjEditor_Default(wx.TextCtrl, ObjEditorMixin):
     def __init__(self, parent, entry: "EntryConstruct"):
-        super().__init__(parent)
         self.entry = entry
 
-        # Test if the obj of the entry is available
-        if self.entry.obj is None:
-            return
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txt = wx.TextCtrl(
-            self,
+        super().__init__(
+            parent,
             wx.ID_ANY,
             self.entry.obj_str,
             wx.DefaultPosition,
             wx.Size(-1, -1),
             style=wx.TE_READONLY,
         )
-        hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.SetSizer(hsizer)
-        self.Layout()
 
     def get_new_obj(self) -> Any:
         return self.entry.obj
 
 
-class ObjPanel_String(ObjPanel):
+class ObjEditor_String(wx.TextCtrl, ObjEditorMixin):
     def __init__(self, parent, entry: "EntryConstruct"):
-        super().__init__(parent)
-        self.entry = entry
-
-        # Test if the obj of the entry is available
-        if self.entry.obj is None:
-            return
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txt = wx.TextCtrl(
-            self,
+        super().__init__(
+            parent,
             wx.ID_ANY,
-            self.entry.obj_str,
+            entry.obj_str,
             style=wx.TE_PROCESS_ENTER,
         )
-        hsizer.Add(self.obj_txt, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.SetSizer(hsizer)
-        self.Layout()
+        self.SelectAll()
 
     def get_new_obj(self) -> Any:
-        val_str: str = self.obj_txt.GetValue()
+        val_str: str = self.GetValue()
         return val_str
 
 
-class ObjPanel_Integer(ObjPanel):
+class ObjEditor_Integer(wx.TextCtrl, ObjEditorMixin):
     def __init__(self, parent, entry: "EntryConstruct"):
-        super().__init__(parent)
-        self.entry = entry
-
-        # Test if the obj of the entry is available
-        if self.entry.obj is None:
-            return
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txtctrl = wx.TextCtrl(
-            self,
+        super().__init__(
+            parent,
             wx.ID_ANY,
-            self.entry.obj_str,
+            entry.obj_str,
             style=wx.TE_PROCESS_ENTER,
         )
-        hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.SetSizer(hsizer)
-        self.Layout()
+        self.SelectAll()
 
     def get_new_obj(self) -> Any:
-        val_str: str = self.obj_txtctrl.GetValue()
+        val_str: str = self.GetValue()
 
         try:
             # convert string to integer
@@ -165,33 +124,22 @@ class ObjPanel_Integer(ObjPanel):
         return new_obj
 
 
-class ObjPanel_Flag(ObjPanel):
+class ObjEditor_Flag(wx.TextCtrl, ObjEditorMixin):
     true_strings = ["t", "true", "1"]
     false_strings = ["f", "false", "0"]
 
     def __init__(self, parent, entry: "EntryConstruct"):
-        super().__init__(parent)
-        self.entry = entry
-
-        # Test if the obj of the entry is available
-        if self.entry.obj is None:
-            return
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txtctrl = wx.TextCtrl(
-            self,
+        super().__init__(
+            parent,
             wx.ID_ANY,
-            self.entry.obj_str,
+            entry.obj_str,
             style=wx.TE_PROCESS_ENTER,
         )
-        hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.SetSizer(hsizer)
-        self.Layout()
+        self.SelectAll()
 
     def get_new_obj(self) -> Any:
-        val_str: str = self.obj_txtctrl.GetValue()
+        val_str: str = self.GetValue()
 
         val_str = val_str.lower()
         if val_str in self.true_strings:
@@ -204,30 +152,19 @@ class ObjPanel_Flag(ObjPanel):
         return new_obj
 
 
-class ObjPanel_Bytes(ObjPanel):
+class ObjEditor_Bytes(wx.TextCtrl, ObjEditorMixin):
     def __init__(self, parent, entry: "EntryConstruct"):
-        super().__init__(parent)
-        self.entry = entry
-
-        # Test if the obj of the entry is available
-        if self.entry.obj is None:
-            return
-
-        # Obj
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.obj_txtctrl = wx.TextCtrl(
-            self,
+        super().__init__(
+            parent,
             wx.ID_ANY,
-            self.entry.obj_str,
+            entry.obj_str,
             style=wx.TE_PROCESS_ENTER,
         )
-        hsizer.Add(self.obj_txtctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.SetSizer(hsizer)
-        self.Layout()
+        self.SelectAll()
 
     def get_new_obj(self) -> Any:
-        val_str: str = self.obj_txtctrl.GetValue()
+        val_str: str = self.GetValue()
 
         try:
             # convert string to bytes
@@ -244,42 +181,30 @@ class EnumItem:
     value: int
 
 
-class ObjPanel_Enum(ObjPanel):
+class ObjEditor_Enum(wx.ComboBox, ObjEditorMixin):
     def __init__(self, parent, entry: Union["EntryTEnum", "EntryEnum"]):
-        super().__init__(parent)
-        self.entry = entry
-
-        # Test if the obj of the entry is available
-        if self.entry.obj is None:
-            return
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.obj_combobox = wx.ComboBox(
-            self,
+        super().__init__(
+            parent,
             style=wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER,
         )
-        hsizer.Add(self.obj_combobox, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
+        self.entry = entry
 
-        items = self.entry.get_enum_items()
+        items = entry.get_enum_items()
         for pos, item in enumerate(items):
-            self.obj_combobox.Insert(
+            self.Insert(
                 item=f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})",
                 pos=pos,
                 clientData=item,
             )
-        item = self.entry.get_enum_item_from_obj()
+        item = entry.get_enum_item_from_obj()
         sel_item_str = (
             f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})"
         )
-        self.obj_combobox.SetStringSelection(sel_item_str)
-        self.obj_combobox.SetValue(sel_item_str)  # show even if it is not in the list
-
-        self.SetSizer(hsizer)
-        self.Layout()
+        self.SetStringSelection(sel_item_str)
+        self.SetValue(sel_item_str)  # show even if it is not in the list
 
     def get_new_obj(self) -> Any:
-        val_str: str = self.obj_combobox.GetValue()
+        val_str: str = self.GetValue()
         if len(val_str) == 0:
             val_str = "0"
 
@@ -363,25 +288,19 @@ class FlagsEnumComboPopup(wx.ComboPopup):
         return self.entry.conv_obj_to_str(temp_obj)
 
 
-class ObjPanel_FlagsEnum(ObjPanel):
+class ObjEditor_FlagsEnum(wx.ComboCtrl, ObjEditorMixin):
     def __init__(self, parent, entry: Union["EntryTFlagsEnum", "EntryFlagsEnum"]):
-        super().__init__(parent)
+        super().__init__(
+            parent,
+            style=wx.CB_READONLY,
+        )
         self.entry = entry
 
-        obj = self.entry.obj
-
-        # Test if the obj of the entry is available
-        if obj is None:
-            return
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.combo_ctrl = wx.ComboCtrl(self, style=wx.CB_READONLY)
-        self.popup_ctrl = FlagsEnumComboPopup(self.combo_ctrl, self.entry)
-        self.combo_ctrl.SetPopupControl(self.popup_ctrl)
+        self.popup_ctrl = FlagsEnumComboPopup(self, entry)
+        self.SetPopupControl(self.popup_ctrl)
 
         # Initialize CheckListBox
-        items = self.entry.get_flagsenum_items_from_obj()
+        items = entry.get_flagsenum_items_from_obj()
         for pos, item in enumerate(items):
             self.popup_ctrl.clbx.Insert(
                 item=f"{int_to_str(entry.model.integer_format, item.value)} ({item.name})",
@@ -390,12 +309,7 @@ class ObjPanel_FlagsEnum(ObjPanel):
             )
             self.popup_ctrl.clbx.Check(pos, item.checked)
 
-        self.combo_ctrl.SetValue(self.popup_ctrl.GetStringValue())
-
-        hsizer.Add(self.combo_ctrl, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 0)
-
-        self.SetSizer(hsizer)
-        self.Layout()
+        self.SetValue(self.popup_ctrl.GetStringValue())
 
     def get_new_obj(self) -> Any:
         flagsenum_items = self.popup_ctrl.get_flagsenum_items()
@@ -403,10 +317,10 @@ class ObjPanel_FlagsEnum(ObjPanel):
         return new_obj
 
 
-class ObjPanel_Timestamp(ObjPanel):
+class ObjEditor_Timestamp(wx.Panel, ObjEditorMixin):
     def __init__(self, parent, entry: "EntryTimestamp"):
         super().__init__(parent)
-        self.entry = entry
+        self.parent = parent
 
         # Test if the obj of the entry is available
         if entry.obj is None:
@@ -414,9 +328,11 @@ class ObjPanel_Timestamp(ObjPanel):
         if not isinstance(entry.obj, arrow.Arrow):
             return
 
+        self.obj_type = type(entry.obj)
+
         # Obj
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        dt = self.entry.obj.datetime
+        dt = entry.obj.datetime
         wx_datetime = wx.DateTime(
             day=dt.day,
             month=dt.month - 1,  # in wx.adc.DatePickerCtrl the month start with 0
@@ -450,12 +366,16 @@ class ObjPanel_Timestamp(ObjPanel):
         self.obj_txtctrl = wx.TextCtrl(
             self,
             wx.ID_ANY,
-            self.entry.obj_str,
+            entry.obj_str,
             wx.DefaultPosition,
             wx.DefaultSize,
             style=wx.TE_READONLY,
         )
         hsizer.Add(self.obj_txtctrl, 1, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.date_picker.Bind(wx.EVT_KILL_FOCUS, self._on_kill_focus)
+        self.time_picker.Bind(wx.EVT_KILL_FOCUS, self._on_kill_focus)
+        self.obj_txtctrl.Bind(wx.EVT_KILL_FOCUS, self._on_kill_focus)
 
         self.SetSizer(hsizer)
         self.Layout()
@@ -463,8 +383,7 @@ class ObjPanel_Timestamp(ObjPanel):
     def get_new_obj(self) -> Any:
         date: wx.DateTime = self.date_picker.GetValue()
         time: wx.DateTime = self.time_picker.GetValue()
-        obj_type = type(self.entry.obj)
-        new_obj = obj_type(
+        new_obj = self.obj_type(
             year=date.year,
             month=date.month + 1,  # in wx.adc.DatePickerCtrl the month start with 0
             day=date.day,
@@ -473,6 +392,12 @@ class ObjPanel_Timestamp(ObjPanel):
             second=time.second,
         )
         return new_obj
+
+    def _on_kill_focus(self, event):
+        # The kill focus event is not propagated from the childs to the panel. So we have to do it manually.
+        # If this is not done, the dvc editor is not closed correctly, when the focus is lost.
+        evt_handler: wx.EvtHandler = self.GetEventHandler()
+        evt_handler.ProcessEvent(event)
 
 
 # #####################################################################################################################
@@ -626,9 +551,9 @@ class EntryConstruct(object):
             flat_subentry_list.append(self)
 
     # default "create_obj_panel" ##############################################
-    def create_obj_panel(self, parent) -> ObjPanel:
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
         """This method is called, when the user clicks an entry"""
-        return ObjPanel_Default(parent, self)
+        return ObjEditor_Default(parent, self)
 
     # default "modify_context_menu" ###########################################
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
@@ -737,7 +662,7 @@ class EntrySubconstruct(EntryConstruct):
         self.subentry.dvc_item_expanded = val
 
     # pass throught "create_obj_panel" to subentry ############################
-    def create_obj_panel(self, parent) -> ObjPanel:
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
         return self.subentry.create_obj_panel(parent)
 
     # pass throught "modify_context_menu" to subentry #########################
@@ -778,13 +703,13 @@ def add_adapter_mapping(
         def obj_str(self) -> Any:
             return str(self.obj)
 
-        def create_obj_panel(self, parent) -> ObjPanel:
+        def create_obj_panel(self, parent) -> ObjEditorMixin:
             if obj_panel == AdapterPanelType.Integer:
-                return ObjPanel_Integer(parent, self)
+                return ObjEditor_Integer(parent, self)
             elif obj_panel == AdapterPanelType.String:
-                return ObjPanel_String(parent, self)
+                return ObjEditor_String(parent, self)
             else:
-                return ObjPanel_Default(parent, self)
+                return ObjEditor_Default(parent, self)
 
     construct_entry_mapping[adapter] = EntryAdapter
 
@@ -823,8 +748,8 @@ class EntryStruct(EntryConstruct):
     def obj_str(self) -> str:
         return ""
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Struct
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Default(parent, self)  # TODO: create panel for cs.Struct
 
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
         menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
@@ -914,8 +839,8 @@ class EntryArray(EntrySubconstruct):
     def obj_str(self) -> str:
         return ""
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Default(parent, self)  # TODO: create panel for cs.Array
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Default(parent, self)  # TODO: create panel for cs.Array
 
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
         menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
@@ -1063,10 +988,10 @@ class EntryIfThenElse(EntryConstruct):
         else:
             return subentry.subentries
 
-    def create_obj_panel(self, parent) -> ObjPanel:
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjPanel_Default(parent, self)
+            return ObjEditor_Default(parent, self)
         else:
             return subentry.create_obj_panel(parent)
 
@@ -1187,10 +1112,10 @@ class EntrySwitch(EntryConstruct):
         else:
             return subentry.subentries
 
-    def create_obj_panel(self, parent) -> ObjPanel:
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjPanel_Default(parent, self)
+            return ObjEditor_Default(parent, self)
         else:
             return subentry.create_obj_panel(parent)
 
@@ -1209,9 +1134,11 @@ class FormatFieldInt:
     bits: int
     signed: bool
 
+
 @dataclasses.dataclass()
 class FormatFieldFloat:
     name: str
+
 
 class EntryFormatField(EntryConstruct):
     construct: "cs.FormatField[Any, Any]"
@@ -1266,13 +1193,13 @@ class EntryFormatField(EntryConstruct):
         if construct.fmtstr in self.type_mapping:
             self.type_infos = self.type_mapping[construct.fmtstr]
 
-    def create_obj_panel(self, parent) -> ObjPanel:
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
         if isinstance(self.type_infos, FormatFieldInt):
-            return ObjPanel_Integer(parent, self)
+            return ObjEditor_Integer(parent, self)
         elif isinstance(self.type_infos, FormatFieldFloat):
-            return ObjPanel_Default(parent, self)  # TODO: ObjPanel_Float
+            return ObjEditor_Default(parent, self)  # TODO: ObjEditor_Float
         else:
-            return ObjPanel_Default(parent, self)
+            return ObjEditor_Default(parent, self)
 
     @property
     def obj_str(self) -> str:
@@ -1280,7 +1207,7 @@ class EntryFormatField(EntryConstruct):
         if isinstance(self.type_infos, FormatFieldInt) and (obj is not None):
             return int_to_str(self.model.integer_format, obj)
         elif isinstance(self.type_infos, FormatFieldFloat) and (obj is not None):
-            return str(obj) # TODO: float_to_str
+            return str(obj)  # TODO: float_to_str
         else:
             return str(obj)
 
@@ -1330,11 +1257,11 @@ class EntryBytesInteger(EntryConstruct):
         else:
             return int_to_str(self.model.integer_format, obj)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
         if isinstance(self.construct.length, int):
-            return ObjPanel_Integer(parent, self)
+            return ObjEditor_Integer(parent, self)
         else:
-            return ObjPanel_Default(parent, self)
+            return ObjEditor_Default(parent, self)
 
 
 # EntryBitsInteger ####################################################################################################
@@ -1367,11 +1294,11 @@ class EntryBitsInteger(EntryConstruct):
         else:
             return int_to_str(self.model.integer_format, obj)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
         if isinstance(self.construct.length, int):
-            return ObjPanel_Integer(parent, self)
+            return ObjEditor_Integer(parent, self)
         else:
-            return ObjPanel_Default(parent, self)
+            return ObjEditor_Default(parent, self)
 
 
 # EntryBytes ##########################################################################################################
@@ -1423,8 +1350,8 @@ class EntryBytes(EntryConstruct):
             except Exception:
                 return "GreedyBytes"
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Bytes(parent, self)
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Bytes(parent, self)
 
     def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
         menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
@@ -1571,8 +1498,8 @@ class EntryTimestamp(EntrySubconstruct):
     def obj_str(self) -> str:
         return str(self.obj)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Timestamp(parent, self)
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Timestamp(parent, self)
 
 
 # EntryTransparentSubcon ##############################################################################################
@@ -1677,8 +1604,8 @@ class EntryFlag(EntryConstruct):
     ):
         super().__init__(model, parent, construct, name, docs)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Flag(parent, self)
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Flag(parent, self)
 
     @property
     def obj_str(self) -> str:
@@ -1715,8 +1642,8 @@ class EntryEnum(EntrySubconstruct):
         except Exception:
             return str(self.obj)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Enum(parent, self)
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Enum(parent, self)
 
     def get_enum_items(self) -> t.List[EnumItem]:
         """Get items to show in the ComboBox"""
@@ -1778,8 +1705,8 @@ class EntryFlagsEnum(EntrySubconstruct):
     def obj_str(self) -> str:
         return self.conv_obj_to_str(self.obj)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_FlagsEnum(parent, self)
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_FlagsEnum(parent, self)
 
     def conv_obj_to_str(self, obj: Any) -> str:
         try:
@@ -1840,8 +1767,8 @@ class EntryTEnum(EntrySubconstruct):
         except Exception:
             return str(self.obj)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_Enum(parent, self)
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Enum(parent, self)
 
     def get_enum_items(self) -> t.List[EnumItem]:
         """Get items to show in the ComboBox"""
@@ -1892,8 +1819,8 @@ class EntryTFlagsEnum(EntrySubconstruct):
     def obj_str(self) -> str:
         return self.conv_obj_to_str(self.obj)
 
-    def create_obj_panel(self, parent) -> ObjPanel:
-        return ObjPanel_FlagsEnum(parent, self)
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_FlagsEnum(parent, self)
 
     def conv_obj_to_str(self, obj: Any) -> str:
         try:
