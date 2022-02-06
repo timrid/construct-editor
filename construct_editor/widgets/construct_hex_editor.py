@@ -18,7 +18,7 @@ class HexEditorPanel(wx.SplitterWindow):
     def __init__(self, parent, name: str, read_only: bool = False):
         super().__init__(parent, style=wx.SP_LIVE_UPDATE)
         self.SetSashGravity(0.5)
-        
+
         panel = wx.Panel(self)
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -49,7 +49,6 @@ class HexEditorPanel(wx.SplitterWindow):
         vsizer.Add(self.hex_editor, 1)
         panel.SetSizer(vsizer)
 
-        
         self.Initialize(panel)
 
         self.sub_panel: t.Optional["HexEditorPanel"] = None
@@ -188,30 +187,27 @@ class ConstructHexEditor(wx.Panel):
     # Internals ###############################################################
     def _convert_binary_to_struct(self):
         """Convert binary to construct object"""
-        if self._converting:
-            return
-        try:
-            self._converting = True
-            self.Freeze()
-            self.construct_editor.parse(
-                self.hex_panel.hex_editor.binary, **self.contextkw
-            )
-        finally:
-            self.Thaw()
+
+        def on_done(obj_or_ex: t.Union[t.Any, Exception]):
             self._converting = False
+
+        self._converting = True
+        self.construct_editor.parse(
+            self.hex_panel.hex_editor.binary, self.contextkw, on_done
+        )
 
     def _convert_struct_to_binary(self):
         """Convert construct object to binary"""
-        try:
-            self._converting = True
-            self.Freeze()
-            binary = self.construct_editor.build(**self.contextkw)
-            self.hex_panel.hex_editor.binary = binary
-        except Exception:
-            pass  # ignore errors, because they are already shown in the gui
-        finally:
-            self.Thaw()
+
+        def on_done(byts_or_ex: t.Union[bytes, Exception]):
+            if isinstance(byts_or_ex, Exception):
+                pass  # ignore errors, because they are already shown in the gui
+            else:
+                self.hex_panel.hex_editor.binary = byts_or_ex
             self._converting = False
+
+        self._converting = True
+        self.construct_editor.build(self.contextkw, on_done)
 
     def _on_entry_selected(self, entry: EntryConstruct):
         try:
@@ -225,20 +221,11 @@ class ConstructHexEditor(wx.Panel):
 
     def _show_stream_infos(self, stream_infos: t.List[StreamInfo]):
         hex_pnl = self.hex_panel
-        panel_stream_mapping: t.List[t.Tuple[HexEditorPanel, StreamInfo]] = []
-
-        # Create all Sub-Panels
         for idx, stream_info in enumerate(stream_infos):
             if idx != 0:  # dont create Sub-Panel for the root stream
                 hex_pnl = hex_pnl.create_sub_panel(".".join(stream_info.path))
                 hex_pnl.hex_editor.binary = stream_info.stream.getvalue()
 
-            panel_stream_mapping.append((hex_pnl, stream_info))
-
-        # Mark to correct bytes in the stream.
-        # Can only be made when alls sub-panels are created. Otherwise "scroll_to_idx"
-        # does not work properly because the size of the HexEditorPanel may change.
-        for hex_pnl, stream_info in panel_stream_mapping:
             start = stream_info.byte_range[0]
             end = stream_info.byte_range[1]
 
