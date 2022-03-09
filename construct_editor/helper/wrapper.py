@@ -1918,7 +1918,7 @@ construct_entry_mapping: t.Dict[
     cs.BitsInteger: EntryBitsInteger,
     #
     # strings ###################################
-    # cs.StringEncoded
+    cs.StringEncoded : EntryTransparentSubcon,
     #
     # mappings ##################################
     cs.Flag: EntryFlag,
