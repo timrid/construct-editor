@@ -37,6 +37,7 @@ import construct_editor.gallery.test_nullstripped
 import construct_editor.gallery.test_nullterminated
 import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
+import construct_editor.gallery.test_stringencodded
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
@@ -71,8 +72,8 @@ class ConstructGallery(wx.Panel):
             # "Test: BytesInteger (TODO)": None,
             # "Test: BitsInteger (TODO)": None,
             "Test: Bitwiese": construct_editor.gallery.test_bitwise.gallery_item,
-            # "## strings #######################": None,
-            # "Test: StringEncoded (TODO)": None,
+            "## strings #######################": None,
+            "Test: StringEncoded": construct_editor.gallery.test_stringencodded.gallery_item,
             "## mappings ######################": None,
             "Test: Flag": construct_editor.gallery.test_flag.gallery_item,
             "Test: Enum": construct_editor.gallery.test_enum.gallery_item,
