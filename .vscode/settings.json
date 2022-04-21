@@ -9,10 +9,6 @@
     //
     // Python Formatting //////////////////////////////////////////////////////
     "python.formatting.provider": "black",
-    "python.formatting.blackArgs": [
-        "--line-length",
-        "120"
-    ],
     //
     // Python Sort Imports ////////////////////////////////////////////////////
     "python.sortImports.args": [
