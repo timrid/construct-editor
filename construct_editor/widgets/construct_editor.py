@@ -729,7 +729,7 @@ class ConstructEditor(wx.Panel):
             end = byte_range[1] - 1
             size = end - start + 1
             if size > 0:
-                bytes_info = f"Bytes: {start}-{end} ({size})"
+                bytes_info = f"Bytes: {start:n}-{end:n} ({size:n})"
         self._status_bar.SetStatusText(bytes_info, 1)
 
     def _clear_status_bar(self):

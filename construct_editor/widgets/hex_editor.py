@@ -1118,15 +1118,15 @@ class HexEditor(wx.Panel):
         self.Show(True)
 
     def _on_binary_changed(self, binary_data: HexEditorBinaryData):
-        msg = f"{len(binary_data):d} Bytes"
+        msg = f"{len(binary_data):n} Bytes"
         self._status_bar.SetStatusText(msg, 0)
         self.refresh()
 
     def _on_selection_changed(self, idx1: int, idx2: Optional[int]):
         if idx2 is None:
-            msg = f"Selection: {idx1:d}"
+            msg = f"Selection: {idx1:n}"
         else:
-            msg = f"Selection: {idx1:d}-{idx2:d} ({idx2-idx1+1:d})"
+            msg = f"Selection: {idx1:n}-{idx2:n} ({idx2-idx1+1:n})"
 
         self._status_bar.SetStatusText(msg, 1)
 
