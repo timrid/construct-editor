@@ -599,10 +599,32 @@ class EntryConstruct(object):
 
         # Create new StreamInfo for the stream
         if child_stream != stream:
+            bitstream = getattr(stream, "_construct_bitstream_flag", False)
+
+            # Some special handling for RestreamedBytesIO
+            # (eg. nessesary for `cs.Bitwise(cs.GreedyRange(cs.Bit))`)
+            if isinstance(stream, cs.RestreamedBytesIO):
+                if not isinstance(stream.substream, io.BytesIO):
+                    raise RuntimeError("stream.substream has to be io.BytesIO")
+
+                bytes_io_stream: t.Optional[io.BytesIO] = getattr(
+                    stream, "_construct_bytes_io", None
+                )
+                if bytes_io_stream is None:
+                    # reset substream, so that the stream can be read
+                    stream.substream.seek(0)
+
+                    # read the entire stream
+                    data = stream.read()
+
+                    # create a new stream with the data
+                    bytes_io_stream = io.BytesIO(data)
+                    setattr(stream, "_construct_bytes_io", bytes_io_stream)
+
+                stream = bytes_io_stream
+
             if not isinstance(stream, io.BytesIO):
                 raise RuntimeError("stream has to be io.BytesIO")
-
-            bitstream = getattr(stream, "_construct_bitstream_flag", False)
 
             stream_infos.append(
                 StreamInfo(
