@@ -408,6 +408,7 @@ class StreamInfo:
     stream: io.BytesIO
     path: List[str]
     byte_range: t.Tuple[int, int]
+    bitstream: bool
 
 
 class NameExcludedFromPath(str):
@@ -601,11 +602,14 @@ class EntryConstruct(object):
             if not isinstance(stream, io.BytesIO):
                 raise RuntimeError("stream has to be io.BytesIO")
 
+            bitstream = getattr(stream, "_construct_bitstream_flag", False)
+
             stream_infos.append(
                 StreamInfo(
                     stream=stream,
                     path=self.path[:-1],
                     byte_range=(metadata["byte_range"]),
+                    bitstream=bitstream,
                 )
             )
 
@@ -1918,7 +1922,7 @@ construct_entry_mapping: t.Dict[
     cs.BitsInteger: EntryBitsInteger,
     #
     # strings ###################################
-    cs.StringEncoded : EntryTransparentSubcon,
+    cs.StringEncoded: EntryTransparentSubcon,
     #
     # mappings ##################################
     cs.Flag: EntryFlag,

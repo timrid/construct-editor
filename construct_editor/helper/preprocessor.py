@@ -76,13 +76,17 @@ def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
 class IncludeGuiMetaData(cs.Subconstruct):
     """Include GUI metadata to the parsed object"""
 
-    def __init__(self, subcon):
+    def __init__(self, subcon, bitwise: bool):
         super().__init__(subcon)  # type: ignore
+        self.bitwise = bitwise
 
     def _parse(self, stream, context, path):
         offset_start = cs.stream_tell(stream, path)
         obj = self.subcon._parsereport(stream, context, path)  # type: ignore
         offset_end = cs.stream_tell(stream, path)
+
+        if self.bitwise is True:
+            stream._construct_bitstream_flag = True
 
         gui_metadata = GuiMetaData(
             byte_range=(offset_start, offset_end),
@@ -100,7 +104,7 @@ class IncludeGuiMetaData(cs.Subconstruct):
 
 # #############################################################################
 def include_metadata(
-    constr: "cs.Construct[t.Any, t.Any]",
+    constr: "cs.Construct[t.Any, t.Any]", bitwise: bool = False
 ) -> "cs.Construct[t.Any, t.Any]":
     """
     Surrond all named entries of a construct with offsets, so that
@@ -127,7 +131,21 @@ def include_metadata(
             cs.Seek,
         ),
     ):
-        return IncludeGuiMetaData(constr)
+        return IncludeGuiMetaData(constr, bitwise)
+
+    # ########## Bitwiese Construct ###########################################
+    elif (
+        isinstance(constr, (cs.Restreamed))
+        and (constr.decoder is cs.bytes2bits)
+        and (constr.encoder is cs.bits2bytes)
+    ) or (
+        isinstance(constr, (cs.Transformed))
+        and (constr.decodefunc is cs.bytes2bits)
+        and (constr.encodefunc is cs.bits2bytes)
+    ):
+        constr = copy.copy(constr)  # constr is modified, so we have to make a copy
+        constr.subcon = include_metadata(constr.subcon, bitwise=True)
+        return IncludeGuiMetaData(constr, bitwise)
 
     # ########## Subconstructs ################################################
     elif isinstance(
@@ -153,46 +171,46 @@ def include_metadata(
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = include_metadata(constr.subcon)  # type: ignore
-        return IncludeGuiMetaData(constr)
+        constr.subcon = include_metadata(constr.subcon, bitwise)  # type: ignore
+        return IncludeGuiMetaData(constr, bitwise)
 
     # Struct ##################################################################
     elif isinstance(constr, cs.Struct):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
         new_subcons = []
         for subcon in constr.subcons:
-            new_subcons.append(include_metadata(subcon))
+            new_subcons.append(include_metadata(subcon, bitwise))
         constr.subcons = new_subcons
-        return IncludeGuiMetaData(constr)
+        return IncludeGuiMetaData(constr, bitwise)
 
     # IfThenElse ##############################################################
     elif isinstance(constr, cs.IfThenElse):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.thensubcon = include_metadata(constr.thensubcon)
-        constr.elsesubcon = include_metadata(constr.elsesubcon)
-        return IncludeGuiMetaData(constr)
+        constr.thensubcon = include_metadata(constr.thensubcon, bitwise)
+        constr.elsesubcon = include_metadata(constr.elsesubcon, bitwise)
+        return IncludeGuiMetaData(constr, bitwise)
 
     # Switch ##################################################################
     elif isinstance(constr, cs.Switch):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
         new_cases = {}
         for key, subcon in constr.cases.items():
-            new_cases[key] = include_metadata(subcon)
+            new_cases[key] = include_metadata(subcon, bitwise)
         constr.cases = new_cases
         if constr.default is not None:
-            constr.default = include_metadata(constr.default)
-        return IncludeGuiMetaData(constr)
+            constr.default = include_metadata(constr.default, bitwise)
+        return IncludeGuiMetaData(constr, bitwise)
 
     # Checksum #################################################################
     elif isinstance(constr, cs.Checksum):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.checksumfield = include_metadata(constr.checksumfield)
-        return IncludeGuiMetaData(constr)
+        constr.checksumfield = include_metadata(constr.checksumfield, bitwise)
+        return IncludeGuiMetaData(constr, bitwise)
 
     # Renamed #################################################################
     elif isinstance(constr, cs.Renamed):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = include_metadata(constr.subcon)  # type: ignore
+        constr.subcon = include_metadata(constr.subcon, bitwise)  # type: ignore
         return constr
 
     # Misc ####################################################################
@@ -214,7 +232,7 @@ def include_metadata(
             type(cs.Terminated),
         ),
     ):
-        return IncludeGuiMetaData(constr)
+        return IncludeGuiMetaData(constr, bitwise)
 
     # TODO:
     # # Grouping:

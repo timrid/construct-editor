@@ -1083,6 +1083,7 @@ class HexEditor(wx.Panel):
         binary: bytes = b"",
         format: Optional[HexEditorFormat] = None,
         read_only: bool = False,
+        bitwiese: bool = False,
     ):
         super().__init__(parent)
 
@@ -1091,6 +1092,7 @@ class HexEditor(wx.Panel):
             self._format = HexEditorFormat()
         else:
             self._format = format
+        self.bitwiese = bitwiese
 
         # self.control = wx.TextCtrl(self, style=wx.TE_MULTILINE)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1118,7 +1120,12 @@ class HexEditor(wx.Panel):
         self.Show(True)
 
     def _on_binary_changed(self, binary_data: HexEditorBinaryData):
-        msg = f"{len(binary_data):n} Bytes"
+        if self.bitwiese is True:
+            unit = "Bits"
+        else:
+            unit = "Bytes"
+
+        msg = f"{len(binary_data):n} {unit}"
         self._status_bar.SetStatusText(msg, 0)
         self.refresh()
 

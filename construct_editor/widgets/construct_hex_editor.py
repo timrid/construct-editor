@@ -15,7 +15,7 @@ from construct_editor.widgets.hex_editor import (
 
 
 class HexEditorPanel(wx.SplitterWindow):
-    def __init__(self, parent, name: str, read_only: bool = False):
+    def __init__(self, parent, name: str, read_only: bool = False, bitwiese: bool = False):
         super().__init__(parent, style=wx.SP_LIVE_UPDATE)
         self.SetSashGravity(0.5)
         
@@ -45,6 +45,7 @@ class HexEditorPanel(wx.SplitterWindow):
             b"",
             HexEditorFormat(width=16),
             read_only=read_only,
+            bitwiese=bitwiese
         )
         vsizer.Add(self.hex_editor, 1)
         panel.SetSizer(vsizer)
@@ -61,10 +62,10 @@ class HexEditorPanel(wx.SplitterWindow):
             self.sub_panel.Destroy()
             self.sub_panel = None
 
-    def create_sub_panel(self, name: str) -> "HexEditorPanel":
+    def create_sub_panel(self, name: str, bitwise: bool) -> "HexEditorPanel":
         """Create a new sub-panel"""
         if self.sub_panel is None:
-            self.sub_panel = HexEditorPanel(self, name, read_only=True)
+            self.sub_panel = HexEditorPanel(self, name, read_only=True, bitwiese=bitwise)
             self.SplitHorizontally(self.GetWindow1(), self.sub_panel)
             return self.sub_panel
         else:
@@ -230,7 +231,7 @@ class ConstructHexEditor(wx.Panel):
         # Create all Sub-Panels
         for idx, stream_info in enumerate(stream_infos):
             if idx != 0:  # dont create Sub-Panel for the root stream
-                hex_pnl = hex_pnl.create_sub_panel(".".join(stream_info.path))
+                hex_pnl = hex_pnl.create_sub_panel(".".join(stream_info.path), stream_info.bitstream)
                 hex_pnl.hex_editor.binary = stream_info.stream.getvalue()
 
             panel_stream_mapping.append((hex_pnl, stream_info))
