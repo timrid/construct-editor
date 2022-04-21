@@ -1,27 +1,34 @@
 {
-    "python.pythonPath": "./.venv/Scripts/python.exe",
+    // Python Settings ////////////////////////////////////////////////////////
+    "python.pythonPath": ".venv\\Scripts\\python.exe",
     "python.languageServer": "Pylance",
-    // "python.testing.unittestEnabled": false,
-    // "python.testing.nosetestsEnabled": false,
-    // "python.testing.pytestEnabled": true,
-    "pythonTestExplorer.testFramework": "pytest",
+    // 
+    // Python Testing (pytest) ////////////////////////////////////////////////
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    //
+    // Python Formatting //////////////////////////////////////////////////////
     "python.formatting.provider": "black",
-    "python.sortImports.path": "isort",
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "120"
+    ],
+    //
+    // Python Sort Imports ////////////////////////////////////////////////////
     "python.sortImports.args": [
         "--profile=black",
     ],
-    // "[python]": {
-    //     "editor.codeActionsOnSave": {
-    //         "source.organizeImports": true
-    //     }
-    // }
-    "python.analysis.typeCheckingMode": "basic",
+    //
+    // Python Static Analysis (Pylance) ///////////////////////////////////////
     "python.analysis.autoImportCompletions": false,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "workspace",
     "python.analysis.diagnosticSeverityOverrides": {
         "reportPrivateUsage": "information",
         "reportUntypedNamedTuple": "information",
     },
-    "python.analysis.diagnosticMode": "workspace",
+    //
+    // Misc ///////////////////////////////////////////////////////////////////
     "files.exclude": {
         ".venv/": true,
         "**/__pycache__": true,
