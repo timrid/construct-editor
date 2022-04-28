@@ -46,6 +46,45 @@ def str_to_bytes(s: str) -> bytes:
     return bytes.fromhex(s)
 
 
+def _convert_restreamed(stream: cs.RestreamedBytesIO) -> io.BytesIO:
+    """
+    Helper method to convert a `RestreamedBytesIO` to a normal `BytesIO`.
+    This is eg. nessesary for:
+      - `cs.Bitwise(cs.GreedyRange(cs.Bit))`
+      - `cs.BitsSwapped(cs.Bitwise(cs.GreedyRange(cs.Bit)))`
+    """
+
+    def reset_substream_recursively(stream: t.Union[io.BytesIO, cs.RestreamedBytesIO]):
+        if isinstance(stream, cs.RestreamedBytesIO):
+            if stream.substream is None:
+                raise RuntimeError(
+                    "stream.substream has to be io.BytesIO or cs.RestreamedBytesIO"
+                )
+            return reset_substream_recursively(stream.substream)
+        else:
+            stream.seek(0)
+
+    # check if there is already a cached version
+    bytes_io_stream: t.Optional[io.BytesIO] = getattr(
+        stream, "_construct_bytes_io", None
+    )
+
+    if bytes_io_stream is None:
+        # reset substream recursively, so that the whole RestreamedBytesIO can be read again
+        reset_substream_recursively(stream)
+
+        # read the entire RestreamedBytesIO
+        data = stream.read()
+
+        # create a new BytesIO with the data of the RestreamedBytesIO
+        bytes_io_stream = io.BytesIO(data)
+
+        # cache the created stream, so that we dont have to do it again
+        setattr(stream, "_construct_bytes_io", bytes_io_stream)
+
+    return bytes_io_stream
+
+
 # #####################################################################################################################
 # GUI Elements ########################################################################################################
 # #####################################################################################################################
@@ -602,26 +641,8 @@ class EntryConstruct(object):
             bitstream = getattr(stream, "_construct_bitstream_flag", False)
 
             # Some special handling for RestreamedBytesIO
-            # (eg. nessesary for `cs.Bitwise(cs.GreedyRange(cs.Bit))`)
             if isinstance(stream, cs.RestreamedBytesIO):
-                if not isinstance(stream.substream, io.BytesIO):
-                    raise RuntimeError("stream.substream has to be io.BytesIO")
-
-                bytes_io_stream: t.Optional[io.BytesIO] = getattr(
-                    stream, "_construct_bytes_io", None
-                )
-                if bytes_io_stream is None:
-                    # reset substream, so that the stream can be read
-                    stream.substream.seek(0)
-
-                    # read the entire stream
-                    data = stream.read()
-
-                    # create a new stream with the data
-                    bytes_io_stream = io.BytesIO(data)
-                    setattr(stream, "_construct_bytes_io", bytes_io_stream)
-
-                stream = bytes_io_stream
+                stream = _convert_restreamed(stream)
 
             if not isinstance(stream, io.BytesIO):
                 raise RuntimeError("stream has to be io.BytesIO")

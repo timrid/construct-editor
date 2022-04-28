@@ -15,6 +15,7 @@ import construct_editor.gallery.test_bytes_greedybytes
 import construct_editor.gallery.test_array
 import construct_editor.gallery.test_greedyrange
 import construct_editor.gallery.test_bitwise
+import construct_editor.gallery.test_bits_swapped_bitwise
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
@@ -72,6 +73,7 @@ class ConstructGallery(wx.Panel):
             # "Test: BytesInteger (TODO)": None,
             # "Test: BitsInteger (TODO)": None,
             "Test: Bitwiese": construct_editor.gallery.test_bitwise.gallery_item,
+            "Test: BitsSwapped/Bitwiese": construct_editor.gallery.test_bits_swapped_bitwise.gallery_item,
             "## strings #######################": None,
             "Test: StringEncoded": construct_editor.gallery.test_stringencodded.gallery_item,
             "## mappings ######################": None,
