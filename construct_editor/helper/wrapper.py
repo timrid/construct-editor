@@ -1474,7 +1474,23 @@ class EntryPass(EntryConstruct):
         return ""
 
 
-# EntryComputed ###########################################################################################################
+# EntryComputed #######################################################################################################
+class EntryConst(EntrySubconstruct):
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Const[Any, Any, Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        return ObjEditor_Default(parent, self)
+
+
+# EntryComputed #######################################################################################################
 class EntryComputed(EntryConstruct):
     def __init__(
         self,
@@ -1498,7 +1514,7 @@ class EntryComputed(EntryConstruct):
             return str(self.obj)
 
 
-# EntryDefault ##############################################################################################
+# EntryDefault ########################################################################################################
 class EntryDefault(EntrySubconstruct):
     def __init__(
         self,
@@ -1529,7 +1545,7 @@ class EntryDefault(EntrySubconstruct):
         menu.Bind(wx.EVT_MENU, on_default_clicked, menu_item)
 
 
-# EntryTimestamp ###########################################################################################################
+# EntryTimestamp ######################################################################################################
 class EntryTimestamp(EntrySubconstruct):
     def __init__(
         self,
@@ -1986,7 +2002,7 @@ construct_entry_mapping: t.Dict[
     # cs.Renamed  # this is skipped
     #
     # miscellaneous #############################
-    cs.Const: EntryTransparentSubcon,
+    cs.Const: EntryConst,
     cs.Computed: EntryComputed,
     # cs.Index
     # cs.Rebuild

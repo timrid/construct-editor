@@ -27,6 +27,7 @@ import construct_editor.gallery.test_enum
 import construct_editor.gallery.test_flagsenum
 import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_tflagsenum
+import construct_editor.gallery.test_const
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_timestamp
 import construct_editor.gallery.test_padded
@@ -95,7 +96,7 @@ class ConstructGallery(wx.Panel):
             "## specials ##########################": None,
             "Test: Renamed": construct_editor.gallery.test_renamed.gallery_item,
             "## miscellaneous ##########################": None,
-            # "Test: Const (TODO)": None,
+            "Test: Const": construct_editor.gallery.test_const.gallery_item,
             "Test: Computed": construct_editor.gallery.test_computed.gallery_item,
             # "Test: Index (TODO)": None,
             # "Test: Rebuild (TODO)": None,
