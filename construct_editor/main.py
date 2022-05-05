@@ -29,6 +29,7 @@ import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_tflagsenum
 import construct_editor.gallery.test_const
 import construct_editor.gallery.test_computed
+import construct_editor.gallery.test_focusedseq
 import construct_editor.gallery.test_timestamp
 import construct_editor.gallery.test_padded
 import construct_editor.gallery.test_aligned
@@ -103,7 +104,7 @@ class ConstructGallery(wx.Panel):
             # "Test: Default (TODO)": None,
             # "Test: Check (TODO)": None,
             # "Test: Error (TODO)": None,
-            # "Test: FocusedSeq (TODO)": None,
+            "Test: FocusedSeq": construct_editor.gallery.test_focusedseq.gallery_item,
             # "Test: Pickled (TODO)": None,
             # "Test: Numpy (TODO)": None,
             # "Test: NamedTuple (TODO)": None,

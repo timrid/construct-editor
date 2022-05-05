@@ -1545,6 +1545,126 @@ class EntryDefault(EntrySubconstruct):
         menu.Bind(wx.EVT_MENU, on_default_clicked, menu_item)
 
 
+# EntryFocusedSeq ###################################################################################################
+class EntryFocusedSeq(EntryConstruct):
+    construct: "cs.FocusedSeq"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.FocusedSeq",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+        # change default row infos
+        self._subentries: t.Dict[str, EntryConstruct] = {}
+
+        # create sub entries
+        for subcon in self.construct.subcons:
+            if subcon.name is None:
+                continue
+
+            name = subcon.name
+
+            # remove name of subcon
+            if isinstance(subcon, cs.Renamed):
+                subcon = subcon.subcon
+
+            subentry = create_entry_from_construct(
+                model,
+                self,
+                subcon,
+                NameExcludedFromPath(name),
+                "",
+            )
+            self._subentries[name] = subentry
+
+    def _get_subentry(self) -> "Optional[EntryConstruct]":
+        """Evaluate the conditional function to detect the type of the subentry"""
+        obj = self.obj
+        if obj is None:
+            return None
+        else:
+            metadata = get_gui_metadata(obj)
+            ctx = metadata["context"] if metadata is not None else None
+            parsebuildfrom = evaluate(self.construct.parsebuildfrom, ctx)
+            subentry = self._subentries[parsebuildfrom]
+            return subentry
+
+    @property
+    def obj_str(self) -> str:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return ""
+        else:
+            return subentry.obj_str
+
+    @property
+    def typ_str(self) -> str:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return "FocusedSeq"
+        else:
+            return subentry.typ_str
+
+    @property
+    def dvc_item(self) -> Any:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return super().dvc_item
+        else:
+            return subentry.dvc_item
+
+    @dvc_item.setter
+    def dvc_item(self, val: Any):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item = val
+        else:
+            subentry.dvc_item = val
+
+    @property
+    def dvc_item_expanded(self) -> bool:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return self._dvc_item_expanded
+        else:
+            return subentry.dvc_item_expanded
+
+    @dvc_item_expanded.setter
+    def dvc_item_expanded(self, val: bool):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item_expanded = val
+        else:
+            subentry.dvc_item_expanded = val
+
+    @property
+    def subentries(self) -> Optional[List["EntryConstruct"]]:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return list(self._subentries.values())
+        else:
+            return subentry.subentries
+
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return ObjEditor_Default(parent, self)
+        else:
+            return subentry.create_obj_panel(parent)
+
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        subentry = self._get_subentry()
+        if subentry is None:
+            return
+        else:
+            return subentry.modify_context_menu(menu)
+
+
 # EntryTimestamp ######################################################################################################
 class EntryTimestamp(EntrySubconstruct):
     def __init__(
@@ -2009,7 +2129,7 @@ construct_entry_mapping: t.Dict[
     cs.Default: EntryDefault,
     # cs.Check
     # cs.Error
-    # cs.FocusedSeq
+    cs.FocusedSeq: EntryFocusedSeq,
     # cs.Pickled
     # cs.Numpy
     # cs.NamedTuple

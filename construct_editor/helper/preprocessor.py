@@ -183,6 +183,15 @@ def include_metadata(
         constr.subcons = new_subcons
         return IncludeGuiMetaData(constr, bitwise)
 
+    # FocusedSeq ##############################################################
+    elif isinstance(constr, cs.FocusedSeq):
+        constr = copy.copy(constr)  # constr is modified, so we have to make a copy
+        new_subcons = []
+        for subcon in constr.subcons:
+            new_subcons.append(include_metadata(subcon, bitwise))
+        constr.subcons = new_subcons
+        return IncludeGuiMetaData(constr, bitwise)
+
     # IfThenElse ##############################################################
     elif isinstance(constr, cs.IfThenElse):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
@@ -237,7 +246,6 @@ def include_metadata(
     # TODO:
     # # Grouping:
     # - Sequence
-    # - FocusedSeq
     # - Union
     # - Select
     # - LazyStruct
