@@ -1665,6 +1665,117 @@ class EntryFocusedSeq(EntryConstruct):
             return subentry.modify_context_menu(menu)
 
 
+# EntrySelect ###################################################################################################
+class EntrySelect(EntryConstruct):
+    construct: "cs.Select"
+
+    def __init__(
+        self,
+        model: "construct_editor.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Select",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+        # change default row infos
+        self._subentries: t.Dict[int, EntryConstruct] = {}
+
+        # create sub entries
+        for idx, subcon in enumerate(self.construct.subcons):
+            subentry = create_entry_from_construct(
+                model,
+                self,
+                subcon,
+                NameExcludedFromPath(f"Option {idx}"),
+                "",
+            )
+            self._subentries[id(subentry.construct)] = subentry
+
+    def _get_subentry(self) -> "Optional[EntryConstruct]":
+        """Evaluate the conditional function to detect the type of the subentry"""
+        obj = self.obj
+        if obj is None:
+            return None
+        else:
+            metadata = get_gui_metadata(obj)
+            if metadata is None:
+                return None
+            subentry = self._subentries[id(metadata["construct"])]
+            return subentry
+
+    @property
+    def obj_str(self) -> str:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return ""
+        else:
+            return subentry.obj_str
+
+    @property
+    def typ_str(self) -> str:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return "Select"
+        else:
+            return subentry.typ_str
+
+    @property
+    def dvc_item(self) -> Any:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return super().dvc_item
+        else:
+            return subentry.dvc_item
+
+    @dvc_item.setter
+    def dvc_item(self, val: Any):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item = val
+        else:
+            subentry.dvc_item = val
+
+    @property
+    def dvc_item_expanded(self) -> bool:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return self._dvc_item_expanded
+        else:
+            return subentry.dvc_item_expanded
+
+    @dvc_item_expanded.setter
+    def dvc_item_expanded(self, val: bool):
+        subentry = self._get_subentry()
+        if subentry is None:
+            self._dvc_item_expanded = val
+        else:
+            subentry.dvc_item_expanded = val
+
+    @property
+    def subentries(self) -> Optional[List["EntryConstruct"]]:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return list(self._subentries.values())
+        else:
+            return subentry.subentries
+
+    def create_obj_panel(self, parent) -> ObjEditorMixin:
+        subentry = self._get_subentry()
+        if subentry is None:
+            return ObjEditor_Default(parent, self)
+        else:
+            return subentry.create_obj_panel(parent)
+
+    def modify_context_menu(self, menu: "construct_editor.ContextMenu"):
+        subentry = self._get_subentry()
+        if subentry is None:
+            return
+        else:
+            return subentry.modify_context_menu(menu)
+
+
 # EntryTimestamp ######################################################################################################
 class EntryTimestamp(EntrySubconstruct):
     def __init__(
@@ -2139,7 +2250,7 @@ construct_entry_mapping: t.Dict[
     #
     # conditional ###############################
     # cs.Union
-    # cs.Select
+    cs.Select: EntrySelect,
     cs.IfThenElse: EntryIfThenElse,
     cs.Switch: EntrySwitch,
     # cs.StopIf
