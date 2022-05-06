@@ -18,6 +18,7 @@ import construct_editor.gallery.test_bitwise
 import construct_editor.gallery.test_bits_swapped_bitwise
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_select
+import construct_editor.gallery.test_select_complex
 import construct_editor.gallery.test_ifthenelse
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_switch_dataclass
@@ -115,6 +116,7 @@ class ConstructGallery(wx.Panel):
             "## conditional ##########################": None,
             # "Test: Union (TODO)": None,
             "Test: Select": construct_editor.gallery.test_select.gallery_item,
+            "Test: Select (Complex)": construct_editor.gallery.test_select_complex.gallery_item,
             "Test: IfThenElse": construct_editor.gallery.test_ifthenelse.gallery_item,
             "Test: Switch": construct_editor.gallery.test_switch.gallery_item,
             "Test: Switch (Dataclass)": construct_editor.gallery.test_switch_dataclass.gallery_item,

@@ -1702,6 +1702,13 @@ class EntrySelect(EntryConstruct):
             metadata = get_gui_metadata(obj)
             if metadata is None:
                 return None
+            # we are not interested in the metadata of the 
+            # cs.Select, but of its childs
+            metadata = metadata["child_gui_metadata"]
+            if metadata is None:
+                return None
+            if id(metadata["construct"]) not in self._subentries:
+                print("error")
             subentry = self._subentries[id(metadata["construct"])]
             return subentry
 

@@ -10,6 +10,7 @@ class GuiMetaData(t.TypedDict):
     construct: cs.Construct
     context: "cs.Context"
     stream: io.BytesIO
+    child_gui_metadata: t.Optional["GuiMetaData"]
 
 
 class IntWithGuiMetadata(int):
@@ -85,6 +86,10 @@ class IncludeGuiMetaData(cs.Subconstruct):
         obj = self.subcon._parsereport(stream, context, path)  # type: ignore
         offset_end = cs.stream_tell(stream, path)
 
+        # Maybe the obj has already gui_metadata. Read it
+        # out and save it in the parent gui_metadata object.
+        child_gui_metadata = get_gui_metadata(obj)
+
         if self.bitwise is True:
             stream._construct_bitstream_flag = True
 
@@ -93,6 +98,7 @@ class IncludeGuiMetaData(cs.Subconstruct):
             construct=self.subcon,
             context=context,
             stream=stream,
+            child_gui_metadata=child_gui_metadata,
         )
 
         return add_gui_metadata(obj, gui_metadata)
@@ -199,7 +205,7 @@ def include_metadata(
         for subcon in constr.subcons:
             new_subcons.append(include_metadata(subcon, bitwise))
         constr.subcons = new_subcons
-        return constr
+        return IncludeGuiMetaData(constr, bitwise)
 
     # IfThenElse ##############################################################
     elif isinstance(constr, cs.IfThenElse):
