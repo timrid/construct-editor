@@ -209,8 +209,8 @@ class HexEditorTable(Grid.GridTableBase):
 
     def refresh_rows_cols(self):
         self._rows = math.ceil(len(self._binary_data) / self._editor.format.width)
-        # if (len(self._binary_data) % self._editor.format.width) == 1:
-        #     self._rows += 1
+        if (len(self._binary_data) % self._editor.format.width) == 0:
+            self._rows += 1
         self._cols = self._editor.format.width
 
     # ############################################ GridTableBase Interface ############################################
@@ -618,6 +618,7 @@ class HexEditorGrid(Grid.Grid):
         self._table = table
         self._binary_data = binary_data
         self.read_only = read_only
+        self.on_selection_changed = SelectionChangedCallbackList()
 
         # The second parameter means that the grid is to take
         # ownership of the table and will destroy it when done.
@@ -650,7 +651,6 @@ class HexEditorGrid(Grid.Grid):
         self.refresh()
 
         self._selection: t.Tuple[Optional[int], Optional[int]] = (None, None)
-        self.on_selection_changed = SelectionChangedCallbackList()
 
     def refresh(self):
         """
