@@ -330,10 +330,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
 
         # return parent of entry
         entry: EntryConstruct = self.ItemToObject(item)
-        if entry.parent is None:
-            return dv.NullDataViewItem
-        else:
-            return entry.parent.dvc_item
+        return entry.get_parent_dvc_item()
 
     def GetValue(self, item: dv.DataViewItem, col: int):
         # Return the value to be displayed for this item and column.

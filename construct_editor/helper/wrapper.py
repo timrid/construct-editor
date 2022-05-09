@@ -11,6 +11,7 @@ import construct_editor.widgets.construct_editor as construct_editor
 import construct_typed as cst
 import wx
 import wx.adv
+import wx.dataview as dv
 from construct_editor.helper.preprocessor import (
     GuiMetaData,
     IncludeGuiMetaData,
@@ -473,8 +474,8 @@ class EntryConstruct(object):
         self._docs = docs
 
         # This is set from the model, when the dvc item for this entry is created.
-        self._dvc_item = None
-        self._dvc_item_expanded = False
+        self._dvc_item: t.Optional[dv.DataViewItem] = None
+        self._dvc_item_expanded: bool = False
 
     # default "parent" ########################################################
     @property
@@ -548,12 +549,34 @@ class EntryConstruct(object):
 
     # default "dvc_item" ######################################################
     @property
-    def dvc_item(self) -> Any:
+    def dvc_item(self) -> t.Optional[dv.DataViewItem]:
         return self._dvc_item
 
     @dvc_item.setter
-    def dvc_item(self, val: Any):
+    def dvc_item(self, val: t.Optional[dv.DataViewItem]):
         self._dvc_item = val
+
+    # default "get_dvc_item" ##################################################
+    def get_dvc_item(self) -> dv.DataViewItem:
+        if self._dvc_item is not None:
+            # this entry has an dvc_item -> return it
+            return self._dvc_item
+        else:
+            # this entry has no own dvc_item -> return the parents dvc_item
+            return self.get_parent_dvc_item()
+
+    # default "get_parent_dvc_item" ###########################################
+    def get_parent_dvc_item(self) -> dv.DataViewItem:
+        if self.parent is None:
+            # no parent available -> this is the root object
+            return dv.NullDataViewItem
+
+        if self.parent.dvc_item is None:
+            # The parent has no dvc_item -> check all parents parents recursivly
+            return self.parent.get_parent_dvc_item()
+        else:
+            # The parent has a dvc_item -> return it
+            return self.parent.dvc_item
 
     # default "dvc_item_expanded" #############################################
     @property
@@ -689,24 +712,6 @@ class EntrySubconstruct(EntryConstruct):
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
         return self.subentry.subentries
-
-    # pass throught "dvc_item" to subentry ####################################
-    @property
-    def dvc_item(self) -> Any:
-        return self.subentry.dvc_item
-
-    @dvc_item.setter
-    def dvc_item(self, val: Any):
-        self.subentry.dvc_item = val
-
-    # pass throught "dvc_item_expanded" to subentry ###########################
-    @property
-    def dvc_item_expanded(self) -> bool:
-        return self.subentry.dvc_item_expanded
-
-    @dvc_item_expanded.setter
-    def dvc_item_expanded(self, val: bool):
-        self.subentry.dvc_item_expanded = val
 
     # pass throught "create_obj_panel" to subentry ############################
     def create_obj_panel(self, parent) -> ObjEditorMixin:
@@ -996,38 +1001,6 @@ class EntryIfThenElse(EntryConstruct):
             return subentry.typ_str
 
     @property
-    def dvc_item(self) -> Any:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return super().dvc_item
-        else:
-            return subentry.dvc_item
-
-    @dvc_item.setter
-    def dvc_item(self, val: Any):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item = val
-        else:
-            subentry.dvc_item = val
-
-    @property
-    def dvc_item_expanded(self) -> bool:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return self._dvc_item_expanded
-        else:
-            return subentry.dvc_item_expanded
-
-    @dvc_item_expanded.setter
-    def dvc_item_expanded(self, val: bool):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item_expanded = val
-        else:
-            subentry.dvc_item_expanded = val
-
-    @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
         subentry = self._get_subentry()
         if subentry is None:
@@ -1118,38 +1091,6 @@ class EntrySwitch(EntryConstruct):
             return "Switch"
         else:
             return subentry.typ_str
-
-    @property
-    def dvc_item(self) -> Any:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return super().dvc_item
-        else:
-            return subentry.dvc_item
-
-    @dvc_item.setter
-    def dvc_item(self, val: Any):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item = val
-        else:
-            subentry.dvc_item = val
-
-    @property
-    def dvc_item_expanded(self) -> bool:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return self._dvc_item_expanded
-        else:
-            return subentry.dvc_item_expanded
-
-    @dvc_item_expanded.setter
-    def dvc_item_expanded(self, val: bool):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item_expanded = val
-        else:
-            subentry.dvc_item_expanded = val
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
@@ -1533,10 +1474,11 @@ class EntryDefault(EntrySubconstruct):
 
         def on_default_clicked(event: wx.MenuEvent):
             self.obj = None
+            dvc_item = self.get_dvc_item()
             menu.model.ValueChanged(
-                self.dvc_item, construct_editor.ConstructEditorColumn.Value
+                dvc_item, construct_editor.ConstructEditorColumn.Value
             )
-            # menu.model.ItemChanged(self.dvc_item)
+            # menu.model.ItemChanged(dvc_item)
             # menu.parent.expand_entry(self)
             # menu.parent.reload()
 
@@ -1611,38 +1553,6 @@ class EntryFocusedSeq(EntryConstruct):
             return subentry.typ_str
 
     @property
-    def dvc_item(self) -> Any:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return super().dvc_item
-        else:
-            return subentry.dvc_item
-
-    @dvc_item.setter
-    def dvc_item(self, val: Any):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item = val
-        else:
-            subentry.dvc_item = val
-
-    @property
-    def dvc_item_expanded(self) -> bool:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return self._dvc_item_expanded
-        else:
-            return subentry.dvc_item_expanded
-
-    @dvc_item_expanded.setter
-    def dvc_item_expanded(self, val: bool):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item_expanded = val
-        else:
-            subentry.dvc_item_expanded = val
-
-    @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
         subentry = self._get_subentry()
         if subentry is None:
@@ -1702,7 +1612,7 @@ class EntrySelect(EntryConstruct):
             metadata = get_gui_metadata(obj)
             if metadata is None:
                 return None
-            # we are not interested in the metadata of the 
+            # we are not interested in the metadata of the
             # cs.Select, but of its childs
             metadata = metadata["child_gui_metadata"]
             if metadata is None:
@@ -1727,38 +1637,6 @@ class EntrySelect(EntryConstruct):
             return "Select"
         else:
             return subentry.typ_str
-
-    @property
-    def dvc_item(self) -> Any:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return super().dvc_item
-        else:
-            return subentry.dvc_item
-
-    @dvc_item.setter
-    def dvc_item(self, val: Any):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item = val
-        else:
-            subentry.dvc_item = val
-
-    @property
-    def dvc_item_expanded(self) -> bool:
-        subentry = self._get_subentry()
-        if subentry is None:
-            return self._dvc_item_expanded
-        else:
-            return subentry.dvc_item_expanded
-
-    @dvc_item_expanded.setter
-    def dvc_item_expanded(self, val: bool):
-        subentry = self._get_subentry()
-        if subentry is None:
-            self._dvc_item_expanded = val
-        else:
-            subentry.dvc_item_expanded = val
 
     @property
     def subentries(self) -> Optional[List["EntryConstruct"]]:
