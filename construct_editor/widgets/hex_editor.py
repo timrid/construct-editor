@@ -207,6 +207,12 @@ class HexEditorTable(Grid.GridTableBase):
         idx = (row * self._cols) + col
         return idx
 
+    def refresh_rows_cols(self):
+        self._rows = math.ceil(len(self._binary_data) / self._editor.format.width)
+        # if (len(self._binary_data) % self._editor.format.width) == 1:
+        #     self._rows += 1
+        self._cols = self._editor.format.width
+
     # ############################################ GridTableBase Interface ############################################
     def SetValue(self, row: int, col: int, value: str):
         byte_idx = self.get_byte_idx(row, col)
@@ -651,27 +657,25 @@ class HexEditorGrid(Grid.Grid):
         (Grid) -> Reset the grid view.   Call this to
         update the grid if rows and columns have been added or deleted
         """
-        oldrows = self._table._rows
-        oldcols = self._table._cols
+        oldrows = self._table.GetNumberRows()
+        oldcols = self._table.GetNumberCols()
 
-        self._table._rows = math.ceil(
-            len(self._binary_data) / self._editor.format.width
-        )
-        # if (len(self._binary_data) % self._editor.format.width) == 1:
-        #     self._table._rows += 1
-        self._table._cols = self._editor.format.width
+        self._table.refresh_rows_cols()
+
+        newrows = self._table.GetNumberRows()
+        newcols = self._table.GetNumberCols()
 
         self.BeginBatch()
         for current, new, delmsg, addmsg in [
             (
                 oldrows,
-                self._table._rows,
+                newrows,
                 Grid.GRIDTABLE_NOTIFY_ROWS_DELETED,
                 Grid.GRIDTABLE_NOTIFY_ROWS_APPENDED,
             ),
             (
                 oldcols,
-                self._table._cols,
+                newcols,
                 Grid.GRIDTABLE_NOTIFY_COLS_DELETED,
                 Grid.GRIDTABLE_NOTIFY_COLS_APPENDED,
             ),
@@ -700,7 +704,7 @@ class HexEditorGrid(Grid.Grid):
 
         # settings for each column
         hexcol_width = (char_width * 2) + 5
-        for col in range(self._table._cols):
+        for col in range(newcols):
             logger.debug("hexcol %d width=%d" % (col, hexcol_width))
             self.SetColMinimalWidth(col, 0)
             self.SetColSize(col, hexcol_width)
