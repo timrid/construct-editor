@@ -20,6 +20,7 @@ import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_select
 import construct_editor.gallery.test_select_complex
 import construct_editor.gallery.test_ifthenelse
+import construct_editor.gallery.test_ifthenelse_nested_switch
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_switch_dataclass
 import construct_editor.gallery.test_dataclass_struct
@@ -118,6 +119,7 @@ class ConstructGallery(wx.Panel):
             "Test: Select": construct_editor.gallery.test_select.gallery_item,
             "Test: Select (Complex)": construct_editor.gallery.test_select_complex.gallery_item,
             "Test: IfThenElse": construct_editor.gallery.test_ifthenelse.gallery_item,
+            "Test: IfThenElse (Nested Switch)": construct_editor.gallery.test_ifthenelse_nested_switch.gallery_item,
             "Test: Switch": construct_editor.gallery.test_switch.gallery_item,
             "Test: Switch (Dataclass)": construct_editor.gallery.test_switch_dataclass.gallery_item,
             # "Test: StopIf (TODO)": None,
