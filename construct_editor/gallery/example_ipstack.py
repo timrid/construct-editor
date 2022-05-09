@@ -4,8 +4,8 @@ TCP/IP Protocol Stack
 WARNING: before parsing the application layer over a TCP stream, you must first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
 """
 
-from construct import *
-from construct.lib import *
+from construct import *  # type: ignore
+from construct.lib import *  # type: ignore
 import construct_editor.helper.wrapper as cse_wrapper
 from . import GalleryItem
 
@@ -16,7 +16,7 @@ from . import GalleryItem
 
 MacAddress = ExprAdapter(Byte[6],
     decoder = lambda obj,ctx: "-".join("%02x" % b for b in obj),
-    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split("-")],
+    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split("-")],  # type: ignore
 )
 
 ethernet_header = Struct(
@@ -117,7 +117,7 @@ mtp2_header = BitStruct(
 
 IpAddress = ExprAdapter(Byte[4],
     decoder = lambda obj,ctx: "{0}.{1}.{2}.{3}".format(*obj),
-    encoder = lambda obj,ctx: [int(x) for x in obj.split(".")],
+    encoder = lambda obj,ctx: [int(x) for x in obj.split(".")],  # type: ignore
 )
 
 ProtocolEnum = Enum(Int8ub,
@@ -131,7 +131,7 @@ ipv4_header = Struct(
         "version" / Const(4, Nibble),
         "header_length" / ExprAdapter(Nibble,
             decoder = lambda obj, ctx: obj * 4,
-            encoder = lambda obj, ctx: obj // 4,
+            encoder = lambda obj, ctx: obj // 4,  # type: ignore
         ),
     ),
     "header_length" / Computed(this.header.header_length),
@@ -171,7 +171,7 @@ ProtocolEnum = Enum(Int8ub,
 
 Ipv6Address = ExprAdapter(Byte[16],
     decoder = lambda obj,ctx: ":".join("%02x" % b for b in obj),
-    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split(":")],
+    encoder = lambda obj,ctx: [int(part, 16) for part in obj.split(":")],  # type: ignore
 )
 
 ipv6_header = Struct(
@@ -567,7 +567,7 @@ tcp_header = Struct(
     "ack" / Int32ub,
     "header" / BitStruct(
         "header_length" / ExprAdapter(Nibble,
-            encoder = lambda obj,ctx: obj // 4,
+            encoder = lambda obj,ctx: obj // 4,  # type: ignore
             decoder = lambda obj,ctx: obj * 4,
         ),
         Padding(3),
@@ -601,7 +601,7 @@ udp_header = Struct(
     "source" / Int16ub,
     "destination" / Int16ub,
     "payload_length" / ExprAdapter(Int16ub,
-        encoder = lambda obj,ctx: obj + 8,
+        encoder = lambda obj,ctx: obj + 8,  # type: ignore
         decoder = lambda obj,ctx: obj - 8,
     ),
     "checksum" / Int16ub,
@@ -614,15 +614,15 @@ udp_header = Struct(
 
 class DnsStringAdapter(Adapter):
     def _decode(self, obj, context, path):
-        return u".".join(obj[:-1])
+        return u".".join(obj[:-1])  # type: ignore
     def _encode(self, obj, context, path):
-        return obj.split(u".") + [u""]
+        return obj.split(u".") + [u""]  # type: ignore
 
 class DnsNamesAdapter(Adapter):
     def _decode(self, obj, context, path):
-        return [x.label if x.islabel else x.pointer & 0x3fff for x in obj]
+        return [x.label if x.islabel else x.pointer & 0x3fff for x in obj]  # type: ignore
     def _encode(self, obj, context, path):
-        return [dict(ispointer=1,pointer=x|0xc000) if isinstance(x,int) else dict(islabel=1,label=x) for x in obj]
+        return [dict(ispointer=1,pointer=x|0xc000) if isinstance(x,int) else dict(islabel=1,label=x) for x in obj]  # type: ignore
 
 dns_record_class = Enum(Int16ub,
     RESERVED = 0,

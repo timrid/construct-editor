@@ -1,4 +1,4 @@
-from construct import *
+from construct import *  # type: ignore
 from . import GalleryItem
 
 docs = """

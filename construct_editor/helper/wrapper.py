@@ -496,7 +496,7 @@ class EntryConstruct(object):
             if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
-                obj = obj[int(p)]
+                obj = obj[int(p)]  # type: ignore
         return obj
 
     @obj.setter
@@ -507,7 +507,7 @@ class EntryConstruct(object):
             if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
-                obj = obj[int(p)]
+                obj = obj[int(p)]  # type: ignore
 
         if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
             obj[path[-1]] = val

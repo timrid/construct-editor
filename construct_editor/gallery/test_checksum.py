@@ -11,7 +11,7 @@ constr = cs.Struct(
     "checksum_end" / cs.Tell,
     "checksum" / cs.Checksum(cs.Bytes(64),
         lambda data: hashlib.sha512(data).digest(),
-        lambda ctx: ctx._io.getvalue()[ctx.checksum_start:ctx.checksum_end]),
+        lambda ctx: ctx._io.getvalue()[ctx.checksum_start:ctx.checksum_end]),  # type: ignore
 )
 
 
