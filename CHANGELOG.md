@@ -1,5 +1,8 @@
 # Changelog
 ## [Unreleased]
+
+-------------------------------------------------------------------------------
+## [0.0.16] - 2022-05-11
 Enhanced ConstructEditor:
 - Added support for
    - `cs.NullStripped`
