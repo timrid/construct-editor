@@ -12,12 +12,12 @@ Enhanced ConstructEditor:
    - `cs.Const`
    - `cs.FocusedSeq`
    - `cs.Select`
-- Display `x Bits` insted of `x Bytes` if we are inside a `cs.Bitwise`.
 - Fixed issue: When the users has opened an DVC Editor and clicks somewhere else, the Object-Editor is now closed correcty.
 - Fixed issue: Removed recursion bug inside conditional constructs (`cs.IfThenElse`, `cs.Switch`, ...).
 
 Enhanced HexEditor:
 - Added thousands separator for byte/bit positions.
+- Display `x Bits` insted of `x Bytes` if we are inside a `cs.Bitwise`.
 - Fixed issue: When 0 or a multiple of 16 Bytes are shown in the hex editor, then there is no new line for adding data. This is now fixed, and an new line is added.
 
 -------------------------------------------------------------------------------
