@@ -2,6 +2,11 @@
 ## [Unreleased]
 
 -------------------------------------------------------------------------------
+## [0.0.17] - 2022-08-03
+Enhanced ConstructEditor:
+- Fixed a bug in conditional constructs (IfThenElse/Switch/FocusedSeq/Select)
+
+-------------------------------------------------------------------------------
 ## [0.0.16] - 2022-05-11
 Enhanced ConstructEditor:
 - Added support for
