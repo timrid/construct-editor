@@ -293,6 +293,7 @@ class ConstructGallery(wx.Panel):
     def on_clear_binary_clicked(self, event):
         self.example_selector_lbx.SetSelection(wx.NOT_FOUND)
         self.construct_hex_editor.binary = bytes()
+        self.construct_hex_editor.construct_editor.expand_all()
 
     def on_example_selection_changed(self, event):
         selection = self.gallery_selector_lbx.GetStringSelection()
@@ -301,6 +302,7 @@ class ConstructGallery(wx.Panel):
 
         # Set example binary
         self.construct_hex_editor.binary = example_binary
+        self.construct_hex_editor.construct_editor.expand_all()
 
     def on_load_binary_file_clicked(self, event):
         with wx.FileDialog(

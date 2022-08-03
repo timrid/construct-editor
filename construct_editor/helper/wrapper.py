@@ -477,6 +477,18 @@ class EntryConstruct(object):
         self._dvc_item: t.Optional[dv.DataViewItem] = None
         self._dvc_item_expanded: bool = False
 
+    def get_debug_infos(self) -> str:
+        s = ""
+        s += f"{'.'.join(self.path)}\n"
+        s += f"  - name={str(self.name)}\n"
+        s += f"  - construct={str(self.construct)}\n"
+        s += f"  - entry={self}\n"
+        s += f"  - dvc_item={str(self.dvc_item)}\n"
+        s += f"  - parent={self.parent}\n"
+        s += f"  - parent_dvc_item={self.get_parent_dvc_item()}\n"
+        s += f"  - subentries={self.subentries}"
+        return s
+
     # default "parent" ########################################################
     @property
     def parent(self) -> Optional["EntryConstruct"]:
@@ -974,6 +986,7 @@ class EntryIfThenElse(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
+            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
         else:
             metadata = get_gui_metadata(obj)
@@ -1066,6 +1079,7 @@ class EntrySwitch(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
+            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
         else:
             metadata = get_gui_metadata(obj)
@@ -1528,6 +1542,7 @@ class EntryFocusedSeq(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
+            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
         else:
             metadata = get_gui_metadata(obj)
@@ -1607,6 +1622,7 @@ class EntrySelect(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
+            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
         else:
             metadata = get_gui_metadata(obj)
