@@ -44,6 +44,7 @@ import construct_editor.gallery.test_nullterminated
 import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
 import construct_editor.gallery.test_stringencodded
+import construct_editor.gallery.example_cmd_resp
 from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
 
 
@@ -70,6 +71,7 @@ class ConstructGallery(wx.Panel):
             "################ EXAMPLES ################": None,
             "Example: pe32coff": construct_editor.gallery.example_pe32coff.gallery_item,
             "Example: ipstack": construct_editor.gallery.example_ipstack.gallery_item,
+            "Example: Cmd/Resp": construct_editor.gallery.example_cmd_resp.gallery_item,
             "################ TESTS ####################": None,
             # "## bytes and bits ################": None,
             "Test: Bytes/GreedyBytes": construct_editor.gallery.test_bytes_greedybytes.gallery_item,
