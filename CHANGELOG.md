@@ -2,6 +2,14 @@
 ## [Unreleased]
 
 -------------------------------------------------------------------------------
+## [0.0.18] - 2022-09-07
+General:
+- Package is now also compatible with Python 3.9 and 3.10
+
+Enhanced ConstructHexEditor:
+- Fixed a bug which leads to an exception as of wxPython 4.2.
+
+-------------------------------------------------------------------------------
 ## [0.0.17] - 2022-08-03
 Enhanced ConstructEditor:
 - Fixed a bug in conditional constructs (IfThenElse/Switch/FocusedSeq/Select)
