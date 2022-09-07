@@ -2,6 +2,11 @@
 ## [Unreleased]
 
 -------------------------------------------------------------------------------
+## [0.0.19] - 2022-09-07
+Enhanced ConstructHexEditor:
+- Fixed a bug which leads to an "Fatal Python error" as of wxPython 4.2.
+
+-------------------------------------------------------------------------------
 ## [0.0.18] - 2022-09-07
 General:
 - Package is now also compatible with Python 3.9 and 3.10
