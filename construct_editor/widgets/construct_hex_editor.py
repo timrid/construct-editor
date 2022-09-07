@@ -26,7 +26,7 @@ class HexEditorPanel(wx.SplitterWindow):
         if name != "":
             line = wx.StaticLine(panel, style=wx.LI_HORIZONTAL)
             vsizer.Add(line, 0, wx.EXPAND)
-            self._name_txt = wx.StaticText(self, wx.ID_ANY)
+            self._name_txt = wx.StaticText(panel, wx.ID_ANY)
             self._name_txt.SetFont(
                 wx.Font(
                     10,
