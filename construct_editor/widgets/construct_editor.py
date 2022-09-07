@@ -479,10 +479,6 @@ class ConstructEditor(wx.Panel):
             t.Tuple[EntryConstruct, ConstructEditorColumn]
         ] = None
 
-        self._dvc_header = self._dvc.FindWindowByName("wxMSWHeaderCtrl")
-        if self._dvc_header is not None:
-            self._dvc_header.Bind(wx.EVT_MOTION, self._on_dvc_header_motion)
-
         self.on_entry_selected = EntrySelectedCallbackList()
         self.on_root_obj_changed = RootObjChangedCallbackList()
         self.construct = construct
@@ -742,7 +738,7 @@ class ConstructEditor(wx.Panel):
         # this is a mouse event, so we have to calculate the position of
         # the item where the mouse is manually.
         pos = event.GetPosition()
-        pos += (0, self._dvc_header.Size.Height)  # correct the dvc header
+        pos += self._dvc_main_window.GetPosition()  # correct the dvc header
         item, col = self._dvc.HitTest(pos)
         if item.GetID() is None:
             self._dvc_main_window.SetToolTip("")
@@ -762,9 +758,6 @@ class ConstructEditor(wx.Panel):
         else:
             self._dvc_main_window.SetToolTip("")
             self._last_tooltip = None
-
-    def _on_dvc_header_motion(self, event: wx.MouseEvent):
-        event.Skip()  # TODO: Create Tooltip for DVC-Header
 
     def _on_dvc_right_clicked(self, event: dv.DataViewEvent):
         """
