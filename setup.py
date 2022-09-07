@@ -28,7 +28,7 @@ setup(
     platforms=["Windows"],
     url="https://github.com/timrid/construct-editor",
     author="Tim Riddermann",
-    python_requires="==3.8.*",
+    python_requires=">=3.8",
     install_requires=[
         "construct==2.10.67",
         "construct-typing==0.5.1",
@@ -65,6 +65,8 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Typing :: Typed",
     ],
