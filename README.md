@@ -17,11 +17,18 @@ Features:
 - undo/redo in HexEditor and in ConstructEditor
 - extensible for custom adapters
 
-## Installation
+## Installation (for use in your own project)
 The preferred way to installation is via PyPI:
 ```
 pip install construct-editor
 ```
+
+## Installation as standalone
+The preferred way to installation is:
+- Open a command line in the project folder (`construct-editor`)
+- Create a new virtual environment via `virtualenv .venv`
+- Activate it with `.venv\Scripts\activate.ps1` or `.venv\Scripts\activate.bat`
+- Install via `pip install -e .` (remember the `.` at the end of the line)
 
 ## Getting started (Standalone)
 To start the standalone version, just execute the following in the command line:
@@ -50,15 +57,14 @@ frame.Show(True)
 app.MainLoop()
 ```
 
-This snipped generate a gui like this:
+This snipped generates a GUI like this:
 
 [Screenshot of the example]
 
 ## Widgets
 ### ConstructHexEditor
 This is the main widget ot this library. It offers a look at the raw binary data and also at the parsed structure.
-It offers a way to modify the raw binary data, which is then automaticly converted to the structed view. And also it support to modify the structed data and build the binary data from it.
-
+It offers a way to modify the raw binary data, which is then automaticly converted to the structed view. It also supports to modify the structed data and build the binary data from it.
 
 ### ConstructEditor
 This is just the right side of the `ConstructHexEditor`, but can be used also used as standalone widget. It provides:

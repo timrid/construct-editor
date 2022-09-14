@@ -616,14 +616,15 @@ class EntryConstruct(object):
                     subentry.dvc_item_restore_expansion()
 
     # default "add_nonstruct_subentries_to_list" ##############################
-    def create_flat_subentry_list(self, flat_subentry_list: List["EntryConstruct"]):
+    def create_flat_subentry_list(self, flat_subentry_list: List["EntryConstruct"], hide_protected: bool):
         """Create a flat list with all subentires, recursively"""
         subentries = self.subentries
         if subentries is not None:
             for subentry in subentries:
-                subentry.create_flat_subentry_list(flat_subentry_list)
+                subentry.create_flat_subentry_list(flat_subentry_list, hide_protected)
         else:
-            flat_subentry_list.append(self)
+            if not hide_protected or not self.name.startswith("_") and self.name != "":
+                flat_subentry_list.append(self)
 
     # default "create_obj_panel" ##############################################
     def create_obj_panel(self, parent) -> ObjEditorMixin:

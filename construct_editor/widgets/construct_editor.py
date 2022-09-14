@@ -254,7 +254,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
             raise ValueError(f"{repr(entry)} is no valid entry")
 
         flat_subentry_list: List["EntryConstruct"] = []
-        entry.create_flat_subentry_list(flat_subentry_list)
+        entry.create_flat_subentry_list(flat_subentry_list, self.hide_protected)
 
         return ".".join(flat_subentry_list[col].path)
 
@@ -353,7 +353,7 @@ class ConstructEditorModel(dv.PyDataViewModel):
         col = col - len(ConstructEditorColumn)
 
         flat_subentry_list: List["EntryConstruct"] = []
-        entry.create_flat_subentry_list(flat_subentry_list)
+        entry.create_flat_subentry_list(flat_subentry_list, self.hide_protected)
         if len(flat_subentry_list) > col:
             return flat_subentry_list[col].obj_str
         else:
@@ -663,7 +663,7 @@ class ConstructEditor(wx.Panel):
             if list_viewed_entry.subentries is not None:
                 for subentry in list_viewed_entry.subentries:
                     flat_list = []
-                    subentry.create_flat_subentry_list(flat_list)
+                    subentry.create_flat_subentry_list(flat_list, self.hide_protected)
                     list_cols = max(list_cols, len(flat_list))
 
         for list_col in range(list_cols):
@@ -678,7 +678,7 @@ class ConstructEditor(wx.Panel):
         if (entry.parent is not None) and (
             entry.parent in self._model.list_viewed_entries
         ):
-            entry.create_flat_subentry_list(flat_list)
+            entry.create_flat_subentry_list(flat_list, self.hide_protected)
 
         list_cols = self._dvc.GetColumnCount() - len(ConstructEditorColumn)
         for list_col in range(list_cols):
