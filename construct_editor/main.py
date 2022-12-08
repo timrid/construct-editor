@@ -4,7 +4,10 @@ from pathlib import Path
 from types import TracebackType
 
 import wx
+from wx.py.shell import ShellFrame
 from wx.lib.embeddedimage import PyEmbeddedImage
+import os
+import wx.lib.dialogs
 
 import construct_editor.gallery.example_cmd_resp
 import construct_editor.gallery.example_ipstack
@@ -62,9 +65,13 @@ class ConstructGalleryFrame(wx.Frame):
         # show uncatched exceptions in a dialog...
         sys.excepthook = self.on_uncaught_exception
 
-        self.main_panel = ConstructGallery(self)
-
         self.status_bar: wx.StatusBar = self.CreateStatusBar()
+        self.main_panel = ConstructGallery(self)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+
+    def on_close(self, event):
+        self.main_panel.on_application_close()
+        event.Skip()
 
     def on_uncaught_exception(
         self, etype: t.Type[BaseException], value: BaseException, trace: TracebackType
@@ -189,6 +196,8 @@ class ConstructGallery(wx.Panel):
         # Define GUI elements #############################################
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
+        self.pyshell = None
+        self.pyshell_help = None
 
         # gallery selctor
         self.gallery_selector_lbx = wx.ListBox(
@@ -245,6 +254,17 @@ class ConstructGallery(wx.Panel):
         )
         vsizer.Add(self.load_binary_file_btn, 0, wx.ALL | wx.EXPAND, 1)
 
+        # open Python shell
+        self.open_shell_btn = wx.Button(
+            self,
+            wx.ID_ANY,
+            "Open Python Shell",
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            0,
+        )
+        vsizer.Add(self.open_shell_btn, 0, wx.ALL | wx.EXPAND, 1)
+
         self.sizer.Add(vsizer, 0, wx.ALL | wx.EXPAND, 0)
 
         self.sizer.Add(
@@ -276,9 +296,14 @@ class ConstructGallery(wx.Panel):
         )
 
         self.load_binary_file_btn.Bind(wx.EVT_BUTTON, self.on_load_binary_file_clicked)
+        self.open_shell_btn.Bind(wx.EVT_BUTTON, self.on_open_shell_clicked)
 
         # Emulate Selection Click
         self.on_gallery_selection_changed(None)
+
+    def on_application_close(self):
+        if self.pyshell:
+            self.pyshell.Destroy()
 
     def on_gallery_selection_changed(self, event):
         selection = self.gallery_selector_lbx.GetStringSelection()
@@ -326,6 +351,130 @@ class ConstructGallery(wx.Panel):
         # Set example binary
         self.construct_hex_editor.binary = example_binary
         self.construct_hex_editor.construct_editor.expand_all()
+
+    def on_pyshell_help(self, event):
+        """Display a specific help window for the Construct Editor Shell."""
+
+        HELP_TEXT = """\
+-----------------------------------
+Help for the Construct Editor Shell
+-----------------------------------
+
+All locals and globals can be used. "self" works for instance.
+Use "frame" for the main frame, meaning "self.GetTopLevelParent()"
+
+For multiline instructions, wrap them into a function and then call the function.
+_________________________________________
+
+To hide the construct_hex_editor:
+
+self.construct_hex_editor.Hide()
+_________________________________________
+
+To show the construct_hex_editor:
+
+self.construct_hex_editor.Show();self.construct_hex_editor.GetParent().Layout()
+_________________________________________
+
+To parse a new string:
+
+frame.main_panel.construct_hex_editor.binary = bytes.fromhex("0011")
+
+_________________________________________
+
+To expand all fields:
+
+frame.main_panel.construct_hex_editor.construct_editor.expand_all()
+_________________________________________
+
+To change the parser, parsing a new string, showing a label on the status line and expanding all fields:
+
+def change_parser(label, format, hex_string):
+    frame.SetStatusText("Used construct type: " + label)
+    frame.main_panel.construct_hex_editor.construct = format
+    frame.main_panel.construct_hex_editor.binary = bytes.fromhex(hex_string)
+    frame.main_panel.construct_hex_editor.construct_editor.expand_all()
+
+change_parser("parser name", <construct>, "0011")
+_________________________________________
+
+To reload the current selection:
+
+def reload_current_selection():
+    selection = frame.main_panel.gallery_selector_lbx.GetStringSelection() 
+    example = frame.main_panel.example_selector_lbx.GetStringSelection()
+    example_binary = frame.main_panel.construct_gallery[selection].example_binarys[example]
+    frame.main_panel.construct_hex_editor.binary = example_binary
+
+reload_current_selection() # produces error if a selection has been never done before
+
+_________________________________________
+
+To set the root variable to the parsed structure:
+
+root = frame.main_panel.construct_hex_editor.construct_editor._model.root_obj
+
+_________________________________________
+
+To read the status line:
+
+frame.main_panel.construct_hex_editor.construct_editor._status_bar.GetStatusText()
+
+"""
+
+        if self.pyshell_help:
+            self.pyshell_help.Raise()
+            self.pyshell_help.Show()
+            return
+        title = 'Construct Editor Help'
+        self.pyshell_help = wx.lib.dialogs.ScrolledMessageDialog(
+            self, HELP_TEXT, title, size = ((700, 540)),
+            style=wx.DEFAULT_DIALOG_STYLE | wx.DIALOG_NO_PARENT)
+        fnt = wx.Font(
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL)
+        self.pyshell_help.GetChildren()[0].SetFont(fnt)
+        self.pyshell_help.GetChildren()[0].SetInsertionPoint(0)
+        #self.pyshell_help.ShowModal()
+        #self.pyshell_help.Destroy()
+        self.pyshell_help.Show()
+
+    def on_pyshell_close(self, event):
+        if self.pyshell_help:
+            self.pyshell_help.Destroy()
+        event.Skip()
+
+    def on_open_shell_clicked(self, event):
+        if self.pyshell:
+            self.pyshell.Raise()
+            return
+        confDir = wx.StandardPaths.Get().GetUserDataDir()
+        os.makedirs(confDir, exist_ok=True)
+        self.config = wx.FileConfig()
+        main_locals = {
+            **globals(), **locals(), "frame": self.GetTopLevelParent()}
+        self.pyshell = ShellFrame(
+            config=self.config,
+            title="Construct Editor Shell",
+            dataDir=confDir,
+            locals=main_locals
+        )
+
+        ID_LI_HELP = wx.NewIdRef()
+        m=self.pyshell.helpMenu
+        m.Insert(0, ID_LI_HELP, '&Construct Editor Help\tF9',
+            'Specific help for the Construct Editor')
+        self.pyshell.Bind(wx.EVT_MENU, self.on_pyshell_help, id=ID_LI_HELP)
+
+        self.pyshell.shell.setStatusText("Construct Editor Shell. "
+            "Press F9 for further help.")
+
+        self.pyshell.LoadHistory()
+        self.pyshell.LoadSettings()
+        self.pyshell.Bind(wx.EVT_CLOSE, self.on_pyshell_close)
+        self.pyshell.Show()
 
     def on_load_binary_file_clicked(self, event):
         with wx.FileDialog(
