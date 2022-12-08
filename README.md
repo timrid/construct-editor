@@ -54,6 +54,96 @@ This snipped generate a gui like this:
 
 [Screenshot of the example]
 
+## Example of custom population of the gallery frame
+
+The following example shows how to build a full gallery frame, including comments.
+
+The `ConstructGalleryFrame` class is used to build the frame in place of the `wx.Frame` used in the previous example.
+
+`ConstructGalleryFrame` parameters:
+
+- `gallery_selection`: default selection (shall not point to a comment)
+- `construct_gallery`: dictionary of the names of the gallery elements (key) and `GalleryItem` (value). If the value is `None`, the element is considered a comment.
+- `title`: title of the app
+- `size`: tuple defining the default app size (x, y)
+
+`GalleryItem` parameters:
+
+- `construct`: *construct* definition related to the gallery element
+- `example_binarys`: dictionary of example names (key) and data (value) related to the gallery element
+
+```python
+import construct as cs
+import wx
+import construct_editor.main as csmain
+import construct_editor.gallery as csgallery
+
+# construct definitions
+
+flags_struct = cs.Struct(
+    "flag0" / cs.Flag,
+    "flag1" / cs.Flag,
+
+    "bit_struct" / cs.BitStruct(
+        "bit_flag0" / cs.Flag,
+        "bit_flag1" / cs.Flag,
+        "bit_flag2" / cs.Flag,
+        "bit_flag3" / cs.Flag,
+        cs.Padding(4)
+    )
+)
+
+pass_struct = cs.Struct(
+    "value1" / cs.Int8sb,
+    "pass" / cs.Pass,
+    "value2" / cs.Int8sb,
+)
+
+padded_struct = cs.Struct(
+    "padded" / cs.Padded(5, cs.Bytes(3)),
+    "padding" / cs.Padding(5),
+)
+
+# app setup
+
+app = wx.App(False)
+frame = csmain.ConstructGalleryFrame(
+            None,
+            gallery_selection=0,
+            
+            # Gallery definition
+            construct_gallery = {
+                "Test: Flag": csgallery.GalleryItem(
+                    construct=flags_struct,
+                    example_binarys={
+                        "1": bytes([0x01, 0x02, 0x40]),
+                        "Zeros": bytes(3),
+                    },
+                ),
+                "## miscellaneous ##########################": None,
+                "Test: Pass": csgallery.GalleryItem(
+                    construct=pass_struct,
+                    example_binarys={
+                        "Zeros": bytes(2),
+                        "1": b"12",
+                    },
+                ),
+                "Test: Padded": csgallery.GalleryItem(
+                    construct=padded_struct,
+                    example_binarys={
+                        "1": bytes([0, 1, 2, 3, 4, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5]),
+                        "Zeros": bytes(10),
+                    },
+                )
+            },
+
+            title="Custom sample",
+            size=(1000, 500)
+)
+frame.Show(True)
+app.MainLoop()
+```
+
 ## Widgets
 ### ConstructHexEditor
 This is the main widget ot this library. It offers a look at the raw binary data and also at the parsed structure.
