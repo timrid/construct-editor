@@ -7,6 +7,7 @@ import wx
 import wx.dataview as dv
 from construct_editor.helper import CallbackList
 import textwrap
+import re
 
 from construct_editor.helper.preprocessor import include_metadata
 from construct_editor.helper.wrapper import (
@@ -104,10 +105,16 @@ class ContextMenu(wx.Menu):
         super(ContextMenu, self).__init__()
         self.parent = parent
         self.model = model
+        self.entry = entry
 
-        item: wx.MenuItem = self.Append(wx.ID_COPY, "Copy\tCtrl+C")
-        # self.Bind(wx.EVT_MENU, self.on_copy, id=item.Id)
-        item.Enable(False)
+        item: wx.MenuItem = self.Append(wx.ID_ANY, "Copy\tCtrl+C")
+        self.Bind(wx.EVT_MENU, self.on_copy_value_to_clipboard, id=item.Id)
+        item.Enable(True)
+
+        item: wx.MenuItem = self.Append(wx.ID_ANY,
+            "Copy path to clipboard")
+        self.Bind(wx.EVT_MENU, self.on_copy_path_to_clipboard, id=item.Id)
+        item.Enable(True)
 
         item: wx.MenuItem = self.Append(wx.ID_PASTE, "Paste\tCtrl+V")
         # self.Bind(wx.EVT_MENU, self.on_paste, id=item.Id)
@@ -193,6 +200,18 @@ class ContextMenu(wx.Menu):
         entry = self.submenu_map[event.GetId()]
         self.model.list_viewed_entries.remove(entry)
         self.parent.reload()
+
+    def on_copy_value_to_clipboard(self, event: wx.CommandEvent):
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(wx.TextDataObject(self.entry.obj_str))
+            wx.TheClipboard.Close()
+
+    def on_copy_path_to_clipboard(self, event: wx.CommandEvent):
+        status_text = ".".join(self.entry.path)
+        status_text = re.sub(r"\.(\[\d+\]\.)", r"\1", status_text)
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(wx.TextDataObject(status_text))
+            wx.TheClipboard.Close()
 
 
 # #####################################################################################################################
@@ -711,7 +730,9 @@ class ConstructEditor(wx.Panel):
             self._clear_status_bar()
 
     def _refresh_status_bar(self, entry: EntryConstruct):
-        self._status_bar.SetStatusText(".".join(entry.path), 0)
+        status_text = ".".join(entry.path)
+        status_text = re.sub(r"\.(\[\d+\]\.)", r"\1", status_text)
+        self._status_bar.SetStatusText(status_text, 0)
         bytes_info = ""
         stream_infos = entry.get_stream_infos()
 
@@ -748,7 +769,8 @@ class ConstructEditor(wx.Panel):
         if col.ModelColumn == ConstructEditorColumn.Name:
             # only set tooltip if the obj changed. this prevents flickering
             if self._last_tooltip != (entry, ConstructEditorColumn.Name):
-                self._dvc_main_window.SetToolTip(textwrap.dedent(entry.docs).strip())
+                self._dvc_main_window.SetToolTip(textwrap.dedent(
+                    entry.docs or entry.name).strip())
             self._last_tooltip = (entry, ConstructEditorColumn.Name)
         elif col.ModelColumn == ConstructEditorColumn.Type:
             # only set tooltip if the obj changed. this prevents flickering

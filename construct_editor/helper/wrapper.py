@@ -508,7 +508,7 @@ class EntryConstruct(object):
             if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
-                obj = obj[int(p)]  # type: ignore
+                obj = obj[int(p.strip("[]"))]  # type: ignore
         return obj
 
     @obj.setter
@@ -519,7 +519,7 @@ class EntryConstruct(object):
             if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
                 obj = obj[p]
             elif isinstance(obj, list):
-                obj = obj[int(p)]  # type: ignore
+                obj = obj[int(p.strip("[]"))]  # type: ignore
 
         if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
             obj[path[-1]] = val
@@ -874,8 +874,8 @@ class EntryArray(EntrySubconstruct):
                     self.model,
                     self,
                     self.construct.subcon,
-                    str(index),
-                    "",
+                    '[' + str(index) + ']',
+                    '[' + str(index) + ']',
                 )
                 self._subentries.append(subentry)
 
