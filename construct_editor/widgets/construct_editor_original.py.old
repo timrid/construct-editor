@@ -5,11 +5,11 @@ import typing as t
 import construct as cs
 import wx
 import wx.dataview as dv
-from construct_editor.helper import CallbackList
+from construct_editor.core import CallbackList
 import textwrap
 
-from construct_editor.helper.preprocessor import include_metadata
-from construct_editor.helper.wrapper import (
+from construct_editor.core.preprocessor import include_metadata
+from construct_editor.core.model_entries import (
     ObjEditorMixin,
     EntryConstruct,
     create_entry_from_construct,

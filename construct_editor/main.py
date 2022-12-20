@@ -45,7 +45,7 @@ import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
 import construct_editor.gallery.test_stringencodded
 import construct_editor.gallery.example_cmd_resp
-from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
+from construct_editor.widgets.wx.wx_construct_hex_editor import ConstructHexEditor
 
 
 class ConstructGalleryFrame(wx.Frame):
@@ -237,7 +237,7 @@ class ConstructGallery(wx.Panel):
             construct=default_gallery_item.construct,
             contextkw=default_gallery_item.contextkw,
         )
-        self.construct_hex_editor.construct_editor.expand_all()
+        # self.construct_hex_editor.construct_editor.expand_all()
         self.sizer.Add(self.construct_hex_editor, 1, wx.ALL | wx.EXPAND, 0)
 
         self.SetSizer(self.sizer)
@@ -287,13 +287,13 @@ class ConstructGallery(wx.Panel):
         self.construct_hex_editor.construct = gallery_item.construct
         self.construct_hex_editor.contextkw = gallery_item.contextkw
         self.construct_hex_editor.binary = example_binary
-        self.construct_hex_editor.construct_editor.expand_all()
+        # self.construct_hex_editor.construct_editor.expand_all()
         self.Thaw()
 
     def on_clear_binary_clicked(self, event):
         self.example_selector_lbx.SetSelection(wx.NOT_FOUND)
         self.construct_hex_editor.binary = bytes()
-        self.construct_hex_editor.construct_editor.expand_all()
+        # self.construct_hex_editor.construct_editor.expand_all()
 
     def on_example_selection_changed(self, event):
         selection = self.gallery_selector_lbx.GetStringSelection()
@@ -302,7 +302,7 @@ class ConstructGallery(wx.Panel):
 
         # Set example binary
         self.construct_hex_editor.binary = example_binary
-        self.construct_hex_editor.construct_editor.expand_all()
+        # self.construct_hex_editor.construct_editor.expand_all()
 
     def on_load_binary_file_clicked(self, event):
         with wx.FileDialog(

@@ -5,9 +5,9 @@ import typing as t
 import construct as cs
 import wx
 
-from construct_editor.helper.wrapper import EntryConstruct, StreamInfo
-from construct_editor.widgets.construct_editor import ConstructEditor
-from construct_editor.widgets.hex_editor import (
+from construct_editor.core.entries import EntryConstruct, StreamInfo
+from construct_editor.widgets.wx.wx_construct_editor import WxConstructEditor
+from construct_editor.widgets.wx.wx_hex_editor import (
     HexEditor,
     HexEditorBinaryData,
     HexEditorFormat,
@@ -119,7 +119,7 @@ class ConstructHexEditor(wx.Panel):
         )
 
     def _init_gui_construct_editor(self, hsizer: wx.BoxSizer, construct: cs.Construct):
-        self.construct_editor: ConstructEditor = ConstructEditor(
+        self.construct_editor: WxConstructEditor = WxConstructEditor(
             self,
             construct,
         )
@@ -174,7 +174,7 @@ class ConstructHexEditor(wx.Panel):
     # Property: root_obj ######################################################
     @property
     def root_obj(self) -> t.Any:
-        return self.construct_editor.root_obj
+        return self.construct_editor._model.root_obj
 
     # Property: binary ########################################################
     @property

@@ -130,8 +130,8 @@ gallery_item = GalleryItem(
 # ######################################################################################
 # ################## Adding new constructs to construct-editor #########################
 # ######################################################################################
-import construct_editor.helper.preprocessor as cse_preprocessor  # type: ignore
-import construct_editor.helper.wrapper as cse_wrapper  # type: ignore
+import construct_editor.core.preprocessor as cse_preprocessor  # type: ignore
+import construct_editor.core.entries as cse_wrapper  # type: ignore
 
 cse_wrapper.construct_entry_mapping.update(
     {
