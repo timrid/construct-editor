@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
+import abc
 import enum
 import typing as t
 
+import construct_editor.core.entries as entries
 from construct_editor.core.callbacks import CallbackListNew
 from construct_editor.core.commands import Command, CommandProcessor
-import construct_editor.core.entries as entries
-from construct_editor.core.preprocessor import (
-    add_gui_metadata,
-    get_gui_metadata,
-)
+from construct_editor.core.preprocessor import add_gui_metadata, get_gui_metadata
 
 
 class IntegerFormat(enum.Enum):
@@ -45,9 +43,11 @@ class ConstructEditorModel:
         self.list_viewed_entries: t.List["entries.EntryConstruct"] = []
 
         self.command_processor = CommandProcessor(max_commands=20)
-        self.on_value_changed: CallbackListNew[
-            ["entries.EntryConstruct"]
-        ] = CallbackListNew()
+
+    @abc.abstractmethod
+    def on_value_changed(self, entry: "entries.EntryConstruct"):
+        """Implement this in the derived class"""
+        ...
 
     def get_column_count(self):
         """
@@ -67,6 +67,7 @@ class ConstructEditorModel:
 
         # root entry is requested
         if entry is None:
+            self.root_entry.visible_row = True
             return [self.root_entry]
 
         if entry.subentries is None:
@@ -163,10 +164,10 @@ class ConstructEditorModel:
             def do(self) -> None:
                 self._obj_backup = current_value
                 entry.obj = new_value
-                model.on_value_changed.fire(entry)
+                model.on_value_changed(entry)
 
             def undo(self) -> None:
                 entry.obj = self._obj_backup
-                model.on_value_changed.fire(entry)
+                model.on_value_changed(entry)
 
         self.command_processor.submit(Cmd())

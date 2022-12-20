@@ -284,8 +284,8 @@ class ConstructGallery(wx.Panel):
             example_binary = bytes(0)
 
         self.Freeze()
-        self.construct_hex_editor.construct = gallery_item.construct
-        self.construct_hex_editor.contextkw = gallery_item.contextkw
+        self.construct_hex_editor.change_construct(gallery_item.construct)
+        self.construct_hex_editor.change_contextkw(gallery_item.contextkw)
         self.construct_hex_editor.binary = example_binary
         # self.construct_hex_editor.construct_editor.expand_all()
         self.Thaw()

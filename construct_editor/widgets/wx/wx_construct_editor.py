@@ -97,8 +97,29 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         # self.UseWeakRefs(True)  # weak refs are slower when creating a large number of items
 
     # #################################################################################################################
+    # ConstructEditorModel Interface ##################################################################################
+    # #################################################################################################################
+    def on_value_changed(self, entry: "EntryConstruct"):
+        dvc_item = self._entry_to_dvc_item(entry)
+        self.ItemChanged(dvc_item)
+
+    # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
     # #################################################################################################################
+
+    def _dvc_item_to_entry(self, dvc_item: dv.DataViewItem) -> EntryConstruct:
+        entry = self.ItemToObject(dvc_item)
+        if not isinstance(entry, EntryConstruct):
+            raise ValueError(f"{repr(entry)} is no valid entry")
+        return entry
+
+    def _entry_to_dvc_item(self, entry: EntryConstruct) -> dv.DataViewItem:
+        visible_row_entry = entry.get_visible_row_entry()
+        if visible_row_entry is None:
+            return dv.NullDataViewItem
+        dvc_item = self.ObjectToItem(visible_row_entry)
+        return dvc_item
+
     def GetColumnCount(self):
         # Report how many columns this model provides data for.
         return self.get_column_count()
@@ -118,17 +139,16 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         if self.root_entry is None:
             return 0
 
-        # hidden root
         if not parent:
+            # hidden root
             entry = None
         else:
-            entry = self.ItemToObject(parent)
-            if not isinstance(entry, EntryConstruct):
-                raise ValueError(f"{repr(entry)} is no valid entry")
+            entry = self._dvc_item_to_entry(parent)
 
         childs = self.get_children(entry)
         for child in childs:
-            dvc_item = self.ObjectToItem(child)
+            dvc_item = self._entry_to_dvc_item(child)
+            # dvc_item = self.ObjectToItem(child)
             children.append(dvc_item)
         return len(children)
 
@@ -139,12 +159,12 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         if not item:
             return True
 
-        # check if the entry is a container
-        entry = self.ItemToObject(item)
-        if not isinstance(entry, EntryConstruct):
-            raise ValueError(f"{repr(entry)} is no valid entry")
+        entry = self._dvc_item_to_entry(item)
 
-        return entry.subentries is not None
+        if entry.subentries is None:
+            return False
+
+        return True
 
     def HasContainerColumns(self, item):
         # True zurückgeben, damit in Containern auch in allen Spalten Werte angezeigt werden
@@ -156,23 +176,22 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         if not item:
             entry = None  # Root object
         else:
-            entry = self.ItemToObject(item)
-            if not isinstance(entry, EntryConstruct):
-                raise ValueError(f"{repr(entry)} is no valid entry")
+            entry = self._dvc_item_to_entry(item)
 
-        return self.get_parent(entry)
+        parent = self.get_parent(entry)
+        if parent is None:
+            parent_item = dv.NullDataViewItem
+        else:
+            parent_item = self._entry_to_dvc_item(parent)
+        return parent_item
 
     def GetValue(self, item: dv.DataViewItem, col: int):
-        entry = self.ItemToObject(item)
-        if not isinstance(entry, EntryConstruct):
-            raise ValueError(f"{repr(entry)} is no valid entry")
+        entry = self._dvc_item_to_entry(item)
 
         return self.get_value(entry, col)
 
     def SetValue(self, value: t.Any, item: dv.DataViewItem, col: int):
-        entry = self.ItemToObject(item)
-        if not isinstance(entry, EntryConstruct):
-            raise ValueError(f"{repr(entry)} is no valid entry")
+        entry = self._dvc_item_to_entry(item)
 
         # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
         # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type
@@ -184,9 +203,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         return True
 
     def GetAttr(self, item, col, attr):
-        entry = self.ItemToObject(item)
-        if not isinstance(entry, EntryConstruct):
-            raise ValueError(f"{repr(entry)} is no valid entry")
+        entry = self._dvc_item_to_entry(item)
 
         if entry is self.root_entry:
             attr.SetColour("blue")
@@ -318,6 +335,12 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         """
         self._status_bar.SetStatusText(path_info, 0)
         self._status_bar.SetStatusText(bytes_info, 1)
+
+    def get_root_obj(self) -> t.Any:
+        """
+        Get the current root object of the parsed binary.
+        """
+        return self._model.root_obj
 
     # # expand_entry ############################################################
     # def expand_entry(self, entry: EntryConstruct):

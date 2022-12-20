@@ -15,10 +15,12 @@ from construct_editor.widgets.wx.wx_hex_editor import (
 
 
 class HexEditorPanel(wx.SplitterWindow):
-    def __init__(self, parent, name: str, read_only: bool = False, bitwiese: bool = False):
+    def __init__(
+        self, parent, name: str, read_only: bool = False, bitwiese: bool = False
+    ):
         super().__init__(parent, style=wx.SP_LIVE_UPDATE)
         self.SetSashGravity(0.5)
-        
+
         panel = wx.Panel(self)
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -45,12 +47,11 @@ class HexEditorPanel(wx.SplitterWindow):
             b"",
             HexEditorFormat(width=16),
             read_only=read_only,
-            bitwiese=bitwiese
+            bitwiese=bitwiese,
         )
         vsizer.Add(self.hex_editor, 1)
         panel.SetSizer(vsizer)
 
-        
         self.Initialize(panel)
 
         self.sub_panel: t.Optional["HexEditorPanel"] = None
@@ -65,7 +66,9 @@ class HexEditorPanel(wx.SplitterWindow):
     def create_sub_panel(self, name: str, bitwise: bool) -> "HexEditorPanel":
         """Create a new sub-panel"""
         if self.sub_panel is None:
-            self.sub_panel = HexEditorPanel(self, name, read_only=True, bitwiese=bitwise)
+            self.sub_panel = HexEditorPanel(
+                self, name, read_only=True, bitwiese=bitwise
+            )
             self.SplitHorizontally(self.GetWindow1(), self.sub_panel)
             return self.sub_panel
         else:
@@ -151,30 +154,23 @@ class ConstructHexEditor(wx.Panel):
         self.Refresh()
         self.Thaw()
 
-    # Property: construct #####################################################
-    @property
-    def construct(self) -> cs.Construct:
-        """construct used for parsing"""
-        return self.construct_editor.construct
+    def change_construct(self, constr: cs.Construct) -> None:
+        """
+        Change the construct format, that is used for building/parsing.
+        """
+        self.construct_editor.change_construct(constr)
 
-    @construct.setter
-    def construct(self, val: cs.Construct):
-        self.construct_editor.construct = val
+    def change_contextkw(self, contextkw: dict):
+        """
+        Change the contextkw used for building/parsing.
+        """
+        self._contextkw = contextkw
 
-    # Property: contextkw #####################################################
-    @property
-    def contextkw(self) -> dict:
-        """contextkw used for parsing the construct"""
-        return self._contextkw
-
-    @contextkw.setter
-    def contextkw(self, val: dict):
-        self._contextkw = val
-
-    # Property: root_obj ######################################################
-    @property
-    def root_obj(self) -> t.Any:
-        return self.construct_editor._model.root_obj
+    def get_root_obj(self) -> t.Any:
+        """
+        Get the current root object of the parsed binary.
+        """
+        return self.construct_editor.get_root_obj()
 
     # Property: binary ########################################################
     @property
@@ -195,7 +191,7 @@ class ConstructHexEditor(wx.Panel):
             self._converting = True
             self.Freeze()
             self.construct_editor.parse(
-                self.hex_panel.hex_editor.binary, **self.contextkw
+                self.hex_panel.hex_editor.binary, **self._contextkw
             )
         finally:
             self.Thaw()
@@ -206,7 +202,7 @@ class ConstructHexEditor(wx.Panel):
         try:
             self._converting = True
             self.Freeze()
-            binary = self.construct_editor.build(**self.contextkw)
+            binary = self.construct_editor.build(**self._contextkw)
             self.hex_panel.hex_editor.binary = binary
         except Exception:
             pass  # ignore errors, because they are already shown in the gui
@@ -231,7 +227,9 @@ class ConstructHexEditor(wx.Panel):
         # Create all Sub-Panels
         for idx, stream_info in enumerate(stream_infos):
             if idx != 0:  # dont create Sub-Panel for the root stream
-                hex_pnl = hex_pnl.create_sub_panel(".".join(stream_info.path), stream_info.bitstream)
+                hex_pnl = hex_pnl.create_sub_panel(
+                    ".".join(stream_info.path), stream_info.bitstream
+                )
                 hex_pnl.hex_editor.binary = stream_info.stream.getvalue()
 
             panel_stream_mapping.append((hex_pnl, stream_info))

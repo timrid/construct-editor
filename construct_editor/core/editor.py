@@ -21,8 +21,9 @@ from construct_editor.core.preprocessor import (
 
 class ConstructEditor:
     def __init__(self, construct: cs.Construct, model: ConstructEditorModel):
-        self._construct = construct
         self._model = model
+
+        self.change_construct(construct)
 
         self.on_entry_selected: CallbackListNew[[EntryConstruct]] = CallbackListNew()
         self.on_root_obj_changed: CallbackListNew[[t.Any]] = CallbackListNew()
@@ -51,15 +52,23 @@ class ConstructEditor:
         Show an status to the user.
         """
 
-    # Property: construct #####################################################
-    @property
-    def construct(self) -> cs.Construct:
-        """construct used for building/parsing"""
-        return self._construct
+    def change_construct(self, constr: cs.Construct) -> None:
+        """
+        Change the construct format, that is used for building/parsing.
+        """
+        # add root name, is none is available
+        if constr.name is None:
+            constr = "root" / constr
 
-    @construct.setter
-    def construct(self, val: cs.Construct):
-        self._construct = val
+        # modify the copied construct, so that each item also includes metadata for the GUI
+        self._construct = include_metadata(constr)
+
+        # create entry from the construct
+        self._model.root_entry = create_entry_from_construct(
+            self._model, None, self._construct, None, ""
+        )
+
+        self._model.list_viewed_entries.clear()
 
     def parse(self, binary: bytes, **contextkw: t.Any):
         """
@@ -95,24 +104,6 @@ class ConstructEditor:
         wx.CallAfter(lambda: self.parse(binary, **contextkw))
 
         return binary
-
-    def change_construct(self, val: cs.Construct) -> None:
-        """
-        Change the construct format, that is used for building/parsing.
-        """
-        # add root name, is none is available
-        if val.name is None:
-            val = "root" / val
-
-        # modify the copied construct, so that each item also includes metadata for the GUI
-        self._construct = include_metadata(val)
-
-        # create entry from the construct
-        self._model.root_entry = create_entry_from_construct(
-            self._model, None, self._construct, None, ""
-        )
-
-        self._model.list_viewed_entries.clear()
 
     def hide_protected(self, hide_protected: bool) -> None:
         """
