@@ -278,6 +278,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._dvc_main_window: wx.Window = self._dvc.GetMainWindow()
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
         self._dvc_main_window.Bind(wx.EVT_KEY_DOWN, self._on_dvc_key_down)
+        self._dvc_main_window.Bind(wx.EVT_CHAR, self._on_dvc_char)
         self._last_tooltip: t.Optional[
             t.Tuple[EntryConstruct, ConstructEditorColumn]
         ] = None
@@ -546,6 +547,21 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
 
         else:
             event.Skip()
+
+    def _on_dvc_char(self, event: wx.KeyEvent):
+        if event.GetUnicodeKey() in (wx.WXK_NONE, wx.WXK_RETURN):
+            event.Skip()
+            return
+
+        # when any printable key is pressed, the editing should start
+        self._dvc.EditItem(
+            self._dvc.GetSelection(),
+            self._dvc.GetColumn(ConstructEditorColumn.Value),
+        )
+
+        sim = wx.UIActionSimulator()
+        sim.KeyDown(event.GetKeyCode())
+
 
     # def _on_dvc_item_expanded(self, event: dv.DataViewEvent):
     #     item = event.GetItem()

@@ -1,5 +1,7 @@
 # Changelog
 ## [Unreleased]
+Enhanced ConstructEditor:
+- Any keypress of an printable key will start editing an item. No ENTER or double click is reqired any more.
 
 -------------------------------------------------------------------------------
 ## [0.0.19] - 2022-09-07
