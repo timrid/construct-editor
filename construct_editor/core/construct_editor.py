@@ -218,6 +218,39 @@ class ConstructEditor:
         for subentry in entry.subentries:
             self.restore_expansion_from_model(subentry)
 
+    def enable_list_view(self, entry: EntryConstruct):
+        """
+        Enable the list view for an entry.
+        """
+        if self.is_list_view_enabled(entry):
+            return
+
+        self._model.list_viewed_entries.append(entry)
+        self.reload()
+
+        # collapse all subentries without the entry itself,
+        # so that the list can be seen better.
+        self.collapse_children(entry)
+        self.expand_entry(entry)
+
+    def disable_list_view(self, entry: EntryConstruct):
+        """
+        Disable the list view for an entry.
+        """
+        if not self.is_list_view_enabled(entry):
+            return
+
+        self._model.list_viewed_entries.remove(entry)
+        self.reload()
+
+    def is_list_view_enabled(self, entry: EntryConstruct) -> bool:
+        """
+        Check if an entry is shown in a list view.
+        """
+        if entry in self._model.list_viewed_entries:
+            return True
+        return False
+
     # Internals ###############################################################
     # def _reload_dvc_columns(self):
     #     """Reload the dvc columns"""

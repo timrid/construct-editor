@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import dataclasses
 import textwrap
 import typing as t
 
@@ -10,8 +11,8 @@ import wx.dataview as dv
 from construct_editor.core.construct_editor import ConstructEditor
 from construct_editor.core.entries import EntryConstruct
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
+from construct_editor.widgets.wx.wx_context_menu import WxContextMenu
 from construct_editor.widgets.wx.wx_obj_editors import WxObjEditor, create_obj_editor
-import dataclasses
 
 
 @dataclasses.dataclass
@@ -478,11 +479,10 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         item = event.GetItem()
         entry: t.Optional["EntryConstruct"]
         if item.ID is not None:
-            entry = self._model.ItemToObject(item)
+            entry = self._model.dvc_item_to_entry(item)
         else:
             entry = None
-        # TODO (MUST): implement this!
-        # self.PopupMenu(ContextMenu(self, self._model, entry), event.GetPosition())
+        self.PopupMenu(WxContextMenu(self, self._model, entry), event.GetPosition())
 
     def _on_dvc_key_down(self, event: wx.KeyEvent):
         # Ctrl+E
@@ -539,4 +539,4 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         if dvc_item.ID is None:
             return
         entry = self._model.dvc_item_to_entry(dvc_item)
-        entry.row_expanded = True
+        entry.row_expanded = False

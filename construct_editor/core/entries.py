@@ -12,7 +12,12 @@ import wx
 import wx.adv
 
 import construct_editor.core.model as model
-from construct_editor.core.context_menu import ContextMenu
+from construct_editor.core.context_menu import (
+    ContextMenu,
+    ButtonMenuItem,
+    SeparatorMenuItem,
+    CheckboxMenuItem,
+)
 from construct_editor.core.preprocessor import (
     GuiMetaData,
     IncludeGuiMetaData,
@@ -527,25 +532,29 @@ class EntryStruct(EntryConstruct):
         return ObjEditorSettings_Default(self)  # TODO: create panel for cs.Struct
 
     def modify_context_menu(self, menu: ContextMenu):
-        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
-
-        def on_expand_children_clicked(event: wx.MenuEvent):
-            return
-            # TODO (MUST): implement this!
+        def on_expand_children_clicked():
             menu.parent.expand_children(self)
 
-        def on_collapse_children_clicked(event: wx.MenuEvent):
-            return
-            # TODO (MUST): implement this!
+        def on_collapse_children_clicked():
             menu.parent.collapse_children(self)
 
-        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Expand Children")
-        menu.Append(menu_item)
-        menu.Bind(wx.EVT_MENU, on_expand_children_clicked, menu_item)
-
-        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Collapse Children")
-        menu.Append(menu_item)
-        menu.Bind(wx.EVT_MENU, on_collapse_children_clicked, menu_item)
+        menu.add_menu_item(SeparatorMenuItem())
+        menu.add_menu_item(
+            ButtonMenuItem(
+                "Expand Children",
+                None,
+                True,
+                on_expand_children_clicked,
+            )
+        )
+        menu.add_menu_item(
+            ButtonMenuItem(
+                "Collapse Children",
+                None,
+                True,
+                on_collapse_children_clicked,
+            )
+        )
 
 
 # EntryArray ##########################################################################################################
@@ -623,25 +632,29 @@ class EntryArray(EntrySubconstruct):
         return ObjEditorSettings_Default(self)  # TODO: create panel for cs.Array
 
     def modify_context_menu(self, menu: ContextMenu):
-        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
-
-        def on_expand_children_clicked(event: wx.MenuEvent):
-            return
-            # TODO (MUST): implement this!
+        def on_expand_children_clicked():
             menu.parent.expand_children(self)
 
-        def on_collapse_children_clicked(event: wx.MenuEvent):
-            return
-            # TODO (MUST): implement this!
+        def on_collapse_children_clicked():
             menu.parent.collapse_children(self)
 
-        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Expand Children")
-        menu.Append(menu_item)
-        menu.Bind(wx.EVT_MENU, on_expand_children_clicked, menu_item)
-
-        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Collapse Children")
-        menu.Append(menu_item)
-        menu.Bind(wx.EVT_MENU, on_collapse_children_clicked, menu_item)
+        menu.add_menu_item(SeparatorMenuItem())
+        menu.add_menu_item(
+            ButtonMenuItem(
+                "Expand Children",
+                None,
+                True,
+                on_expand_children_clicked,
+            )
+        )
+        menu.add_menu_item(
+            ButtonMenuItem(
+                "Collapse Children",
+                None,
+                True,
+                on_collapse_children_clicked,
+            )
+        )
 
         # If the subentry has no subentries itself, it makes no sense to create a list view.
         temp_subentry = create_entry_from_construct(
@@ -650,22 +663,22 @@ class EntryArray(EntrySubconstruct):
         if temp_subentry.subentries is None:
             return
 
-        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
-
-        def on_menu_item_clicked(event: wx.MenuEvent):
-            return
-            # TODO (MUST): implement this!
-            if self in self.model.list_viewed_entries:
-                self.model.list_viewed_entries.remove(self)
+        def on_menu_item_clicked(checked: bool):
+            if menu.parent.is_list_view_enabled(self):
+                menu.parent.disable_list_view(self)
             else:
-                self.model.list_viewed_entries.append(self)
-            self.dvc_item_expanded = True
-            menu.parent.reload()
+                menu.parent.enable_list_view(self)
 
-        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Enable List View", kind=wx.ITEM_CHECK)
-        menu.Append(menu_item)
-        menu_item.Check(self in self.model.list_viewed_entries)
-        menu.Bind(wx.EVT_MENU, on_menu_item_clicked, menu_item)
+        menu.add_menu_item(SeparatorMenuItem())
+        menu.add_menu_item(
+            CheckboxMenuItem(
+                "Enable List View",
+                None,
+                True,
+                menu.parent.is_list_view_enabled(self),
+                on_menu_item_clicked,
+            )
+        )
 
 
 # EntryIfThenElse #####################################################################################################
@@ -1084,16 +1097,20 @@ class EntryBytes(EntryConstruct):
         return ObjEditorSettings_Bytes(self)
 
     def modify_context_menu(self, menu: ContextMenu):
-        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
-
-        def on_menu_item_clicked(event: wx.MenuEvent):
+        def on_ascii_view_clicked(checked: bool):
             self.ascii_view = not self.ascii_view
             menu.parent.reload()
 
-        menu_item = wx.MenuItem(menu, wx.ID_ANY, "ASCII View", kind=wx.ITEM_CHECK)
-        menu.Append(menu_item)
-        menu_item.Check(self.ascii_view)
-        menu.Bind(wx.EVT_MENU, on_menu_item_clicked, menu_item)
+        menu.add_menu_item(SeparatorMenuItem())
+        menu.add_menu_item(
+            CheckboxMenuItem(
+                "ASCII View",
+                None,
+                True,
+                self.ascii_view,
+                on_ascii_view_clicked,
+            )
+        )
 
 
 # EntryTell ###########################################################################################################
@@ -1211,23 +1228,20 @@ class EntryDefault(EntrySubconstruct):
         super().__init__(model, parent, construct, name, docs)
 
     def modify_context_menu(self, menu: ContextMenu):
-        self.subentry.modify_context_menu(menu)
-
-        menu.Append(wx.MenuItem(menu, wx.ID_ANY, kind=wx.ITEM_SEPARATOR))
-
-        def on_default_clicked(event: wx.MenuEvent):
-            return
-            # TODO (MUST): implement this!
+        def on_default_clicked():
+            # TODO: This is not working correctly...
             self.obj = None
-            dvc_item = self.get_dvc_item()
-            menu.model.ValueChanged(dvc_item, model.ConstructEditorColumn.Value)
-            # menu.model.ItemChanged(dvc_item)
-            # menu.parent.expand_entry(self)
-            # menu.parent.reload()
+            menu.parent.reload()
 
-        menu_item = wx.MenuItem(menu, wx.ID_ANY, "Set to default")
-        menu.Append(menu_item)
-        menu.Bind(wx.EVT_MENU, on_default_clicked, menu_item)
+        menu.add_menu_item(SeparatorMenuItem())
+        menu.add_menu_item(
+            ButtonMenuItem(
+                "Set to default",
+                None,
+                True,
+                on_default_clicked,
+            )
+        )
 
 
 # EntryFocusedSeq ###################################################################################################

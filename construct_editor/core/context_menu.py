@@ -1,112 +1,201 @@
 # -*- coding: utf-8 -*-
+import abc
+import dataclasses
 import typing as t
-
-import wx
 
 import construct_editor.core.construct_editor as construct_editor
 import construct_editor.core.entries as entries
 from construct_editor.core.model import ConstructEditorModel, IntegerFormat
 
+COPY_LABEL = "Copy"
+PASTE_LABEL = "Paste"
+UNDO_LABEL = "Undo"
+REDO_LABEL = "Redo"
+
+INTFORMAT_DEC_LABEL = "Dec"
+INTFORMAT_HEX_LABEL = "Hex"
 
 # #####################################################################################################################
 # Context Menu ########################################################################################################
 # #####################################################################################################################
-class ContextMenu(wx.Menu):
+@dataclasses.dataclass
+class SeparatorMenuItem:
+    pass
+
+
+@dataclasses.dataclass
+class ButtonMenuItem:
+    label: str
+    shortcut: t.Optional[str]
+    enabled: bool
+    callback: t.Callable[[], None]
+
+
+@dataclasses.dataclass
+class CheckboxMenuItem:
+    label: str
+    shortcut: t.Optional[str]
+    enabled: bool
+    checked: bool
+    callback: t.Callable[[bool], None]
+
+
+@dataclasses.dataclass
+class RadioGroupMenuItems:
+    labels: t.List[str]
+    checked_label: str
+    callback: t.Callable[[str], None]
+
+
+@dataclasses.dataclass
+class SubmenuItem:
+    label: str
+    subitems: t.List["MenuItem"]
+
+
+MenuItem = t.Union[
+    ButtonMenuItem,
+    SeparatorMenuItem,
+    CheckboxMenuItem,
+    RadioGroupMenuItems,
+    SubmenuItem,
+]
+
+
+class ContextMenu:
     def __init__(
         self,
         parent: "construct_editor.ConstructEditor",
         model: "ConstructEditorModel",
         entry: t.Optional["entries.EntryConstruct"],
     ):
-        super(ContextMenu, self).__init__()
         self.parent = parent
         self.model = model
+        self.entry = entry
 
-        item: wx.MenuItem = self.Append(wx.ID_COPY, "Copy\tCtrl+C")
-        # self.Bind(wx.EVT_MENU, self.on_copy, id=item.Id)
-        item.Enable(False)
+        self._init_default_menu()
 
-        item: wx.MenuItem = self.Append(wx.ID_PASTE, "Paste\tCtrl+V")
-        # self.Bind(wx.EVT_MENU, self.on_paste, id=item.Id)
-        item.Enable(False)  # TODO:
+    def _init_default_menu(self):
+        self._init_copy_paste()
+        self.add_menu_item(SeparatorMenuItem())
+        self._init_undo_redo()
+        self.add_menu_item(SeparatorMenuItem())
+        self._init_hide_protected()
+        self.add_menu_item(SeparatorMenuItem())
+        self._init_intformat()
+        if len(self.model.list_viewed_entries) > 0:
+            self.add_menu_item(SeparatorMenuItem())
+            self._init_list_viewed_entries()
 
-        self.AppendSeparator()
+        if self.entry is not None:
+            self.entry.modify_context_menu(self)
 
-        item: wx.MenuItem = self.Append(wx.ID_UNDO, "Undo\tCtrl+Z")
-        self.Bind(
-            wx.EVT_MENU,
-            lambda event: self.model.command_processor.undo(),
-            id=item.Id,
+    def _init_copy_paste(self):
+        self.add_menu_item(
+            ButtonMenuItem(
+                COPY_LABEL,
+                "Ctrl+C",
+                False,
+                self.on_copy,
+            )
         )
-        item.Enable(self.model.command_processor.can_undo())
-
-        item: wx.MenuItem = self.Append(wx.ID_REDO, "Redo\tCtrl+Y")
-        self.Bind(
-            wx.EVT_MENU,
-            lambda event: self.model.command_processor.redo(),
-            id=item.Id,
+        self.add_menu_item(
+            ButtonMenuItem(
+                PASTE_LABEL,
+                "Ctrl+V",
+                False,
+                self.on_paste,
+            )
         )
-        item.Enable(self.model.command_processor.can_redo())
 
-        self.AppendSeparator()
+    def _init_undo_redo(self):
+        self.add_menu_item(
+            ButtonMenuItem(
+                UNDO_LABEL,
+                "Ctrl+Z",
+                self.model.command_processor.can_undo(),
+                self.on_paste,
+            )
+        )
+        self.add_menu_item(
+            ButtonMenuItem(
+                REDO_LABEL,
+                "Ctrl+Y",
+                self.model.command_processor.can_redo(),
+                self.on_redo,
+            )
+        )
 
-        item: wx.MenuItem = self.AppendCheckItem(wx.ID_ANY, "Hide Protected")
-        self.Bind(wx.EVT_MENU, self.on_hide_protected, id=item.Id)
-        item.Check(self.parent.is_hide_protected_enabled())
-        self.hide_protected_mi = item
+    def _init_hide_protected(self):
+        self.add_menu_item(
+            CheckboxMenuItem(
+                "Hide Protected",
+                None,
+                True,
+                self.parent.is_hide_protected_enabled(),
+                self.on_hide_protected,
+            )
+        )
 
-        self.AppendSeparator()
-
-        item: wx.MenuItem = self.AppendRadioItem(wx.ID_ANY, "Dec")
-        self.Bind(wx.EVT_MENU, self.on_intformat_dec, id=item.Id)
-        self.intformat_dec_mi = item
-
-        item: wx.MenuItem = self.AppendRadioItem(wx.ID_ANY, "Hex")
-        self.Bind(wx.EVT_MENU, self.on_intformat_hex, id=item.Id)
-        self.intformat_hex_mi = item
-
+    def _init_intformat(self):
         if self.model.integer_format is IntegerFormat.Hex:
-            self.intformat_hex_mi.Check(True)
+            checked_label = INTFORMAT_HEX_LABEL
         else:
-            self.intformat_dec_mi.Check(True)
+            checked_label = INTFORMAT_DEC_LABEL
+        self.add_menu_item(
+            RadioGroupMenuItems(
+                [INTFORMAT_DEC_LABEL, INTFORMAT_HEX_LABEL],
+                checked_label,
+                self.on_intformat,
+            )
+        )
 
-        # Add List with all currently shown list viewed items
-        if len(model.list_viewed_entries) > 0:
-            self.AppendSeparator()
+    def _init_list_viewed_entries(self):
+        submenu = SubmenuItem("List Viewed Items", [])
+        for e in self.model.list_viewed_entries:
 
-            submenu = wx.Menu()
-            self.submenu_map: t.Dict[t.Any, "entries.EntryConstruct"] = {}
-            for e in model.list_viewed_entries:
-                name = ".".join(e.path)
-                item: wx.MenuItem = submenu.AppendCheckItem(wx.ID_ANY, name)
-                self.submenu_map[item.GetId()] = e
-                self.Bind(wx.EVT_MENU, self.on_remove_list_viewed_item, item)
-                item.Check(True)
+            def on_remove_list_viewed_item(checked: bool):
+                self.parent.disable_list_view(e)
 
-            self.AppendSubMenu(submenu, "List Viewed Items")
+            label = ".".join(e.path)
+            submenu.subitems.append(
+                CheckboxMenuItem(
+                    label,
+                    None,
+                    True,
+                    True,
+                    on_remove_list_viewed_item,
+                )
+            )
+        self.add_menu_item(submenu)
 
-        # Add additional items for this entry
-        if entry is not None:
-            entry.modify_context_menu(self)
+    @abc.abstractmethod
+    def add_menu_item(self, item: MenuItem):
+        """
+        Add an menu item to the context menu.
 
-    def on_hide_protected(self, event):
-        checked = self.hide_protected_mi.IsChecked()
-        self.parent.hide_protected = checked
+        This has to be implemented by the derived class.
+        """
+
+    def on_copy(self):
+        pass  # TODO: implement this
+
+    def on_paste(self):
+        pass  # TODO: implement this
+
+    def on_undo(self):
+        self.model.command_processor.undo()
+
+    def on_redo(self):
+        self.model.command_processor.redo()
+
+    def on_hide_protected(self, checked: bool):
+        self.parent.hide_protected(checked)
         self.parent.reload()
 
-    def on_intformat_dec(self, event: wx.CommandEvent):
-        self.intformat_dec_mi.Check(True)
-        self.model.integer_format = IntegerFormat.Dec
-        self.parent.reload()
-        event.Skip()
-
-    def on_intformat_hex(self, event: wx.CommandEvent):
-        self.intformat_hex_mi.Check(True)
-        self.model.integer_format = IntegerFormat.Hex
-        self.parent.reload()
-        event.Skip()
-
-    def on_remove_list_viewed_item(self, event: wx.CommandEvent):
-        entry = self.submenu_map[event.GetId()]
-        self.model.list_viewed_entries.remove(entry)
+    def on_intformat(self, label: str):
+        if label == INTFORMAT_DEC_LABEL:
+            self.model.integer_format = IntegerFormat.Dec
+        else:
+            self.model.integer_format = IntegerFormat.Hex
         self.parent.reload()
