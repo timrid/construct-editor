@@ -7,7 +7,7 @@ import construct as cs
 import wx
 import wx.dataview as dv
 
-from construct_editor.core.editor import ConstructEditor
+from construct_editor.core.construct_editor import ConstructEditor
 from construct_editor.core.entries import EntryConstruct
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
 from construct_editor.widgets.wx.wx_obj_editors import WxObjEditor, create_obj_editor
@@ -287,8 +287,8 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         )
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_VALUE_CHANGED, self._on_dvc_value_changed)
         self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self._on_dvc_right_clicked)
-        # self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_EXPANDED, self._on_dvc_item_expanded)# TODO (MUST): implement this!
-        # self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_COLLAPSED, self._on_dvc_item_collapsed)# TODO (MUST): implement this!
+        self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_EXPANDED, self._on_dvc_item_expanded)
+        self._dvc.Bind(dv.EVT_DATAVIEW_ITEM_COLLAPSED, self._on_dvc_item_collapsed)
 
         self._dvc_main_window: wx.Window = self._dvc.GetMainWindow()
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
@@ -300,7 +300,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
 
     def reload(self):
         """
-        Reload the ConstructEditor, while remaining expaned elements and selection
+        Reload the ConstructEditor, while remaining expaned elements and selection.
         """
         try:
             self.Freeze()
@@ -316,10 +316,9 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             self._model.Cleared()
             self._refresh_status_bar(None)
 
-            # TODO (MUST): implement this!
-            # # expand everything
-            # if self._model.root_entry is not None:
-            #     self._model.root_entry.dvc_item_restore_expansion()
+            # restore expansion saved in the model itself
+            if self._model.root_entry is not None:
+                self.restore_expansion_from_model(self._model.root_entry)
 
             # restore selection
             self._dvc.SetSelections(selections)
@@ -358,65 +357,19 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         """
         return self._model.root_obj
 
-    # # expand_entry ############################################################
-    # def expand_entry(self, entry: EntryConstruct):
-    #     self._dvc.Expand(entry.dvc_item)
+    def expand_entry(self, entry: EntryConstruct):
+        """
+        Expand an entry.
+        """
+        dvc_item = self._model.entry_to_dvc_item(entry)
+        self._dvc.Expand(dvc_item)
 
-    # # expand_children #########################################################
-    # def expand_children(self, entry: EntryConstruct):
-    #     if entry.subentries is not None:
-    #         if entry.dvc_item is not None:
-    #             self._dvc.Expand(entry.dvc_item)
-    #         for sub_entry in entry.subentries:
-    #             self.expand_children(sub_entry)
-
-    # # expand_all ##############################################################
-    # def expand_all(self):
-    #     """
-    #     Expand all Entries
-    #     """
-    #     if self._model.root_entry:
-    #         self.expand_children(self._model.root_entry)
-
-    # # expand_level ############################################################
-    # def expand_level(self, level: int):
-    #     """
-    #     Expand all Entries to Level ... (0=root level)
-    #     """
-
-    #     def dvc_expand(entry: EntryConstruct, current_level: int):
-    #         subentries = entry.subentries
-    #         dvc_item = entry.dvc_item
-    #         if subentries is not None:
-    #             if dvc_item is not None:
-    #                 self._dvc.Expand(dvc_item)
-    #             if current_level < level:
-    #                 for sub_entry in subentries:
-    #                     dvc_expand(sub_entry, current_level + 1)
-
-    #     if self._model.root_entry:
-    #         dvc_expand(self._model.root_entry, 1)
-
-    # # collapse_all ############################################################
-    # def collapse_children(self, entry: EntryConstruct):
-    #     subentries = entry.subentries
-    #     dvc_item = entry.dvc_item
-    #     if subentries is not None:
-    #         for sub_entry in subentries:
-    #             self.collapse_children(sub_entry)
-    #         if dvc_item is not None:
-    #             self._dvc.Collapse(dvc_item)
-
-    # # collapse_all ############################################################
-    # def collapse_all(self):
-    #     """
-    #     Collapse all Entries
-    #     """
-    #     if self._model.root_entry:
-    #         self.collapse_children(self._model.root_entry)
-
-    #     # expand the root entry again
-    #     self.expand_level(1)
+    def collapse_entry(self, entry: EntryConstruct):
+        """
+        Collapse an entry.
+        """
+        dvc_item = self._model.entry_to_dvc_item(entry)
+        self._dvc.Collapse(dvc_item)
 
     # Internals ###############################################################
     def _reload_dvc_columns(self):
@@ -534,18 +487,15 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
     def _on_dvc_key_down(self, event: wx.KeyEvent):
         # Ctrl+E
         if event.ControlDown() and event.GetKeyCode() == ord("E"):
-            # TODO (MUST): implement this!
-            # self.expand_all()
-            pass
+            self.expand_all()
 
         # Ctrl+W
-        if event.ControlDown() and event.GetKeyCode() == ord("W"):
-            # TODO (MUST): implement this!
-            # self.collapse_all()
-            pass
+        elif event.ControlDown() and event.GetKeyCode() == ord("W"):
+            self.collapse_all()
+            self.expand_level(1)  # expand at least the root
 
         # Ctrl+Z
-        if event.ControlDown() and event.GetKeyCode() == ord("Z"):
+        elif event.ControlDown() and event.GetKeyCode() == ord("Z"):
             self._model.command_processor.undo()
 
         # Ctrl+Y
@@ -577,16 +527,16 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         sim = wx.UIActionSimulator()
         sim.KeyDown(event.GetKeyCode())
 
-    # def _on_dvc_item_expanded(self, event: dv.DataViewEvent):
-    #     item = event.GetItem()
-    #     if item.ID is None:
-    #         return
-    #     entry: EntryConstruct = self._model.ItemToObject(item)
-    #     entry.dvc_item_expanded = True
+    def _on_dvc_item_expanded(self, event: dv.DataViewEvent):
+        dvc_item = event.GetItem()
+        if dvc_item.ID is None:
+            return
+        entry = self._model.dvc_item_to_entry(dvc_item)
+        entry.row_expanded = True
 
-    # def _on_dvc_item_collapsed(self, event: dv.DataViewEvent):
-    #     item = event.GetItem()
-    #     if item.ID is None:
-    #         return
-    #     entry: EntryConstruct = self._model.ItemToObject(item)
-    #     entry.dvc_item_expanded = False
+    def _on_dvc_item_collapsed(self, event: dv.DataViewEvent):
+        dvc_item = event.GetItem()
+        if dvc_item.ID is None:
+            return
+        entry = self._model.dvc_item_to_entry(dvc_item)
+        entry.row_expanded = True

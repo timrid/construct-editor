@@ -31,25 +31,33 @@ class ConstructEditor:
     @abc.abstractmethod
     def reload(self):
         """
-        Reload the ConstructEditor, while remaining expaned elements and selection
+        Reload the ConstructEditor, while remaining expaned elements and selection.
+
+        This has to be implemented by the derived class.
         """
 
     @abc.abstractmethod
     def show_parse_error_message(self, msg: t.Optional[str]):
         """
         Show an parse error message to the user.
+
+        This has to be implemented by the derived class.
         """
 
     @abc.abstractmethod
     def show_build_error_message(self, msg: t.Optional[str]):
         """
         Show an build error message to the user.
+
+        This has to be implemented by the derived class.
         """
 
     @abc.abstractmethod
     def show_status(self, path_info: str, bytes_info: str):
         """
         Show an status to the user.
+
+        This has to be implemented by the derived class.
         """
 
     def change_construct(self, constr: cs.Construct) -> None:
@@ -119,64 +127,96 @@ class ConstructEditor:
         """
         return self._model.hide_protected
 
-    # # expand_entry ############################################################
-    # def expand_entry(self, entry: EntryConstruct):
-    #     self._dvc.Expand(entry.dvc_item)
+    @abc.abstractmethod
+    def expand_entry(self, entry: EntryConstruct):
+        """
+        Expand an entry.
 
-    # # expand_children #########################################################
-    # def expand_children(self, entry: EntryConstruct):
-    #     if entry.subentries is not None:
-    #         if entry.dvc_item is not None:
-    #             self._dvc.Expand(entry.dvc_item)
-    #         for sub_entry in entry.subentries:
-    #             self.expand_children(sub_entry)
+        This has to be implemented by the derived class.
+        """
 
-    # def expand_all(self):
-    #     """
-    #     Expand all Entries.
-    #     """
-    #     if self._model.root_entry:
-    #         self.expand_children(self._model.root_entry)
+    def expand_children(self, entry: EntryConstruct):
+        """
+        Expand all children of an entry recursively including the entry itself.
+        """
+        self.expand_entry(entry)
 
-    # # expand_level ############################################################
-    # def expand_level(self, level: int):
-    #     """
-    #     Expand all Entries to Level ... (0=root level)
-    #     """
+        subentries = entry.subentries
+        if subentries is not None:
+            for sub_entry in subentries:
+                self.expand_children(sub_entry)
 
-    #     def dvc_expand(entry: EntryConstruct, current_level: int):
-    #         subentries = entry.subentries
-    #         dvc_item = entry.dvc_item
-    #         if subentries is not None:
-    #             if dvc_item is not None:
-    #                 self._dvc.Expand(dvc_item)
-    #             if current_level < level:
-    #                 for sub_entry in subentries:
-    #                     dvc_expand(sub_entry, current_level + 1)
+    def expand_all(self):
+        """
+        Expand all entries.
+        """
+        if self._model.root_entry is not None:
+            self.expand_children(self._model.root_entry)
 
-    #     if self._model.root_entry:
-    #         dvc_expand(self._model.root_entry, 1)
+    def expand_level(self, level: int):
+        """
+        Expand all Entries to Level ... (0=root level)
+        """
 
-    # # collapse_all ############################################################
-    # def collapse_children(self, entry: EntryConstruct):
-    #     subentries = entry.subentries
-    #     dvc_item = entry.dvc_item
-    #     if subentries is not None:
-    #         for sub_entry in subentries:
-    #             self.collapse_children(sub_entry)
-    #         if dvc_item is not None:
-    #             self._dvc.Collapse(dvc_item)
+        def dvc_expand(entry: EntryConstruct, current_level: int):
+            subentries = entry.subentries
+            if subentries is None:
+                return
 
-    # # collapse_all ############################################################
-    # def collapse_all(self):
-    #     """
-    #     Collapse all Entries
-    #     """
-    #     if self._model.root_entry:
-    #         self.collapse_children(self._model.root_entry)
+            self.expand_entry(entry)
 
-    #     # expand the root entry again
-    #     self.expand_level(1)
+            if current_level < level:
+                for sub_entry in subentries:
+                    dvc_expand(sub_entry, current_level + 1)
+
+        if self._model.root_entry:
+            dvc_expand(self._model.root_entry, 1)
+
+    @abc.abstractmethod
+    def collapse_entry(self, entry: EntryConstruct):
+        """
+        Collapse an entry.
+
+        This has to be implemented by the derived class.
+        """
+
+    def collapse_children(self, entry: EntryConstruct):
+        """
+        Collapse all children of an entry recursively including the entry itself.
+        """
+        subentries = entry.subentries
+        if subentries is not None:
+            for sub_entry in subentries:
+                self.collapse_children(sub_entry)
+
+        self.collapse_entry(entry)
+
+    def collapse_all(self):
+        """
+        Collapse all entries.
+        """
+        if self._model.root_entry:
+            self.collapse_children(self._model.root_entry)
+
+    def restore_expansion_from_model(self, entry: EntryConstruct):
+        """
+        Restore the expansion state from the model recursively.
+
+        While reloading the view in some frameworks (eg. wxPython) the expansion
+        state of the entries get lost. Because auf this, the expansion state is
+        saved in the model data itself an with this method the expansion state
+        of the model can be restored.
+        """
+        if entry.row_expanded is True:
+            self.expand_entry(entry)
+        else:
+            self.collapse_entry(entry)
+
+        if entry.subentries is None:
+            return
+
+        for subentry in entry.subentries:
+            self.restore_expansion_from_model(subentry)
 
     # Internals ###############################################################
     # def _reload_dvc_columns(self):

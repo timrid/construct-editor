@@ -3,7 +3,7 @@ import typing as t
 
 import wx
 
-import construct_editor.core.editor as editor
+import construct_editor.core.construct_editor as construct_editor
 import construct_editor.core.entries as entries
 from construct_editor.core.model import ConstructEditorModel, IntegerFormat
 
@@ -14,7 +14,7 @@ from construct_editor.core.model import ConstructEditorModel, IntegerFormat
 class ContextMenu(wx.Menu):
     def __init__(
         self,
-        parent: "editor.ConstructEditor",
+        parent: "construct_editor.ConstructEditor",
         model: "ConstructEditorModel",
         entry: t.Optional["entries.EntryConstruct"],
     ):

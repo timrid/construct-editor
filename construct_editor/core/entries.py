@@ -198,7 +198,9 @@ class EntryConstruct(object):
         self._visible_row: bool = False
 
         # Flag if this row is expanded or not.
-        # Only valid, if self._visible_row is True
+        # Only valid, if self._visible_row is True. This is needed because the
+        # expansion state is sometimes not saved in the view itself while reloading
+        # the view (eg. in wxPython).
         self._row_expanded: bool = False
 
     def get_debug_infos(self) -> str:
