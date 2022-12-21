@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-import logging
-
 import dataclasses
-import wx
-import wx.stc
-import wx.grid as Grid
-import wx.lib.newevent
-from typing import Optional, Callable, List
+import logging
 import math
 import typing as t
+
+import wx
+import wx.grid as Grid
+import wx.lib.newevent
+import wx.stc
 
 from construct_editor.core import CallbackList
 
@@ -16,14 +15,14 @@ logger = logging.getLogger("my-logger")
 logger.propagate = False
 
 
-class BinaryChangedCallbackList(CallbackList[Callable[["HexEditorBinaryData"], None]]):
+class BinaryChangedCallbackList(CallbackList[t.Callable[["HexEditorBinaryData"], None]]):
     def fire(self, binary_data: "HexEditorBinaryData"):
         for listener in self:
             listener(binary_data)
 
 
-class SelectionChangedCallbackList(CallbackList[Callable[[int, Optional[int]], None]]):
-    def fire(self, start_idx: int, end_idx: Optional[int]):
+class SelectionChangedCallbackList(CallbackList[t.Callable[[int, t.Optional[int]], None]]):
+    def fire(self, start_idx: int, end_idx: t.Optional[int]):
         for listener in self:
             listener(start_idx, end_idx)
 
@@ -650,7 +649,7 @@ class HexEditorGrid(Grid.Grid):
 
         self.refresh()
 
-        self._selection: t.Tuple[Optional[int], Optional[int]] = (None, None)
+        self._selection: t.Tuple[t.Optional[int], t.Optional[int]] = (None, None)
 
     def refresh(self):
         """
@@ -1085,7 +1084,7 @@ class HexEditor(wx.Panel):
         self,
         parent,
         binary: bytes = b"",
-        format: Optional[HexEditorFormat] = None,
+        format: t.Optional[HexEditorFormat] = None,
         read_only: bool = False,
         bitwiese: bool = False,
     ):
@@ -1133,7 +1132,7 @@ class HexEditor(wx.Panel):
         self._status_bar.SetStatusText(msg, 0)
         self.refresh()
 
-    def _on_selection_changed(self, idx1: int, idx2: Optional[int]):
+    def _on_selection_changed(self, idx1: int, idx2: t.Optional[int]):
         if idx2 is None:
             msg = f"Selection: {idx1:n}"
         else:

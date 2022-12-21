@@ -3,25 +3,21 @@ import enum
 import io
 import string
 import typing as t
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type
 
-import arrow
 import construct as cs
 import construct_typed as cst
-import wx
-import wx.adv
 
 import construct_editor.core.model as model
 from construct_editor.core.context_menu import (
-    ContextMenu,
     ButtonMenuItem,
-    SeparatorMenuItem,
     CheckboxMenuItem,
+    ContextMenu,
+    SeparatorMenuItem,
 )
 from construct_editor.core.preprocessor import (
     GuiMetaData,
     IncludeGuiMetaData,
-    add_gui_metadata,
     get_gui_metadata,
 )
 

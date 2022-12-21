@@ -1,8 +1,9 @@
+import copy
 import io
+import typing as t
+
 import construct as cs
 import construct_typed as cst
-import typing as t
-import copy
 
 
 class GuiMetaData(t.TypedDict):

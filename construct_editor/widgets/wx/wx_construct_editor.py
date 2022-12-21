@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import dataclasses
 import textwrap
 import typing as t

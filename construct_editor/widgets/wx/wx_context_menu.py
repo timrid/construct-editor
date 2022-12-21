@@ -18,7 +18,7 @@ from construct_editor.core.context_menu import (
     SeparatorMenuItem,
     SubmenuItem,
 )
-from construct_editor.core.model import ConstructEditorModel, IntegerFormat
+from construct_editor.core.model import ConstructEditorModel
 
 LABEL_TO_ID_MAPPING = {
     COPY_LABEL: wx.ID_COPY,
