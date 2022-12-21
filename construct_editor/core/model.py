@@ -4,7 +4,6 @@ import enum
 import typing as t
 
 import construct_editor.core.entries as entries
-from construct_editor.core.callbacks import CallbackListNew
 from construct_editor.core.commands import Command, CommandProcessor
 from construct_editor.core.preprocessor import add_gui_metadata, get_gui_metadata
 
@@ -48,12 +47,6 @@ class ConstructEditorModel:
     def on_value_changed(self, entry: "entries.EntryConstruct"):
         """Implement this in the derived class"""
         ...
-
-    def get_column_count(self):
-        """
-        Get the column count.
-        """
-        return 3
 
     def get_children(
         self, entry: t.Optional["entries.EntryConstruct"]
@@ -132,7 +125,7 @@ class ConstructEditorModel:
         # flatten the hierarchical structure to a list
         column = column - len(ConstructEditorColumn)
         flat_subentry_list: t.List["entries.EntryConstruct"] = []
-        entry.create_flat_subentry_list(flat_subentry_list)
+        flat_subentry_list = self.create_flat_subentry_list(entry)
         if len(flat_subentry_list) > column:
             return flat_subentry_list[column].obj_str
         else:
@@ -171,3 +164,24 @@ class ConstructEditorModel:
                 model.on_value_changed(entry)
 
         self.command_processor.submit(Cmd())
+
+    def create_flat_subentry_list(
+        self, entry: "entries.EntryConstruct"
+    ) -> t.List["entries.EntryConstruct"]:
+        """
+        Create a flat list with all subentires, recursively.
+        """
+        flat_subentry_list: t.List["entries.EntryConstruct"] = []
+
+        childs = self.get_children(entry)
+
+        if len(childs) == 0:
+            # append this entry only when no childs/subentires are available
+            flat_subentry_list.append(entry)
+            return flat_subentry_list
+
+        # add all childs/subentries recursivly
+        for child in childs:
+            child_flat_subentry_list = self.create_flat_subentry_list(child)
+            flat_subentry_list.extend(child_flat_subentry_list)
+        return flat_subentry_list

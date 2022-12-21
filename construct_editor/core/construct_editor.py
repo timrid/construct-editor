@@ -1,22 +1,14 @@
 # -*- coding: utf-8 -*-
 import abc
-import enum
-import textwrap
 import typing as t
 
 import construct as cs
 import wx
-import wx.dataview as dv
 
 from construct_editor.core.callbacks import CallbackListNew
-from construct_editor.core.commands import Command, CommandProcessor
 from construct_editor.core.entries import EntryConstruct, create_entry_from_construct
 from construct_editor.core.model import ConstructEditorModel
-from construct_editor.core.preprocessor import (
-    add_gui_metadata,
-    get_gui_metadata,
-    include_metadata,
-)
+from construct_editor.core.preprocessor import include_metadata
 
 
 class ConstructEditor:
@@ -251,55 +243,38 @@ class ConstructEditor:
             return True
         return False
 
-    # Internals ###############################################################
-    # def _reload_dvc_columns(self):
-    #     """Reload the dvc columns"""
-    #     self._dvc.ClearColumns()
+    def _get_list_viewed_column_count(self):
+        """
+        Get the count of all list viewed columns.
+        """
+        column_count = 0
+        for list_viewed_entry in self._model.list_viewed_entries:
+            if list_viewed_entry.subentries is None:
+                continue
+            for subentry in list_viewed_entry.subentries:
+                flat_list = self._model.create_flat_subentry_list(subentry)
+                column_count = max(column_count, len(flat_list))
+        return column_count
 
-    #     self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=160)
-    #     self._dvc.AppendTextColumn("Type", ConstructEditorColumn.Type, width=90)
-    #     # self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=200)
+    def _get_list_viewed_column_names(
+        self, selected_entry: EntryConstruct
+    ) -> t.List[str]:
+        """
+        Get the names of all list viewed columns.
 
-    #     renderer = ObjectRenderer()
-    #     col = dv.DataViewColumn(
-    #         "Value", renderer, ConstructEditorColumn.Value, width=200
-    #     )
-    #     col.Alignment = wx.ALIGN_LEFT
-    #     self._dvc.AppendColumn(col)
-
-    #     list_cols = 0
-    #     for list_viewed_entry in self._model.list_viewed_entries:
-    #         if list_viewed_entry.subentries is not None:
-    #             for subentry in list_viewed_entry.subentries:
-    #                 flat_list = []
-    #                 subentry.create_flat_subentry_list(flat_list)
-    #                 list_cols = max(list_cols, len(flat_list))
-
-    #     for list_col in range(list_cols):
-    #         self._dvc.AppendTextColumn(
-    #             str(list_col), len(ConstructEditorColumn) + list_col
-    #         )
-
-    # def _rename_dvc_columns(self, entry: EntryConstruct):
-    #     """Rename the dvc columns"""
-
-    #     flat_list: t.List["EntryConstruct"] = []
-    #     if (entry.parent is not None) and (
-    #         entry.parent in self._model.list_viewed_entries
-    #     ):
-    #         entry.create_flat_subentry_list(flat_list)
-
-    #     list_cols = self._dvc.GetColumnCount() - len(ConstructEditorColumn)
-    #     for list_col in range(list_cols):
-    #         dvc_column: dv.DataViewColumn = self._dvc.GetColumn(
-    #             len(ConstructEditorColumn) + list_col
-    #         )
-    #         if list_col < len(flat_list):
-    #             path = flat_list[list_col].path
-    #             path = path[len(entry.path) :]  # remove the path from the parent
-    #             dvc_column.SetTitle(".".join(path))
-    #         else:
-    #             dvc_column.SetTitle(str(list_col))
+        The selected entry is used to get the column names. If there are more
+        columns than subentries in the selected entry or no selected entry is
+        passed, the column number is used as label.
+        """
+        column_names: t.List[str] = []
+        flat_list = self._model.create_flat_subentry_list(selected_entry)
+        for entry in flat_list:
+            column_name = entry.path
+            column_name = column_name[
+                len(selected_entry.path) :
+            ]  # remove the path from the selected_entry
+            column_names.append(".".join(column_name))
+        return column_names
 
     def _refresh_status_bar(self, entry: t.Optional[EntryConstruct]) -> None:
         if entry is None:

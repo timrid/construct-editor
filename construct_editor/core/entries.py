@@ -327,16 +327,6 @@ class EntryConstruct(object):
     def row_expanded(self, val: bool):
         self._row_expanded = val
 
-    # default "add_nonstruct_subentries_to_list" ##############################
-    def create_flat_subentry_list(self, flat_subentry_list: List["EntryConstruct"]):
-        """Create a flat list with all subentires, recursively"""
-        subentries = self.subentries
-        if subentries is not None:
-            for subentry in subentries:
-                subentry.create_flat_subentry_list(flat_subentry_list)
-        else:
-            flat_subentry_list.append(self)
-
     # default "obj_editor_settings" ###########################################
     @property
     def obj_editor_settings(self) -> ObjEditorSettings:

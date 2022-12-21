@@ -140,10 +140,6 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
     # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
     # #################################################################################################################
-    def GetColumnCount(self):
-        # Report how many columns this model provides data for.
-        return self.get_column_count()
-
     def GetChildren(self, parent, children):
         # The view calls this method to find the children of any node in the
         # control. There is an implicit hidden root node, and the top level
@@ -374,53 +370,61 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
 
     # Internals ###############################################################
     def _reload_dvc_columns(self):
-        """Reload the dvc columns"""
+        """
+        Reload the dvc columns
+        """
         self._dvc.ClearColumns()
 
-        self._dvc.AppendTextColumn("Name", ConstructEditorColumn.Name, width=160)
-        self._dvc.AppendTextColumn("Type", ConstructEditorColumn.Type, width=90)
-        # self._dvc.AppendTextColumn("Value", ConstructEditorColumn.Value, width=200)
-
-        renderer = ObjectRenderer()
         col = dv.DataViewColumn(
-            "Value", renderer, ConstructEditorColumn.Value, width=200
+            "Name",
+            dv.DataViewTextRenderer(),
+            ConstructEditorColumn.Name,
+            width=160,
+        )
+        self._dvc.AppendColumn(col)
+
+        col = dv.DataViewColumn(
+            "Type",
+            dv.DataViewTextRenderer(),
+            ConstructEditorColumn.Type,
+            width=90,
         )
         col.Alignment = wx.ALIGN_LEFT
         self._dvc.AppendColumn(col)
 
-        list_cols = 0
-        for list_viewed_entry in self._model.list_viewed_entries:
-            if list_viewed_entry.subentries is not None:
-                for subentry in list_viewed_entry.subentries:
-                    flat_list = []
-                    subentry.create_flat_subentry_list(flat_list)
-                    list_cols = max(list_cols, len(flat_list))
+        col = dv.DataViewColumn(
+            "Value",
+            ObjectRenderer(),
+            ConstructEditorColumn.Value,
+            width=200,
+        )
+        col.Alignment = wx.ALIGN_LEFT
+        self._dvc.AppendColumn(col)
 
+        list_cols = self._get_list_viewed_column_count()
         for list_col in range(list_cols):
-            self._dvc.AppendTextColumn(
-                str(list_col), len(ConstructEditorColumn) + list_col
+            col = dv.DataViewColumn(
+                str(list_col),
+                dv.DataViewTextRenderer(),
+                len(ConstructEditorColumn) + list_col,
             )
+            col.Alignment = wx.ALIGN_LEFT
+            self._dvc.AppendColumn(col)
 
     def _rename_dvc_columns(self, entry: EntryConstruct):
-        """Rename the dvc columns"""
+        """
+        Rename the dvc columns
+        """
+        list_viewed_column_names = self._get_list_viewed_column_names(entry)
+        list_viewed_column_offset = len(ConstructEditorColumn)
 
-        flat_list: t.List["EntryConstruct"] = []
-        if (entry.parent is not None) and (
-            entry.parent in self._model.list_viewed_entries
-        ):
-            entry.create_flat_subentry_list(flat_list)
-
-        list_cols = self._dvc.GetColumnCount() - len(ConstructEditorColumn)
-        for list_col in range(list_cols):
-            dvc_column: dv.DataViewColumn = self._dvc.GetColumn(
-                len(ConstructEditorColumn) + list_col
-            )
-            if list_col < len(flat_list):
-                path = flat_list[list_col].path
-                path = path[len(entry.path) :]  # remove the path from the parent
-                dvc_column.SetTitle(".".join(path))
+        for column in range(list_viewed_column_offset, self._dvc.GetColumnCount()):
+            dvc_column: dv.DataViewColumn = self._dvc.GetColumn(column)
+            list_viewed_column = column - list_viewed_column_offset
+            if list_viewed_column < len(list_viewed_column_names):
+                dvc_column.SetTitle(list_viewed_column_names[list_viewed_column])
             else:
-                dvc_column.SetTitle(str(list_col))
+                dvc_column.SetTitle(str(list_viewed_column))
 
     def _on_dvc_selection_changed(self, event):
         """
