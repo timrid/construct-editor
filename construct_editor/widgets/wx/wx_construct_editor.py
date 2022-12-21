@@ -11,6 +11,18 @@ from construct_editor.core.editor import ConstructEditor
 from construct_editor.core.entries import EntryConstruct
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
 from construct_editor.widgets.wx.wx_obj_editors import WxObjEditor, create_obj_editor
+import dataclasses
+
+
+@dataclasses.dataclass
+class ValueFromEditorCtrl:
+    """
+    The `new_obj` has to be passed in a subclass, because subtypes of `int` (eg. `IntEnum`)
+    and `str` (eg. `cs.EnumIntegerString`) are converted to its base type
+    by the DVC...
+    """
+
+    new_obj: t.Any
 
 
 class ObjectRenderer(dv.DataViewCustomRenderer):
@@ -68,10 +80,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
 
     def GetValueFromEditorCtrl(self, editor: WxObjEditor):
         new_obj = editor.get_new_obj()
-        # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
-        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type
-        # by the DVC...
-        return {"new_obj": new_obj}
+        return ValueFromEditorCtrl(new_obj)
 
 
 class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
@@ -190,15 +199,12 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
 
         return self.get_value(entry, col)
 
-    def SetValue(self, value: t.Any, item: dv.DataViewItem, col: int):
+    def SetValue(self, value: ValueFromEditorCtrl, item: dv.DataViewItem, col: int):
+        if not isinstance(value, ValueFromEditorCtrl):
+            raise ValueError(f"value has the wrong type ({value})")
+
         entry = self._dvc_item_to_entry(item)
-
-        # new_obj is passed in a dict, because subtypes of `int` (eg. `IntEnum`)
-        # and `str` (eg. `cs.EnumIntegerString`) are converted to its base type
-        # by the DVC...
-        new_obj = value["new_obj"]
-
-        self.set_value(new_obj, entry, col)
+        self.set_value(value.new_obj, entry, col)
 
         return True
 
@@ -561,7 +567,6 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
 
         sim = wx.UIActionSimulator()
         sim.KeyDown(event.GetKeyCode())
-
 
     # def _on_dvc_item_expanded(self, event: dv.DataViewEvent):
     #     item = event.GetItem()
