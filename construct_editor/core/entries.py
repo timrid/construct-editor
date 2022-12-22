@@ -54,54 +54,54 @@ def str_to_bytes(s: str) -> bytes:
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_Default:
+class ObjViewSettings_Default:
     entry: "EntryConstruct"
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_String:
+class ObjViewSettings_String:
     entry: "EntryConstruct"
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_Integer:
+class ObjViewSettings_Integer:
     entry: "EntryConstruct"
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_Flag:
+class ObjViewSettings_Flag:
     entry: "EntryConstruct"
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_Bytes:
+class ObjViewSettings_Bytes:
     entry: "EntryConstruct"
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_Enum:
+class ObjViewSettings_Enum:
     entry: t.Union["EntryEnum", "EntryTEnum"]
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_FlagsEnum:
+class ObjViewSettings_FlagsEnum:
     entry: t.Union["EntryFlagsEnum", "EntryTFlagsEnum"]
 
 
 @dataclasses.dataclass
-class ObjEditorSettings_Timestamp:
+class ObjViewSettings_Timestamp:
     entry: "EntryTimestamp"
 
 
-ObjEditorSettings = t.Union[
-    ObjEditorSettings_Default,
-    ObjEditorSettings_String,
-    ObjEditorSettings_Integer,
-    ObjEditorSettings_Flag,
-    ObjEditorSettings_Bytes,
-    ObjEditorSettings_Enum,
-    ObjEditorSettings_FlagsEnum,
-    ObjEditorSettings_Timestamp,
+ObjViewSettings = t.Union[
+    ObjViewSettings_Default,
+    ObjViewSettings_String,
+    ObjViewSettings_Integer,
+    ObjViewSettings_Flag,
+    ObjViewSettings_Bytes,
+    ObjViewSettings_Enum,
+    ObjViewSettings_FlagsEnum,
+    ObjViewSettings_Timestamp,
 ]
 
 
@@ -314,7 +314,7 @@ class EntryConstruct(object):
         # Recusivly check all parents
         return self.parent.get_visible_row_entry()
 
-    # default "row_expanded" #############################################
+    # default "row_expanded" ##################################################
     @property
     def row_expanded(self) -> bool:
         return self._row_expanded
@@ -323,11 +323,11 @@ class EntryConstruct(object):
     def row_expanded(self, val: bool):
         self._row_expanded = val
 
-    # default "obj_editor_settings" ###########################################
+    # default "obj_view_settings" #############################################
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        """Settings of the editor that should open, when the user clicks an entry"""
-        return ObjEditorSettings_Default(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        """Settings for the view of an entry (eg. renderer and editor)."""
+        return ObjViewSettings_Default(self)
 
     # default "modify_context_menu" ###########################################
     def modify_context_menu(self, menu: ContextMenu):
@@ -424,10 +424,10 @@ class EntrySubconstruct(EntryConstruct):
     def subentries(self) -> Optional[List["EntryConstruct"]]:
         return self.subentry.subentries
 
-    # pass throught "obj_editor_settings" to subentry ##################################
+    # pass throught "obj_view_settings" to subentry ###########################
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return self.subentry.obj_editor_settings
+    def obj_view_settings(self) -> ObjViewSettings:
+        return self.subentry.obj_view_settings
 
     # pass throught "modify_context_menu" to subentry #########################
     def modify_context_menu(self, menu: ContextMenu):
@@ -468,13 +468,13 @@ def add_adapter_mapping(
             return str(self.obj)
 
         @property
-        def obj_editor_settings(self) -> ObjEditorSettings:
+        def obj_view_settings(self) -> ObjViewSettings:
             if obj_editor_type == AdapterObjEditorType.Integer:
-                return ObjEditorSettings_Integer(self)
+                return ObjViewSettings_Integer(self)
             elif obj_editor_type == AdapterObjEditorType.String:
-                return ObjEditorSettings_String(self)
+                return ObjViewSettings_String(self)
             else:
-                return ObjEditorSettings_Default(self)
+                return ObjViewSettings_Default(self)
 
     construct_entry_mapping[adapter] = EntryAdapter
 
@@ -514,8 +514,8 @@ class EntryStruct(EntryConstruct):
         return ""
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Default(self)  # TODO: create panel for cs.Struct
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Default(self)  # TODO: create panel for cs.Struct
 
     def modify_context_menu(self, menu: ContextMenu):
         def on_expand_children_clicked():
@@ -614,8 +614,8 @@ class EntryArray(EntrySubconstruct):
         return ""
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Default(self)  # TODO: create panel for cs.Array
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Default(self)  # TODO: create panel for cs.Array
 
     def modify_context_menu(self, menu: ContextMenu):
         def on_expand_children_clicked():
@@ -743,12 +743,12 @@ class EntryIfThenElse(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
+    def obj_view_settings(self) -> ObjViewSettings:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjEditorSettings_Default(self)
+            return ObjViewSettings_Default(self)
         else:
-            return subentry.obj_editor_settings
+            return subentry.obj_view_settings
 
     def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
@@ -837,12 +837,12 @@ class EntrySwitch(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
+    def obj_view_settings(self) -> ObjViewSettings:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjEditorSettings_Default(self)
+            return ObjViewSettings_Default(self)
         else:
-            return subentry.obj_editor_settings
+            return subentry.obj_view_settings
 
     def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
@@ -919,13 +919,13 @@ class EntryFormatField(EntryConstruct):
             self.type_infos = self.type_mapping[construct.fmtstr]
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
+    def obj_view_settings(self) -> ObjViewSettings:
         if isinstance(self.type_infos, FormatFieldInt):
-            return ObjEditorSettings_Integer(self)
+            return ObjViewSettings_Integer(self)
         elif isinstance(self.type_infos, FormatFieldFloat):
-            return ObjEditorSettings_Default(self)  # TODO: ObjEditor_Float
+            return ObjViewSettings_Default(self)  # TODO: ObjEditor_Float
         else:
-            return ObjEditorSettings_Default(self)
+            return ObjViewSettings_Default(self)
 
     @property
     def obj_str(self) -> str:
@@ -984,11 +984,11 @@ class EntryBytesInteger(EntryConstruct):
             return int_to_str(self.model.integer_format, obj)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
+    def obj_view_settings(self) -> ObjViewSettings:
         if isinstance(self.construct.length, int):
-            return ObjEditorSettings_Integer(self)
+            return ObjViewSettings_Integer(self)
         else:
-            return ObjEditorSettings_Default(self)
+            return ObjViewSettings_Default(self)
 
 
 # EntryBitsInteger ####################################################################################################
@@ -1022,11 +1022,11 @@ class EntryBitsInteger(EntryConstruct):
             return int_to_str(self.model.integer_format, obj)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
+    def obj_view_settings(self) -> ObjViewSettings:
         if isinstance(self.construct.length, int):
-            return ObjEditorSettings_Integer(self)
+            return ObjViewSettings_Integer(self)
         else:
-            return ObjEditorSettings_Default(self)
+            return ObjViewSettings_Default(self)
 
 
 # EntryBytes ##########################################################################################################
@@ -1079,8 +1079,8 @@ class EntryBytes(EntryConstruct):
                 return "GreedyBytes"
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Bytes(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Bytes(self)
 
     def modify_context_menu(self, menu: ContextMenu):
         def on_ascii_view_clicked(checked: bool):
@@ -1173,8 +1173,8 @@ class EntryConst(EntrySubconstruct):
         super().__init__(model, parent, construct, name, docs)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Default(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Default(self)
 
 
 # EntryComputed #######################################################################################################
@@ -1305,12 +1305,12 @@ class EntryFocusedSeq(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
+    def obj_view_settings(self) -> ObjViewSettings:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjEditorSettings_Default(self)
+            return ObjViewSettings_Default(self)
         else:
-            return subentry.obj_editor_settings
+            return subentry.obj_view_settings
 
     def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
@@ -1393,12 +1393,12 @@ class EntrySelect(EntryConstruct):
             return subentry.subentries
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
+    def obj_view_settings(self) -> ObjViewSettings:
         subentry = self._get_subentry()
         if subentry is None:
-            return ObjEditorSettings_Default(self)
+            return ObjViewSettings_Default(self)
         else:
-            return subentry.obj_editor_settings
+            return subentry.obj_view_settings
 
     def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
@@ -1425,8 +1425,8 @@ class EntryTimestamp(EntrySubconstruct):
         return str(self.obj)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Timestamp(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Timestamp(self)
 
 
 # EntryTransparentSubcon ##############################################################################################
@@ -1570,8 +1570,8 @@ class EntryFlag(EntryConstruct):
         super().__init__(model, parent, construct, name, docs)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Flag(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Flag(self)
 
     @property
     def obj_str(self) -> str:
@@ -1609,8 +1609,8 @@ class EntryEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Enum(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Enum(self)
 
     def get_enum_items(self) -> t.List[EnumItem]:
         """Get items to show in the ComboBox"""
@@ -1673,8 +1673,8 @@ class EntryFlagsEnum(EntrySubconstruct):
         return self.conv_obj_to_str(self.obj)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_FlagsEnum(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_FlagsEnum(self)
 
     def conv_obj_to_str(self, obj: Any) -> str:
         try:
@@ -1736,8 +1736,8 @@ class EntryTEnum(EntrySubconstruct):
             return str(self.obj)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_Enum(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_Enum(self)
 
     def get_enum_items(self) -> t.List[EnumItem]:
         """Get items to show in the ComboBox"""
@@ -1789,8 +1789,8 @@ class EntryTFlagsEnum(EntrySubconstruct):
         return self.conv_obj_to_str(self.obj)
 
     @property
-    def obj_editor_settings(self) -> ObjEditorSettings:
-        return ObjEditorSettings_FlagsEnum(self)
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_FlagsEnum(self)
 
     def conv_obj_to_str(self, obj: Any) -> str:
         try:

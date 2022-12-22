@@ -5,6 +5,7 @@ Complete refactoring of the code, so that it is more easily possible to add mult
 Enhanced ConstructEditor:
 - Any keypress of an printable key will start editing an item. No ENTER or double click is reqired any more.
 - Protected entries (starting with _) are not visible in list view if "hide protected" is activated.
+- Implemented checkbox for `cs.Flag`
 
 -------------------------------------------------------------------------------
 ## [0.0.19] - 2022-09-07

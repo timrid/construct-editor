@@ -3,22 +3,24 @@ import typing as t
 import arrow
 import wx
 import wx.adv
+import wx.dataview as dv
 
+import construct_editor.widgets.wx.wx_construct_editor as wx_construct_editor
 from construct_editor.core.entries import (
     FLAG_FALSE_STRINGS,
     FLAG_TRUE_STRINGS,
     EntryFlagsEnum,
     EntryTFlagsEnum,
     FlagsEnumItem,
-    ObjEditorSettings,
-    ObjEditorSettings_Bytes,
-    ObjEditorSettings_Default,
-    ObjEditorSettings_Enum,
-    ObjEditorSettings_Flag,
-    ObjEditorSettings_FlagsEnum,
-    ObjEditorSettings_Integer,
-    ObjEditorSettings_String,
-    ObjEditorSettings_Timestamp,
+    ObjViewSettings,
+    ObjViewSettings_Bytes,
+    ObjViewSettings_Default,
+    ObjViewSettings_Enum,
+    ObjViewSettings_Flag,
+    ObjViewSettings_FlagsEnum,
+    ObjViewSettings_Integer,
+    ObjViewSettings_String,
+    ObjViewSettings_Timestamp,
     int_to_str,
     str_to_bytes,
     str_to_int,
@@ -29,7 +31,7 @@ from construct_editor.core.entries import (
 # Value Editors
 # #####################################################################################################################
 class WxObjEditor_Default(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjEditorSettings_Default):
+    def __init__(self, parent, settings: ObjViewSettings_Default):
         self.entry = settings.entry
 
         super(wx.TextCtrl, self).__init__(
@@ -46,7 +48,7 @@ class WxObjEditor_Default(wx.TextCtrl):
 
 
 class WxObjEditor_String(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjEditorSettings_String):
+    def __init__(self, parent, settings: ObjViewSettings_String):
         self.entry = settings.entry
 
         super(wx.TextCtrl, self).__init__(
@@ -64,7 +66,7 @@ class WxObjEditor_String(wx.TextCtrl):
 
 
 class WxObjEditor_Integer(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjEditorSettings_Integer):
+    def __init__(self, parent, settings: ObjViewSettings_Integer):
         self.entry = settings.entry
 
         super(wx.TextCtrl, self).__init__(
@@ -89,7 +91,7 @@ class WxObjEditor_Integer(wx.TextCtrl):
 
 
 class WxObjEditor_Flag(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjEditorSettings_Flag):
+    def __init__(self, parent, settings: ObjViewSettings_Flag):
         self.entry = settings.entry
 
         super(wx.TextCtrl, self).__init__(
@@ -116,7 +118,7 @@ class WxObjEditor_Flag(wx.TextCtrl):
 
 
 class WxObjEditor_Bytes(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjEditorSettings_Bytes):
+    def __init__(self, parent, settings: ObjViewSettings_Bytes):
         self.entry = settings.entry
 
         super(wx.TextCtrl, self).__init__(
@@ -141,7 +143,7 @@ class WxObjEditor_Bytes(wx.TextCtrl):
 
 
 class WxObjEditor_Enum(wx.ComboBox):
-    def __init__(self, parent, settings: ObjEditorSettings_Enum):
+    def __init__(self, parent, settings: ObjViewSettings_Enum):
         self.entry = settings.entry
 
         super(wx.ComboBox, self).__init__(
@@ -242,7 +244,7 @@ class FlagsEnumComboPopup(wx.ComboPopup):
 
 
 class WxObjEditor_FlagsEnum(wx.ComboCtrl):
-    def __init__(self, parent, settings: ObjEditorSettings_FlagsEnum):
+    def __init__(self, parent, settings: ObjViewSettings_FlagsEnum):
         self.entry = settings.entry
 
         super(wx.ComboCtrl, self).__init__(
@@ -272,7 +274,7 @@ class WxObjEditor_FlagsEnum(wx.ComboCtrl):
 
 
 class WxObjEditor_Timestamp(wx.Panel):
-    def __init__(self, parent, settings: ObjEditorSettings_Timestamp):
+    def __init__(self, parent, settings: ObjViewSettings_Timestamp):
         self.entry = settings.entry
 
         super(wx.Panel, self).__init__(parent)
@@ -367,23 +369,149 @@ WxObjEditor = t.Union[
     WxObjEditor_Timestamp,
 ]
 
+
 # #####################################################################################################################
 # Value Editor Factory
 # #####################################################################################################################
-def create_obj_editor(parent, settings: ObjEditorSettings) -> WxObjEditor:
-    if isinstance(settings, ObjEditorSettings_String):
+def create_obj_editor(parent, settings: ObjViewSettings) -> WxObjEditor:
+    if isinstance(settings, ObjViewSettings_String):
         return WxObjEditor_String(parent, settings)
-    elif isinstance(settings, ObjEditorSettings_Integer):
+    elif isinstance(settings, ObjViewSettings_Integer):
         return WxObjEditor_Integer(parent, settings)
-    elif isinstance(settings, ObjEditorSettings_Flag):
+    elif isinstance(settings, ObjViewSettings_Flag):
         return WxObjEditor_Flag(parent, settings)
-    elif isinstance(settings, ObjEditorSettings_Bytes):
+    elif isinstance(settings, ObjViewSettings_Bytes):
         return WxObjEditor_Bytes(parent, settings)
-    elif isinstance(settings, ObjEditorSettings_Enum):
+    elif isinstance(settings, ObjViewSettings_Enum):
         return WxObjEditor_Enum(parent, settings)
-    elif isinstance(settings, ObjEditorSettings_FlagsEnum):
+    elif isinstance(settings, ObjViewSettings_FlagsEnum):
         return WxObjEditor_FlagsEnum(parent, settings)
-    elif isinstance(settings, ObjEditorSettings_Timestamp):
+    elif isinstance(settings, ObjViewSettings_Timestamp):
         return WxObjEditor_Timestamp(parent, settings)
     else:
         return WxObjEditor_Default(parent, settings)
+
+
+# #####################################################################################################################
+# Obj Renderer Helper
+# #####################################################################################################################
+class WxObjRendererHelper_Default:
+    def __init__(self, settings: ObjViewSettings):
+        self.entry = settings.entry
+
+    def get_size(
+        self,
+        renderer: "wx_construct_editor.ObjectRenderer",
+    ) -> wx.Size:
+        # Return the size needed to display the value.  The renderer
+        # has a helper function we can use for measuring text that is
+        # aware of any custom attributes that may have been set for
+        # this item.
+        obj_str = self.entry.obj_str if self.entry else ""
+        size = renderer.GetTextExtent(obj_str)
+        size += (2, 2)
+        return size
+
+    def render(
+        self,
+        renderer: "wx_construct_editor.ObjectRenderer",
+        rect: wx.Rect,
+        dc: wx.DC,
+        state,
+    ) -> bool:
+        # And then finish up with this helper function that draws the
+        # text for us, dealing with alignment, font and color
+        # attributes, etc.
+        obj_str = self.entry.obj_str if self.entry else ""
+        renderer.RenderText(obj_str, 0, rect, dc, state)
+        return True
+
+    def get_mode(self):
+        return dv.DATAVIEW_CELL_EDITABLE
+
+    def activate_cell(
+        self,
+        renderer: "wx_construct_editor.ObjectRenderer",
+        rect: wx.Rect,
+        model: dv.DataViewModel,
+        item: dv.DataViewItem,
+        col: int,
+        mouse_event: t.Optional[wx.MouseEvent],
+    ):
+        return False
+
+
+class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
+    def __init__(self, settings: ObjViewSettings_Flag):
+        self.entry = settings.entry
+
+    def get_size(
+        self,
+        renderer: "wx_construct_editor.ObjectRenderer",
+    ) -> wx.Size:
+        native_renderer: wx.RendererNative = wx.RendererNative.Get()
+        win: wx.Window = renderer.GetView()
+
+        size = native_renderer.GetCheckBoxSize(win)
+        return size
+
+    def render(
+        self,
+        renderer: "wx_construct_editor.ObjectRenderer",
+        rect: wx.Rect,
+        dc: wx.DC,
+        state,
+    ) -> bool:
+        native_renderer: wx.RendererNative = wx.RendererNative.Get()
+        win: wx.Window = renderer.GetView()
+
+        flags = 0
+        if bool(self.entry.obj) is True:
+            flags = wx.CONTROL_CHECKED
+        native_renderer.DrawCheckBox(win, dc, rect, flags)
+        return True
+
+    def get_mode(self):
+        return dv.DATAVIEW_CELL_ACTIVATABLE
+
+    def activate_cell(
+        self,
+        renderer: "wx_construct_editor.ObjectRenderer",
+        rect: wx.Rect,
+        model: dv.DataViewModel,
+        item: dv.DataViewItem,
+        col: int,
+        mouse_event: t.Optional[wx.MouseEvent],
+    ):
+        # see wxWidgets: wxDataViewToggleRenderer::WXActivateCell
+
+        if mouse_event is not None:
+            # Only react to clicks directly on the checkbox, not elsewhere in
+            # the same cell.
+            size = self.get_size(renderer)
+            column: dv.DataViewColumn = renderer.GetOwner()
+
+            if column.GetAlignment() == wx.ALIGN_LEFT:
+                # i dont know why, but without the offset on windows the
+                # clickable area is shifted
+                mouse_event.SetX(mouse_event.GetX() - 3)
+
+            if not wx.Rect(size).Contains(mouse_event.GetPosition()):
+                return False
+
+        new_value = not bool(self.entry.obj)
+        model.ChangeValue(wx_construct_editor.ValueFromEditorCtrl(new_value), item, col)
+        return True
+
+
+WxObjRendererHelper = t.Union[
+    WxObjRendererHelper_Default,
+    WxObjRendererHelper_Flag,
+]
+
+
+def create_obj_renderer_helper(settings: ObjViewSettings) -> WxObjRendererHelper:
+    if isinstance(settings, ObjViewSettings_Flag):
+        return WxObjRendererHelper_Flag(settings)
+    else:
+        return WxObjRendererHelper_Default(settings)

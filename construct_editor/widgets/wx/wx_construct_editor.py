@@ -8,10 +8,15 @@ import wx
 import wx.dataview as dv
 
 from construct_editor.core.construct_editor import ConstructEditor
-from construct_editor.core.entries import EntryConstruct
+from construct_editor.core.entries import EntryConstruct, EntryFlag
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
 from construct_editor.widgets.wx.wx_context_menu import WxContextMenu
-from construct_editor.widgets.wx.wx_obj_editors import WxObjEditor, create_obj_editor
+from construct_editor.widgets.wx.wx_obj_view import (
+    WxObjEditor,
+    WxObjRendererHelper,
+    create_obj_editor,
+    create_obj_renderer_helper,
+)
 
 
 @dataclasses.dataclass
@@ -27,39 +32,66 @@ class ValueFromEditorCtrl:
 
 class ObjectRenderer(dv.DataViewCustomRenderer):
     def __init__(self):
-        super().__init__(varianttype="PyObject", mode=dv.DATAVIEW_CELL_EDITABLE)
+        super().__init__(varianttype="PyObject")
         self.entry: t.Optional[EntryConstruct] = None
+        self.entry_renderer_helper: t.Optional[WxObjRendererHelper] = None
         self.EnableEllipsize(wx.ELLIPSIZE_END)
 
-    def SetValue(self, value):
+    def SetValue(self, value: EntryConstruct):
         self.entry = value
+        self.entry_renderer_helper = create_obj_renderer_helper(
+            self.entry.obj_view_settings
+        )
         return True
 
     def GetValue(self):
         return self.entry
 
     def GetSize(self):
-        # Return the size needed to display the value.  The renderer
-        # has a helper function we can use for measuring text that is
-        # aware of any custom attributes that may have been set for
-        # this item.
-        obj_str = self.entry.obj_str if self.entry else ""
-        size = self.GetTextExtent(obj_str)
-        size += (2, 2)
-        return size
+        if self.entry_renderer_helper is None:
+            raise ValueError("`entry_renderer_helper` not set")
+        return self.entry_renderer_helper.get_size(self)
 
-    def Render(self, rect, dc, state):
-        # And then finish up with this helper function that draws the
-        # text for us, dealing with alignment, font and color
-        # attributes, etc.
-        obj_str = self.entry.obj_str if self.entry else ""
-        self.RenderText(
-            obj_str, 0, rect, dc, state  # x-offset  # wxDataViewCellRenderState flags
+    def Render(self, rect: wx.Rect, dc: wx.DC, state):
+        if self.entry_renderer_helper is None:
+            raise ValueError("`entry_renderer_helper` not set")
+        return self.entry_renderer_helper.render(self, rect, dc, state)
+
+    def GetMode(self) -> int:
+        """
+        Return the mode.
+        - dv.DATAVIEW_CELL_INERT:
+            The cell only displays information and cannot be manipulated or
+            otherwise interacted with in any way.
+
+        - dv.DATAVIEW_CELL_ACTIVATABLE:
+            Indicates that the cell can be activated by clicking it or using
+            keyboard.
+            (see `ActivateCell`)
+
+        - dv.DATAVIEW_CELL_EDITABLE:
+            Indicates that the user can edit the data in-place in an inline
+            editor control that will show up when the user wants to edit the
+            cell.
+            (see `HasEditorCtrl`, `CreateEditorCtrl`, `GetValueFromEditorCtrl`)
+
+        """
+        if self.entry_renderer_helper is None:
+            return dv.DATAVIEW_CELL_INERT
+
+        return self.entry_renderer_helper.get_mode()
+
+    def ActivateCell(
+        self,
+        rect: wx.Rect,
+        model: dv.DataViewModel,
+        item: dv.DataViewItem,
+        col: int,
+        mouseEvent: t.Optional[wx.MouseEvent],
+    ):
+        return self.entry_renderer_helper.activate_cell(
+            self, rect, model, item, col, mouseEvent
         )
-        return True
-
-    def ActivateCell(self, rect, model, item, col, mouseEvent):
-        return False
 
     # The HasEditorCtrl, CreateEditorCtrl and GetValueFromEditorCtrl
     # methods need to be implemented if this renderer is going to
@@ -72,8 +104,8 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     def CreateEditorCtrl(
         self, parent, labelRect: wx.Rect, value: EntryConstruct
     ) -> WxObjEditor:
-        editor_settings = value.obj_editor_settings
-        editor: WxObjEditor = create_obj_editor(parent, editor_settings)
+        view_settings = value.obj_view_settings
+        editor: WxObjEditor = create_obj_editor(parent, view_settings)
         editor.SetPosition(labelRect.Position)
         editor.SetSize(labelRect.Size)
         return editor
@@ -457,7 +489,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         if item.GetID() is None:
             self._dvc_main_window.SetToolTip("")
             return
-        entry: EntryConstruct = self._model.ItemToObject(item)
+        entry = self._model.dvc_item_to_entry(item)
 
         if col.ModelColumn == ConstructEditorColumn.Name:
             # only set tooltip if the obj changed. this prevents flickering
@@ -521,12 +553,17 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             event.Skip()
             return
 
+        if self._dvc.GetSelectedItemsCount() == 0:
+            event.Skip()
+            return
+
         # when any printable key is pressed, the editing should start
         self._dvc.EditItem(
             self._dvc.GetSelection(),
             self._dvc.GetColumn(ConstructEditorColumn.Value),
         )
 
+        # redo the button click, so that the key is passed to edit
         sim = wx.UIActionSimulator()
         sim.KeyDown(event.GetKeyCode())
 
