@@ -4,8 +4,8 @@ import typing as t
 
 import construct as cs
 
+import construct_editor.core.entries as entries
 from construct_editor.core.callbacks import CallbackList
-from construct_editor.core.entries import EntryConstruct, create_entry_from_construct
 from construct_editor.core.model import ConstructEditorModel
 from construct_editor.core.preprocessor import include_metadata
 
@@ -16,7 +16,9 @@ class ConstructEditor:
 
         self.change_construct(construct)
 
-        self.on_entry_selected: CallbackList[[EntryConstruct]] = CallbackList()
+        self.on_entry_selected: CallbackList[
+            ["entries.EntryConstruct"]
+        ] = CallbackList()
         self.on_root_obj_changed: CallbackList[[t.Any]] = CallbackList()
 
     @abc.abstractmethod
@@ -52,7 +54,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def get_selected_entry(self) -> EntryConstruct:
+    def get_selected_entry(self) -> "entries.EntryConstruct":
         """
         Get the currently selected entry (or None if nothing is selected).
         """
@@ -73,7 +75,7 @@ class ConstructEditor:
         self._construct = include_metadata(constr)
 
         # create entry from the construct
-        self._model.root_entry = create_entry_from_construct(
+        self._model.root_entry = entries.create_entry_from_construct(
             self._model, None, self._construct, None, ""
         )
 
@@ -130,14 +132,14 @@ class ConstructEditor:
         return self._model.hide_protected
 
     @abc.abstractmethod
-    def expand_entry(self, entry: EntryConstruct):
+    def expand_entry(self, entry: "entries.EntryConstruct"):
         """
         Expand an entry.
 
         This has to be implemented by the derived class.
         """
 
-    def expand_children(self, entry: EntryConstruct):
+    def expand_children(self, entry: "entries.EntryConstruct"):
         """
         Expand all children of an entry recursively including the entry itself.
         """
@@ -160,7 +162,7 @@ class ConstructEditor:
         Expand all Entries to Level ... (0=root level)
         """
 
-        def dvc_expand(entry: EntryConstruct, current_level: int):
+        def dvc_expand(entry: "entries.EntryConstruct", current_level: int):
             subentries = entry.subentries
             if subentries is None:
                 return
@@ -175,14 +177,14 @@ class ConstructEditor:
             dvc_expand(self._model.root_entry, 1)
 
     @abc.abstractmethod
-    def collapse_entry(self, entry: EntryConstruct):
+    def collapse_entry(self, entry: "entries.EntryConstruct"):
         """
         Collapse an entry.
 
         This has to be implemented by the derived class.
         """
 
-    def collapse_children(self, entry: EntryConstruct):
+    def collapse_children(self, entry: "entries.EntryConstruct"):
         """
         Collapse all children of an entry recursively including the entry itself.
         """
@@ -200,7 +202,7 @@ class ConstructEditor:
         if self._model.root_entry:
             self.collapse_children(self._model.root_entry)
 
-    def restore_expansion_from_model(self, entry: EntryConstruct):
+    def restore_expansion_from_model(self, entry: "entries.EntryConstruct"):
         """
         Restore the expansion state from the model recursively.
 
@@ -220,7 +222,7 @@ class ConstructEditor:
         for subentry in entry.subentries:
             self.restore_expansion_from_model(subentry)
 
-    def enable_list_view(self, entry: EntryConstruct):
+    def enable_list_view(self, entry: "entries.EntryConstruct"):
         """
         Enable the list view for an entry.
         """
@@ -235,7 +237,7 @@ class ConstructEditor:
         self.collapse_children(entry)
         self.expand_entry(entry)
 
-    def disable_list_view(self, entry: EntryConstruct):
+    def disable_list_view(self, entry: "entries.EntryConstruct"):
         """
         Disable the list view for an entry.
         """
@@ -245,7 +247,7 @@ class ConstructEditor:
         self._model.list_viewed_entries.remove(entry)
         self.reload()
 
-    def is_list_view_enabled(self, entry: EntryConstruct) -> bool:
+    def is_list_view_enabled(self, entry: "entries.EntryConstruct") -> bool:
         """
         Check if an entry is shown in a list view.
         """
@@ -267,7 +269,7 @@ class ConstructEditor:
         return column_count
 
     def _get_list_viewed_column_names(
-        self, selected_entry: EntryConstruct
+        self, selected_entry: "entries.EntryConstruct"
     ) -> t.List[str]:
         """
         Get the names of all list viewed columns.
@@ -286,7 +288,7 @@ class ConstructEditor:
             column_names.append(".".join(column_name))
         return column_names
 
-    def _refresh_status_bar(self, entry: t.Optional[EntryConstruct]) -> None:
+    def _refresh_status_bar(self, entry: t.Optional["entries.EntryConstruct"]) -> None:
         if entry is None:
             self.show_status("", "")
             return
