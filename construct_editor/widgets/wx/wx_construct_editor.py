@@ -88,8 +88,14 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         if selected_entry is None:
             mode = dv.DATAVIEW_CELL_INERT
         else:
-            helper = create_obj_renderer_helper(selected_entry.obj_view_settings)
-            mode = helper.get_mode()
+            try:
+                obj_view_settings = selected_entry.obj_view_settings
+                helper = create_obj_renderer_helper(obj_view_settings)
+                mode = helper.get_mode()
+            except Exception:
+                # it is possible that an error occures, when the construct
+                # format has changed...
+                mode = dv.DATAVIEW_CELL_INERT
         return mode
 
     def ActivateCell(
