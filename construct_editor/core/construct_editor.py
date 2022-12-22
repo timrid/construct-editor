@@ -3,7 +3,6 @@ import abc
 import typing as t
 
 import construct as cs
-import wx
 
 from construct_editor.core.callbacks import CallbackList
 from construct_editor.core.entries import EntryConstruct, create_entry_from_construct
@@ -62,6 +61,10 @@ class ConstructEditor:
         """
         Change the construct format, that is used for building/parsing.
         """
+        # reset error messages
+        self.show_build_error_message(None)
+        self.show_parse_error_message(None)
+
         # add root name, is none is available
         if constr.name is None:
             constr = "root" / constr
@@ -106,8 +109,9 @@ class ConstructEditor:
             )
             raise e
 
-        # parse the build binary, so that constructs that parses from nothing are shown correctly (eg. cs.Peek)
-        wx.CallAfter(lambda: self.parse(binary, **contextkw))
+        # Parse the build binary, so that constructs that parses from nothing
+        # are shown correctly (eg. cs.Peek, cs.Pointer).
+        self.parse(binary, **contextkw)
 
         return binary
 

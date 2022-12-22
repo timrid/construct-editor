@@ -500,7 +500,12 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
     def _on_dvc_value_changed(self, event: dv.DataViewEvent):
         """This method is called, if a value in the dvc has changed."""
         if event.Column == ConstructEditorColumn.Value:
-            self.on_root_obj_changed.fire(self._model.root_obj)
+            # The `CallAfter` is necessary, because without it the program crashes
+            # sporadically, when you edit an value in an EditCtrl and then clicking
+            # on another value to close the EditCtrl... Maybe this is because the
+            # callbacks may change the root_obj itself. So better do it after this
+            # event has completed
+            wx.CallAfter(self.on_root_obj_changed.fire, self._model.root_obj)
 
     def _on_dvc_motion(self, event: wx.MouseEvent):
         # this is a mouse event, so we have to calculate the position of
