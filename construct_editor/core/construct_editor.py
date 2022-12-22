@@ -52,6 +52,12 @@ class ConstructEditor:
         This has to be implemented by the derived class.
         """
 
+    @abc.abstractmethod
+    def get_selected_entry(self) -> EntryConstruct:
+        """
+        Get the currently selected entry (or None if nothing is selected).
+        """
+
     def change_construct(self, constr: cs.Construct) -> None:
         """
         Change the construct format, that is used for building/parsing.

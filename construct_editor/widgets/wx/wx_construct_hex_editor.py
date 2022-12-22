@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import io
 import typing as t
 
 import construct as cs
@@ -7,11 +6,7 @@ import wx
 
 from construct_editor.core.entries import EntryConstruct, StreamInfo
 from construct_editor.widgets.wx.wx_construct_editor import WxConstructEditor
-from construct_editor.widgets.wx.wx_hex_editor import (
-    HexEditor,
-    HexEditorBinaryData,
-    HexEditorFormat,
-)
+from construct_editor.widgets.wx.wx_hex_editor import HexEditor, HexEditorFormat
 
 
 class HexEditorPanel(wx.SplitterWindow):
@@ -204,19 +199,20 @@ class ConstructHexEditor(wx.Panel):
             self.Freeze()
             binary = self.construct_editor.build(**self._contextkw)
             self.hex_panel.hex_editor.binary = binary
+            self._on_entry_selected(self.construct_editor.get_selected_entry())
         except Exception:
             pass  # ignore errors, because they are already shown in the gui
         finally:
             self.Thaw()
             self._converting = False
 
-    def _on_entry_selected(self, entry: EntryConstruct):
+    def _on_entry_selected(self, entry: t.Optional[EntryConstruct]):
         try:
             self.Freeze()
             self.hex_panel.clear_sub_panels()
-            # self._show_byte_range(entry, None)
-            stream_infos = entry.get_stream_infos()
-            self._show_stream_infos(stream_infos)
+            if entry is not None:
+                stream_infos = entry.get_stream_infos()
+                self._show_stream_infos(stream_infos)
         finally:
             self.Thaw()
 

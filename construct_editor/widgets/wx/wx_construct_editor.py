@@ -381,6 +381,15 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._status_bar.SetStatusText(path_info, 0)
         self._status_bar.SetStatusText(bytes_info, 1)
 
+    def get_selected_entry(self) -> t.Optional[EntryConstruct]:
+        """
+        Get the currently selected entry (or None if nothing is selected).
+        """
+        item = self._dvc.GetSelection()
+        if item.ID is None:
+            return None
+        return self._model.dvc_item_to_entry(item)
+
     def get_root_obj(self) -> t.Any:
         """
         Get the current root object of the parsed binary.
