@@ -8,9 +8,10 @@ setup(
     version=version_string,  # type: ignore
     packages=[
         "construct_editor",
+        "construct_editor.core",
         "construct_editor.gallery",
-        "construct_editor.helper",
         "construct_editor.widgets",
+        "construct_editor.widgets.wx",
     ],
     package_data={
         "construct_editor": ["py.typed"],
@@ -30,8 +31,8 @@ setup(
     author="Tim Riddermann",
     python_requires=">=3.8",
     install_requires=[
-        "construct==2.10.67",
-        "construct-typing==0.5.1",
+        "construct==2.10.68",
+        "construct-typing==0.5.3",
         "wxPython>=4.1.1",
         "arrow>=1.0.0"
     ],
