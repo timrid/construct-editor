@@ -166,8 +166,6 @@ class ConstructEditorModel:
         if metadata is not None:
             new_value = add_gui_metadata(new_value, metadata)
 
-        model = self
-
         cmd = ChangeValueCmd(entry, current_value, new_value)
         self.command_processor.submit(cmd)
 

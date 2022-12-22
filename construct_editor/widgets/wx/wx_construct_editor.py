@@ -89,6 +89,8 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         col: int,
         mouseEvent: t.Optional[wx.MouseEvent],
     ):
+        if self.entry_renderer_helper is None:
+            raise ValueError("`entry_renderer_helper` not set")
         return self.entry_renderer_helper.activate_cell(
             self, rect, model, item, col, mouseEvent
         )

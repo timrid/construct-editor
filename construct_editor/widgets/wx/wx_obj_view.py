@@ -7,8 +7,6 @@ import wx.dataview as dv
 
 import construct_editor.widgets.wx.wx_construct_editor as wx_construct_editor
 from construct_editor.core.entries import (
-    FLAG_FALSE_STRINGS,
-    FLAG_TRUE_STRINGS,
     EntryFlagsEnum,
     EntryTFlagsEnum,
     FlagsEnumItem,
@@ -31,7 +29,7 @@ from construct_editor.core.entries import (
 # Value Editors
 # #####################################################################################################################
 class WxObjEditor_Default(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjViewSettings_Default):
+    def __init__(self, parent, settings: ObjViewSettings):
         self.entry = settings.entry
 
         super(wx.TextCtrl, self).__init__(
@@ -85,33 +83,6 @@ class WxObjEditor_Integer(wx.TextCtrl):
             # convert string to integer
             new_obj = str_to_int(val_str)
         except Exception:
-            new_obj = val_str  # this will probably result in a building error
-
-        return new_obj
-
-
-class WxObjEditor_Flag(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjViewSettings_Flag):
-        self.entry = settings.entry
-
-        super(wx.TextCtrl, self).__init__(
-            parent,
-            wx.ID_ANY,
-            settings.entry.obj_str,
-            style=wx.TE_PROCESS_ENTER,
-        )
-
-        self.SelectAll()
-
-    def get_new_obj(self) -> t.Any:
-        val_str: str = self.GetValue()
-
-        val_str = val_str.lower()
-        if val_str in FLAG_TRUE_STRINGS:
-            new_obj = True
-        elif val_str in FLAG_FALSE_STRINGS:
-            new_obj = False
-        else:
             new_obj = val_str  # this will probably result in a building error
 
         return new_obj
@@ -362,7 +333,6 @@ WxObjEditor = t.Union[
     WxObjEditor_Default,
     WxObjEditor_String,
     WxObjEditor_Integer,
-    WxObjEditor_Flag,
     WxObjEditor_Bytes,
     WxObjEditor_Enum,
     WxObjEditor_FlagsEnum,
@@ -378,8 +348,6 @@ def create_obj_editor(parent, settings: ObjViewSettings) -> WxObjEditor:
         return WxObjEditor_String(parent, settings)
     elif isinstance(settings, ObjViewSettings_Integer):
         return WxObjEditor_Integer(parent, settings)
-    elif isinstance(settings, ObjViewSettings_Flag):
-        return WxObjEditor_Flag(parent, settings)
     elif isinstance(settings, ObjViewSettings_Bytes):
         return WxObjEditor_Bytes(parent, settings)
     elif isinstance(settings, ObjViewSettings_Enum):

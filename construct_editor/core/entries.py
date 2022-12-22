@@ -26,10 +26,6 @@ def evaluate(param, context):
     return param(context) if callable(param) else param
 
 
-FLAG_TRUE_STRINGS = ["t", "true", "1"]
-FLAG_FALSE_STRINGS = ["f", "false", "0"]
-
-
 def int_to_str(integer_format: "model.IntegerFormat", val: int) -> str:
     if isinstance(val, str):
         return val  # tolerate string
