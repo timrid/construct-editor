@@ -6,7 +6,7 @@ import wx
 
 from construct_editor.core.entries import EntryConstruct, StreamInfo
 from construct_editor.widgets.wx.wx_construct_editor import WxConstructEditor
-from construct_editor.widgets.wx.wx_hex_editor import HexEditor, HexEditorFormat
+from construct_editor.widgets.wx.wx_hex_editor import WxHexEditor, HexEditorFormat
 
 
 class HexEditorPanel(wx.SplitterWindow):
@@ -37,7 +37,7 @@ class HexEditorPanel(wx.SplitterWindow):
             self._name_txt.SetLabelText(name)
 
         # Create HexEditor
-        self.hex_editor: HexEditor = HexEditor(
+        self.hex_editor: WxHexEditor = WxHexEditor(
             panel,
             b"",
             HexEditorFormat(width=16),
@@ -70,7 +70,7 @@ class HexEditorPanel(wx.SplitterWindow):
             raise RuntimeError("sub-panel already created")
 
 
-class ConstructHexEditor(wx.Panel):
+class WxConstructHexEditor(wx.Panel):
     def __init__(
         self,
         parent,

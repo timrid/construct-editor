@@ -154,7 +154,7 @@ class HexEditorFormat:
 
 
 class HexEditorTable(Grid.GridTableBase):
-    def __init__(self, editor: "HexEditor", binary_data: HexEditorBinaryData):
+    def __init__(self, editor: "WxHexEditor", binary_data: HexEditorBinaryData):
         super().__init__()
 
         self._editor = editor
@@ -599,7 +599,7 @@ class HexEditorGrid(Grid.Grid):
 
     def __init__(
         self,
-        editor: "HexEditor",
+        editor: "WxHexEditor",
         table: HexEditorTable,
         binary_data: HexEditorBinaryData,
         read_only: bool = False,
@@ -1065,9 +1065,9 @@ class HexEditorGrid(Grid.Grid):
 
 
 # #####################################################################################################################
-# ############################################## HexEditor ############################################################
+# ############################################## WxHexEditor ##########################################################
 # #####################################################################################################################
-class HexEditor(wx.Panel):
+class WxHexEditor(wx.Panel):
     """
     HexEdior Panel.
     """
@@ -1196,12 +1196,12 @@ if __name__ == "__main__":
             wx.Frame.__init__(self, parent, title=title, size=(420, 800))
 
             # Create an instance of our model...
-            self.hex_editor = HexEditor(self)
+            self.hex_editor = WxHexEditor(self)
 
             self.hex_editor.binary = bytearray(500)
 
             self.Show(True)
 
     app = wx.App(False)
-    frame = MyFrame(None, "HexEditor Example")
+    frame = MyFrame(None, "WxHexEditor Example")
     app.MainLoop()

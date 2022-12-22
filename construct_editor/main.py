@@ -1,51 +1,46 @@
-from __future__ import annotations
-
-import dataclasses
 import sys
-import typing as t
-
 from pathlib import Path
-import construct as cs
+
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 
-import construct_editor.gallery.example_pe32coff
+import construct_editor.gallery.example_cmd_resp
 import construct_editor.gallery.example_ipstack
-import construct_editor.gallery.test_bytes_greedybytes
+import construct_editor.gallery.example_pe32coff
+import construct_editor.gallery.test_aligned
 import construct_editor.gallery.test_array
-import construct_editor.gallery.test_greedyrange
-import construct_editor.gallery.test_bitwise
 import construct_editor.gallery.test_bits_swapped_bitwise
+import construct_editor.gallery.test_bitwise
+import construct_editor.gallery.test_bytes_greedybytes
+import construct_editor.gallery.test_checksum
+import construct_editor.gallery.test_compressed
+import construct_editor.gallery.test_computed
+import construct_editor.gallery.test_const
+import construct_editor.gallery.test_dataclass_bit_struct
+import construct_editor.gallery.test_dataclass_struct
+import construct_editor.gallery.test_enum
+import construct_editor.gallery.test_fixedsized
+import construct_editor.gallery.test_flag
+import construct_editor.gallery.test_flagsenum
+import construct_editor.gallery.test_focusedseq
+import construct_editor.gallery.test_greedyrange
+import construct_editor.gallery.test_ifthenelse
+import construct_editor.gallery.test_ifthenelse_nested_switch
+import construct_editor.gallery.test_nullstripped
+import construct_editor.gallery.test_nullterminated
+import construct_editor.gallery.test_padded
+import construct_editor.gallery.test_pass
+import construct_editor.gallery.test_pointer_peek_seek_tell
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_select
 import construct_editor.gallery.test_select_complex
-import construct_editor.gallery.test_ifthenelse
-import construct_editor.gallery.test_ifthenelse_nested_switch
+import construct_editor.gallery.test_stringencodded
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_switch_dataclass
-import construct_editor.gallery.test_dataclass_struct
-import construct_editor.gallery.test_dataclass_bit_struct
-import construct_editor.gallery.test_flag
-import construct_editor.gallery.test_enum
-import construct_editor.gallery.test_flagsenum
 import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_tflagsenum
-import construct_editor.gallery.test_const
-import construct_editor.gallery.test_computed
-import construct_editor.gallery.test_focusedseq
 import construct_editor.gallery.test_timestamp
-import construct_editor.gallery.test_padded
-import construct_editor.gallery.test_aligned
-import construct_editor.gallery.test_pointer_peek_seek_tell
-import construct_editor.gallery.test_pass
-import construct_editor.gallery.test_fixedsized
-import construct_editor.gallery.test_nullstripped
-import construct_editor.gallery.test_nullterminated
-import construct_editor.gallery.test_checksum
-import construct_editor.gallery.test_compressed
-import construct_editor.gallery.test_stringencodded
-import construct_editor.gallery.example_cmd_resp
-from construct_editor.widgets.wx.wx_construct_hex_editor import ConstructHexEditor
+from construct_editor.widgets.wx import WxConstructHexEditor
 
 
 class ConstructGalleryFrame(wx.Frame):
@@ -232,7 +227,7 @@ class ConstructGallery(wx.Panel):
         )
 
         # construct hex editor
-        self.construct_hex_editor = ConstructHexEditor(
+        self.construct_hex_editor = WxConstructHexEditor(
             self,
             construct=default_gallery_item.construct,
             contextkw=default_gallery_item.contextkw,

@@ -34,7 +34,7 @@ This is a simple example
 ```python
 import wx
 import construct as cs
-import construct_editor as cseditor
+from construct_editor.widgets.wx import WxConstructHexEditor
 
 constr = cs.Struct(
     "a" / cs.Int16sb,
@@ -43,8 +43,8 @@ constr = cs.Struct(
 b = bytes([0x12, 0x34, 0x56, 0x78])
 
 app = wx.App(False)
-frame = wx.Frame(None, title="Construct Hex Editor", size=(1000, 500))
-editor_panel = cseditor.ConstructHexEditor(frame, construct=constr, binary=b)
+frame = wx.Frame(None, title="Construct Hex Editor", size=(1000, 200))
+editor_panel = WxConstructHexEditor(frame, construct=constr, binary=b)
 editor_panel.construct_editor.expand_all()
 frame.Show(True)
 app.MainLoop()
