@@ -9,22 +9,14 @@ import wx.grid as Grid
 import wx.lib.newevent
 import wx.stc
 
-from construct_editor.core import CallbackList
+from construct_editor.core.callbacks import CallbackListNew
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False
 
 
-class BinaryChangedCallbackList(CallbackList[t.Callable[["HexEditorBinaryData"], None]]):
-    def fire(self, binary_data: "HexEditorBinaryData"):
-        for listener in self:
-            listener(binary_data)
-
-
-class SelectionChangedCallbackList(CallbackList[t.Callable[[int, t.Optional[int]], None]]):
-    def fire(self, start_idx: int, end_idx: t.Optional[int]):
-        for listener in self:
-            listener(start_idx, end_idx)
+BinaryChangedCallbackList = CallbackListNew[["HexEditorBinaryData"]]
+SelectionChangedCallbackList = CallbackListNew[[int, t.Optional[int]]]
 
 
 # #####################################################################################################################
@@ -39,7 +31,7 @@ class HexEditorBinaryData:
     def __init__(self, binary: bytes) -> None:
         self._binary = bytearray(binary)
 
-        self.on_binary_changed = BinaryChangedCallbackList()
+        self.on_binary_changed: BinaryChangedCallbackList = CallbackListNew()
         self.command_processor = wx.CommandProcessor()
 
     def overwrite_all(self, byts: bytes):
@@ -617,7 +609,7 @@ class HexEditorGrid(Grid.Grid):
         self._table = table
         self._binary_data = binary_data
         self.read_only = read_only
-        self.on_selection_changed = SelectionChangedCallbackList()
+        self.on_selection_changed: SelectionChangedCallbackList = CallbackListNew()
 
         # The second parameter means that the grid is to take
         # ownership of the table and will destroy it when done.
@@ -738,7 +730,7 @@ class HexEditorGrid(Grid.Grid):
         idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
         self.ClearSelection()
         self._selection = (idx, None)
-        self.on_selection_changed.fire(start_idx=idx, end_idx=None)
+        self.on_selection_changed.fire(idx, None)
 
     def _on_range_selecting_mouse(self, event):
         """Change selection from a rectangular block to a range between two indexes"""
@@ -811,7 +803,7 @@ class HexEditorGrid(Grid.Grid):
             self.SelectBlock(start_row + 1, first_col, end_row - 1, last_col, True)
 
         self._selection = (idx1, idx2)
-        self.on_selection_changed.fire(start_idx=idx1, end_idx=idx2)
+        self.on_selection_changed.fire(idx1, idx2)
 
     def _cut_selection(self) -> bool:
         """
@@ -1186,7 +1178,7 @@ class HexEditor(wx.Panel):
 
     # Property: on_binary_changed #############################################
     @property
-    def on_binary_changed(self) -> BinaryChangedCallbackList:
+    def on_binary_changed(self) -> CallbackListNew[["HexEditorBinaryData"]]:
         return self._binary_data.on_binary_changed
 
     # Property: on_binary_changed #############################################
