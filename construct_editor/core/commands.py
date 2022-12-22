@@ -46,16 +46,46 @@ class CommandProcessor:
         else:
             return True
 
-    def redo(self) -> None:
+    def redo(self) -> bool:
         """
         Executes (redoes) the current command (the command that has just been
         undone if any).
         """
+        next_command = self.get_next_command()
 
-    def undo(self) -> None:
+        # no command to redo in the history
+        if next_command is None:
+            return False
+
+        if next_command.do() is False:
+            return False
+
+        self._increment_current_command()
+
+        return True
+
+    def undo(self) -> bool:
         """
         Undoes the last command executed.
         """
+        current_command = self.get_current_command()
+
+        # no command available
+        if current_command is None:
+            return False
+
+        # command cant be undone
+        if not current_command.can_undo:
+            return False
+
+        # error on undo
+        if current_command.undo() is False:
+            return False
+
+        # set current command to previous command
+        self._decrement_current_command()
+
+        return True
 
     def submit(self, command: Command) -> None:
         """
@@ -72,16 +102,25 @@ class CommandProcessor:
     def store(self, command: Command) -> None:
         """
         Just store the command without executing it.
+
+        Any command that has been undone will be chopped off the history list.
         """
+        # We must chop off the current 'branch', so that
+        # we're at the end of the command list.
         if self._current_command_idx is None:
             self.clear_commands()
+        else:
+            self._history = self._history[: self._current_command_idx + 1]
 
+        # Limit history length. Remove fist commands from history
+        # if an overflow occures
         if len(self._history) >= self._max_commands:
             if self._current_command_idx is None:
                 raise ValueError("history and current_command_idx are out of sync")
             self._history.pop(0)
             self._current_command_idx = self._current_command_idx - 1
 
+        # append command to history
         self._current_command_idx = len(self._history)
         self._history.append(command)
 
@@ -103,14 +142,33 @@ class CommandProcessor:
 
     def get_next_command(self) -> t.Optional[Command]:
         """
-        Returns the current command.
+        Returns the next command.
         """
         if self._current_command_idx is None:
-            return None
-
-        next_command_idx = self._current_command_idx + 1
+            next_command_idx = 0
+        else:
+            next_command_idx = self._current_command_idx + 1
 
         if next_command_idx >= len(self._history):
             return None
 
         return self._history[next_command_idx]
+
+    def _decrement_current_command(self) -> None:
+        if self._current_command_idx is None:
+            return
+        if self._current_command_idx > 0:
+            self._current_command_idx -= 1
+        else:
+            self._current_command_idx = None
+
+    def _increment_current_command(self) -> None:
+        if self._current_command_idx is None:
+            next_command_idx = 0
+        else:
+            next_command_idx = self._current_command_idx + 1
+
+        if next_command_idx >= len(self._history):
+            return
+
+        self._current_command_idx = next_command_idx

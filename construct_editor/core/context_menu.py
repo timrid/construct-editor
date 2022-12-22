@@ -114,7 +114,7 @@ class ContextMenu:
                 UNDO_LABEL,
                 "Ctrl+Z",
                 self.model.command_processor.can_undo(),
-                self.on_paste,
+                self.on_undo,
             )
         )
         self.add_menu_item(

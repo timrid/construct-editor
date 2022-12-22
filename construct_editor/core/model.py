@@ -19,6 +19,24 @@ class ConstructEditorColumn(enum.IntEnum):
     Value = 2
 
 
+class ChangeValueCmd(Command):
+    def __init__(
+        self, entry: "entries.EntryConstruct", old_value: t.Any, new_value: t.Any
+    ) -> None:
+        super().__init__(True, f"Value '{entry.path[-1]}' changed")
+        self.entry = entry
+        self.old_value = old_value
+        self.new_value = new_value
+
+    def do(self) -> None:
+        self.entry.obj = self.new_value
+        self.entry.model.on_value_changed(self.entry)
+
+    def undo(self) -> None:
+        self.entry.obj = self.old_value
+        self.entry.model.on_value_changed(self.entry)
+
+
 class ConstructEditorModel:
     """
     This model acts as a bridge between the DataViewCtrl and the dataclasses.
@@ -41,7 +59,7 @@ class ConstructEditorModel:
         # List with all entries that have the list view enabled
         self.list_viewed_entries: t.List["entries.EntryConstruct"] = []
 
-        self.command_processor = CommandProcessor(max_commands=20)
+        self.command_processor = CommandProcessor(max_commands=10)
 
     @abc.abstractmethod
     def on_value_changed(self, entry: "entries.EntryConstruct"):
@@ -150,20 +168,8 @@ class ConstructEditorModel:
 
         model = self
 
-        class Cmd(Command):
-            def __init__(self) -> None:
-                super().__init__(True, f"Value '{entry.path[-1]}' changed")
-
-            def do(self) -> None:
-                self._obj_backup = current_value
-                entry.obj = new_value
-                model.on_value_changed(entry)
-
-            def undo(self) -> None:
-                entry.obj = self._obj_backup
-                model.on_value_changed(entry)
-
-        self.command_processor.submit(Cmd())
+        cmd = ChangeValueCmd(entry, current_value, new_value)
+        self.command_processor.submit(cmd)
 
     def create_flat_subentry_list(
         self, entry: "entries.EntryConstruct"
