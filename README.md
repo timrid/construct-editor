@@ -52,7 +52,8 @@ app.MainLoop()
 
 This snipped generate a gui like this:
 
-[Screenshot of the example]
+![Screenshot of the example](https://raw.githubusercontent.com/timrid/construct-editor/main/doc/example.png)
+
 
 ## Widgets
 ### ConstructHexEditor
