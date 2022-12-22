@@ -1026,6 +1026,27 @@ class EntryBitsInteger(EntryConstruct):
             return ObjViewSettings_Default(self)
 
 
+# EntryComputed #######################################################################################################
+class EntryStringEncoded(EntrySubconstruct):
+    def __init__(
+        self,
+        model: "model.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.StringEncoded[Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)  # type: ignore
+
+    @property
+    def typ_str(self) -> str:
+        return f"StringEncoded[{self.subentry.typ_str}]"
+
+    @property
+    def obj_view_settings(self) -> ObjViewSettings:
+        return ObjViewSettings_String(self)
+
+
 # EntryBytes ##########################################################################################################
 class EntryBytes(EntryConstruct):
     construct: t.Union["cs.Bytes[Any, Any]", "cs.Construct[bytes, bytes]"]
@@ -1157,7 +1178,7 @@ class EntryPass(EntryConstruct):
         return ""
 
 
-# EntryComputed #######################################################################################################
+# EntryConst #######################################################################################################
 class EntryConst(EntrySubconstruct):
     def __init__(
         self,
@@ -1847,7 +1868,7 @@ construct_entry_mapping: t.Dict[
     cs.BitsInteger: EntryBitsInteger,
     #
     # strings ###################################
-    cs.StringEncoded: EntryTransparentSubcon,
+    cs.StringEncoded: EntryStringEncoded,
     #
     # mappings ##################################
     cs.Flag: EntryFlag,

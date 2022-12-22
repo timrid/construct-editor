@@ -35,6 +35,7 @@ import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_select
 import construct_editor.gallery.test_select_complex
 import construct_editor.gallery.test_stringencodded
+import construct_editor.gallery.test_padded_string
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_switch_dataclass
 import construct_editor.gallery.test_tenum
@@ -78,6 +79,7 @@ class ConstructGallery(wx.Panel):
             "Test: BitsSwapped/Bitwiese": construct_editor.gallery.test_bits_swapped_bitwise.gallery_item,
             "## strings #######################": None,
             "Test: StringEncoded": construct_editor.gallery.test_stringencodded.gallery_item,
+            "Test: PaddedString": construct_editor.gallery.test_padded_string.gallery_item,
             "## mappings ######################": None,
             "Test: Flag": construct_editor.gallery.test_flag.gallery_item,
             "Test: Enum": construct_editor.gallery.test_enum.gallery_item,

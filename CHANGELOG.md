@@ -2,8 +2,9 @@
 ## [Unreleased]
 Complete refactoring of the code, so that core components of the construct-editor are seperated vom GUI components. That makes it theoretically possible to add multiple GUI frameworks in the future. Besides this the following notable enhancements are implemented:
 - Any keypress of an printable key will start editing an item. No ENTER or double click is reqired any more.
-- Protected entries (starting with _) are not visible in list view if "hide protected" is activated.
+- Protected entries (starting with _) are not visible in list view if "hide protected" is activated. (#13)
 - Implemented checkbox for `cs.Flag`
+- Fixed bug with PaddedString (#14)
 
 -------------------------------------------------------------------------------
 ## [0.0.19] - 2022-09-07
