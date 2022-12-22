@@ -7,7 +7,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-class CallbackListNew(Generic[P]):
+class CallbackList(Generic[P]):
     def __init__(self):
         self._callbacks = []
 

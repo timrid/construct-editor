@@ -9,14 +9,14 @@ import wx.grid as Grid
 import wx.lib.newevent
 import wx.stc
 
-from construct_editor.core.callbacks import CallbackListNew
+from construct_editor.core.callbacks import CallbackList
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False
 
 
-BinaryChangedCallbackList = CallbackListNew[["HexEditorBinaryData"]]
-SelectionChangedCallbackList = CallbackListNew[[int, t.Optional[int]]]
+BinaryChangedCallbackList = CallbackList[["HexEditorBinaryData"]]
+SelectionChangedCallbackList = CallbackList[[int, t.Optional[int]]]
 
 
 # #####################################################################################################################
@@ -31,7 +31,7 @@ class HexEditorBinaryData:
     def __init__(self, binary: bytes) -> None:
         self._binary = bytearray(binary)
 
-        self.on_binary_changed: BinaryChangedCallbackList = CallbackListNew()
+        self.on_binary_changed: BinaryChangedCallbackList = CallbackList()
         self.command_processor = wx.CommandProcessor()
 
     def overwrite_all(self, byts: bytes):
@@ -609,7 +609,7 @@ class HexEditorGrid(Grid.Grid):
         self._table = table
         self._binary_data = binary_data
         self.read_only = read_only
-        self.on_selection_changed: SelectionChangedCallbackList = CallbackListNew()
+        self.on_selection_changed: SelectionChangedCallbackList = CallbackList()
 
         # The second parameter means that the grid is to take
         # ownership of the table and will destroy it when done.
@@ -1178,7 +1178,7 @@ class HexEditor(wx.Panel):
 
     # Property: on_binary_changed #############################################
     @property
-    def on_binary_changed(self) -> CallbackListNew[["HexEditorBinaryData"]]:
+    def on_binary_changed(self) -> CallbackList[["HexEditorBinaryData"]]:
         return self._binary_data.on_binary_changed
 
     # Property: on_binary_changed #############################################

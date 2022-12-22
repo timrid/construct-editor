@@ -5,7 +5,7 @@ import typing as t
 import construct as cs
 import wx
 
-from construct_editor.core.callbacks import CallbackListNew
+from construct_editor.core.callbacks import CallbackList
 from construct_editor.core.entries import EntryConstruct, create_entry_from_construct
 from construct_editor.core.model import ConstructEditorModel
 from construct_editor.core.preprocessor import include_metadata
@@ -17,8 +17,8 @@ class ConstructEditor:
 
         self.change_construct(construct)
 
-        self.on_entry_selected: CallbackListNew[[EntryConstruct]] = CallbackListNew()
-        self.on_root_obj_changed: CallbackListNew[[t.Any]] = CallbackListNew()
+        self.on_entry_selected: CallbackList[[EntryConstruct]] = CallbackList()
+        self.on_root_obj_changed: CallbackList[[t.Any]] = CallbackList()
 
     @abc.abstractmethod
     def reload(self):
