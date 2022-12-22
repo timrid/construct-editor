@@ -76,10 +76,21 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
             (see `HasEditorCtrl`, `CreateEditorCtrl`, `GetValueFromEditorCtrl`)
 
         """
-        if self.entry_renderer_helper is None:
-            return dv.DATAVIEW_CELL_INERT
+        # `SetValue` is not called befor `GetMode` is called, so
+        # `self.entry_renderer_helper` is not valid to use here. So we
+        # have to detect the selecte item of the dvc and assume that
+        # we need to get the mode for this item. (Fingers crossed that
+        # this always works.)
 
-        return self.entry_renderer_helper.get_mode()
+        dvc: "dv.DataViewCtrl" = self.GetView()
+        editor: "WxConstructEditor" = dvc.GetParent()
+        selected_entry = editor.get_selected_entry()
+        if selected_entry is None:
+            mode = dv.DATAVIEW_CELL_INERT
+        else:
+            helper = create_obj_renderer_helper(selected_entry.obj_view_settings)
+            mode = helper.get_mode()
+        return mode
 
     def ActivateCell(
         self,
@@ -476,7 +487,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         """
         item = self._dvc.GetSelection()
         if item.ID is not None:
-            entry: EntryConstruct = self._model.ItemToObject(item)
+            entry = self._model.dvc_item_to_entry(item)
             self._refresh_status_bar(entry)
 
             self.on_entry_selected.fire(entry)
@@ -560,7 +571,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             event.Skip()
 
     def _on_dvc_char(self, event: wx.KeyEvent):
-        if event.GetUnicodeKey() in (wx.WXK_NONE, wx.WXK_RETURN):
+        if event.GetUnicodeKey() in (wx.WXK_NONE, wx.WXK_RETURN, wx.WXK_SPACE):
             event.Skip()
             return
 
