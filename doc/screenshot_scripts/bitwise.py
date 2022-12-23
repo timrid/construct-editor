@@ -18,10 +18,9 @@ class Frame(ScreenshotFrame):
 
         # select item
         editor = self.editor_panel.construct_editor
-        model = editor.get_model()
 
-        childs = model.get_children(None)
-        childs = model.get_children(childs[0])
+        childs = editor.model.get_children(None)
+        childs = editor.model.get_children(childs[0])
         editor.select_entry(childs[1])
 
 

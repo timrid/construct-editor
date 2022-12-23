@@ -291,7 +291,7 @@ class ConstructEditor:
         return self._model.root_obj
 
     @property
-    def model(self) -> t.Any:
+    def model(self) -> ConstructEditorModel:
         """
         Model with the displayed data.
         """

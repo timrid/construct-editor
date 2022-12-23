@@ -221,7 +221,7 @@ class WxConstructHexEditor(wx.Panel):
         return self.construct_editor.root_obj
 
     @property
-    def model(self) -> t.Any:
+    def model(self) -> ConstructEditorModel:
         """
         Model with the displayed data.
         """
