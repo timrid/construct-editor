@@ -41,7 +41,7 @@ import construct_editor.gallery.test_switch_dataclass
 import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_tflagsenum
 import construct_editor.gallery.test_timestamp
-from construct_editor.widgets.wx import WxConstructHexEditor
+from construct_editor.wx import WxConstructHexEditor
 
 
 class ConstructGalleryFrame(wx.Frame):

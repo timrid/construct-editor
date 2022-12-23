@@ -10,8 +10,8 @@ import wx.dataview as dv
 from construct_editor.core.construct_editor import ConstructEditor
 from construct_editor.core.entries import EntryConstruct, EntryFlag
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
-from construct_editor.widgets.wx.wx_context_menu import WxContextMenu
-from construct_editor.widgets.wx.wx_obj_view import (
+from construct_editor.wx.wx_context_menu import WxContextMenu
+from construct_editor.wx.wx_obj_view import (
     WxObjEditor,
     WxObjRendererHelper,
     create_obj_editor,

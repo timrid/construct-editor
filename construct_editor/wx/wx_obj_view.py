@@ -5,7 +5,7 @@ import wx
 import wx.adv
 import wx.dataview as dv
 
-import construct_editor.widgets.wx.wx_construct_editor as wx_construct_editor
+import construct_editor.wx.wx_construct_editor as wx_construct_editor
 from construct_editor.core.entries import (
     EntryFlagsEnum,
     EntryTFlagsEnum,

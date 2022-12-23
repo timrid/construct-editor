@@ -4,7 +4,7 @@ import sys
 import construct as cs
 import wx
 
-from construct_editor.widgets.wx import WxConstructHexEditor
+from construct_editor.wx import WxConstructHexEditor
 
 
 def take_screenshot(win: wx.Window, file_name: str):
