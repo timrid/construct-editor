@@ -168,11 +168,64 @@ class WxConstructHexEditor(wx.Panel):
         self.hex_panel.clear_sub_panels()
         self.hex_panel.hex_editor.binary = binary
 
-    def get_root_obj(self) -> t.Any:
+    @property
+    def construct(self) -> cs.Construct:
         """
-        Get the current root object of the parsed binary.
+        Construct that is used for displaying.
         """
-        return self.construct_editor.get_root_obj()
+        return self.construct_editor.construct
+
+    @construct.setter
+    def construct(self, constr: cs.Construct):
+        self.construct_editor.construct = constr
+
+    @property
+    def contextkw(self) -> dict:
+        """
+        Context used for building/parsing.
+        """
+        return self._contextkw
+
+    @contextkw.setter
+    def contextkw(self, contextkw: dict):
+        self.change_contextkw(contextkw)
+
+    @property
+    def binary(self) -> bytes:
+        """
+        Binary data, that should be displayed.
+        """
+        return self.hex_panel.hex_editor.binary
+
+    @binary.setter
+    def binary(self, binary: bytes):
+        self.change_binary(binary)
+
+    @property
+    def hide_protected(self) -> bool:
+        """
+        Hide protected members.
+        A protected member starts with an undescore (_)
+        """
+        return self.construct_editor.hide_protected
+
+    @hide_protected.setter
+    def hide_protected(self, hide_protected: bool):
+        self.construct_editor.hide_protected = hide_protected
+
+    @property
+    def root_obj(self) -> t.Any:
+        """
+        Root object that is displayed
+        """
+        return self.construct_editor.root_obj
+
+    @property
+    def model(self) -> t.Any:
+        """
+        Model with the displayed data.
+        """
+        return self.construct_editor.model
 
     # Internals ###############################################################
     def _convert_binary_to_struct(self):

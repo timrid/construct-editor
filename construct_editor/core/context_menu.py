@@ -132,7 +132,7 @@ class ContextMenu:
                 "Hide Protected",
                 None,
                 True,
-                self.parent.is_hide_protected_enabled(),
+                self.parent.hide_protected,
                 self.on_hide_protected,
             )
         )
@@ -190,7 +190,7 @@ class ContextMenu:
         self.model.command_processor.redo()
 
     def on_hide_protected(self, checked: bool):
-        self.parent.hide_protected(checked)
+        self.parent.change_hide_protected(checked)
         self.parent.reload()
 
     def on_intformat(self, label: str):

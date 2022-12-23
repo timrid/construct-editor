@@ -87,6 +87,14 @@ class ConstructEditor:
 
         self._model.list_viewed_entries.clear()
 
+    def change_hide_protected(self, hide_protected: bool) -> None:
+        """
+        Show/hide protected entries.
+        A protected member starts with an undescore (_)
+        """
+        self._model.hide_protected = hide_protected
+        self.reload()
+
     def parse(self, binary: bytes, **contextkw: t.Any):
         """
         Parse binary data to struct.
@@ -122,20 +130,6 @@ class ConstructEditor:
         self.parse(binary, **contextkw)
 
         return binary
-
-    def hide_protected(self, hide_protected: bool) -> None:
-        """
-        Hide protected members.
-        A protected member starts with an undescore (_)
-        """
-        self._model.hide_protected = hide_protected
-        self.reload()
-
-    def is_hide_protected_enabled(self) -> bool:
-        """
-        Check if "hide_protected" is enabled
-        """
-        return self._model.hide_protected
 
     @abc.abstractmethod
     def expand_entry(self, entry: "entries.EntryConstruct"):
@@ -266,12 +260,44 @@ class ConstructEditor:
             return True
         return False
 
-    def get_model(self) -> ConstructEditorModel:
+    @property
+    def construct(self) -> cs.Construct:
         """
-        Return the model of the shown data.
+        Construct that is used for displaying.
+        """
+        return self._construct
+
+    @construct.setter
+    def construct(self, constr: cs.Construct):
+        self.change_construct(constr)
+
+    @property
+    def hide_protected(self) -> bool:
+        """
+        Hide protected members.
+        A protected member starts with an undescore (_)
+        """
+        return self._model.hide_protected
+
+    @hide_protected.setter
+    def hide_protected(self, hide_protected: bool):
+        self.change_hide_protected(hide_protected)
+
+    @property
+    def root_obj(self) -> t.Any:
+        """
+        Root object that is displayed
+        """
+        return self._model.root_obj
+
+    @property
+    def model(self) -> t.Any:
+        """
+        Model with the displayed data.
         """
         return self._model
 
+    # Internals ###############################################################
     def _get_list_viewed_column_count(self):
         """
         Get the count of all list viewed columns.
