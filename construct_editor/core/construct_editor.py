@@ -211,15 +211,20 @@ class ConstructEditor:
         saved in the model data itself an with this method the expansion state
         of the model can be restored.
         """
-        if entry.row_expanded is True:
-            self.expand_entry(entry)
-        else:
-            self.collapse_entry(entry)
-
-        if entry.subentries is None:
+        visible_entry = entry.get_visible_row_entry()
+        if visible_entry is None:
             return
 
-        for subentry in entry.subentries:
+        if visible_entry.row_expanded is True:
+            self.expand_entry(visible_entry)
+        else:
+            self.collapse_entry(visible_entry)
+
+        subentries = self._model.get_children(entry)
+        if len(subentries) == 0:
+            return
+
+        for subentry in subentries:
             self.restore_expansion_from_model(subentry)
 
     def enable_list_view(self, entry: "entries.EntryConstruct"):
