@@ -470,6 +470,14 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             col.Alignment = wx.ALIGN_LEFT
             self._dvc.AppendColumn(col)
 
+        # This prevents flickering in the dvc.
+        # The length of the value column has a variable size, even though we
+        # have set it to a constant, but it always expands to the end of the
+        # visible area. I guess the flickering comes, because at first the
+        # fixed size is used and then an Event occures an sets the corret size
+        # of the dvc. This Yield forces to process this event.
+        wx.Yield()
+
     def _rename_dvc_columns(self, entry: EntryConstruct):
         """
         Rename the dvc columns
