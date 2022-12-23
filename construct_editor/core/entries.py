@@ -431,49 +431,6 @@ class EntrySubconstruct(EntryConstruct):
         return self.subentry.modify_context_menu(menu)
 
 
-# EntryAdapter ########################################################################################################
-class AdapterObjEditorType(enum.Enum):
-    Default = enum.auto()
-    Integer = enum.auto()
-    String = enum.auto()
-
-
-def add_adapter_mapping(
-    type_str: str,
-    obj_editor_type: AdapterObjEditorType,
-    adapter: t.Union[Type["cs.Construct[Any, Any]"], "cs.Construct[Any, Any]"],
-):
-    """Add a Mapping for a custom adapter construct"""
-
-    class EntryAdapter(EntryConstruct):
-        def __init__(
-            self,
-            model: "model.ConstructEditorModel",
-            parent: Optional["EntryConstruct"],
-            construct: "cs.Subconstruct[Any, Any, Any, Any]",
-            name: NameType,
-            docs: str,
-        ):
-            super().__init__(model, parent, construct, name, docs)
-
-        @property
-        def typ_str(self) -> str:
-            return type_str
-
-        @property
-        def obj_str(self) -> Any:
-            return str(self.obj)
-
-        @property
-        def obj_view_settings(self) -> ObjViewSettings:
-            if obj_editor_type == AdapterObjEditorType.Integer:
-                return ObjViewSettings_Integer(self)
-            elif obj_editor_type == AdapterObjEditorType.String:
-                return ObjViewSettings_String(self)
-            else:
-                return ObjViewSettings_Default(self)
-
-    construct_entry_mapping[adapter] = EntryAdapter
 
 
 # EntryStruct #########################################################################################################
@@ -1516,6 +1473,22 @@ class EntryChecksumSubcon(EntrySubconstruct):
             model, self, construct.checksumfield, None, ""
         )
 
+# EntryCompressed #####################################################################################################
+class EntryCompressed(EntrySubconstruct):
+    def __init__(
+        self,
+        model: "model.ConstructEditorModel",
+        parent: Optional["EntryConstruct"],
+        construct: "cs.Compressed[Any, Any]",
+        name: NameType,
+        docs: str,
+    ):
+        super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def typ_str(self) -> str:
+        return f"Compressed[{self.subentry.typ_str}]"
+
 
 # EntryPeek ###########################################################################################################
 class EntryPeek(EntrySubconstruct):
@@ -1935,7 +1908,7 @@ construct_entry_mapping: t.Dict[
     # cs.ProcessXor
     # cs.ProcessRotateLeft
     cs.Checksum: EntryChecksumSubcon,
-    cs.Compressed: EntryTransparentSubcon,
+    cs.Compressed: EntryCompressed,
     # cs.CompressedLZ4
     # cs.Rebuffered
     #

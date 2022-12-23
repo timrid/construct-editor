@@ -5,6 +5,7 @@ Complete refactoring of the code, so that core components of the construct-edito
 - Protected entries (starting with _) are not visible in list view if "hide protected" is activated. (#13)
 - Implemented checkbox for `cs.Flag`
 - Fixed bug with PaddedString (#14)
+- Added module "construct_editor.core.custom" for easier addition of custom constructs.
 
 -------------------------------------------------------------------------------
 ## [0.0.19] - 2022-09-07

@@ -119,7 +119,7 @@ def include_metadata(
     we know the offset in the byte-stream and the length
     """
 
-    # ########## Simple Constructs ############################################
+    # Simple Constructs #######################################################
     if isinstance(
         constr,
         (
@@ -141,7 +141,7 @@ def include_metadata(
     ):
         return IncludeGuiMetaData(constr, bitwise)
 
-    # ########## Bitwiese Construct ###########################################
+    # Bitwiese Construct ######################################################
     elif (
         isinstance(constr, (cs.Restreamed))
         and (constr.decoder is cs.bytes2bits)
@@ -155,7 +155,7 @@ def include_metadata(
         constr.subcon = include_metadata(constr.subcon, bitwise=True)
         return IncludeGuiMetaData(constr, bitwise)
 
-    # ########## Subconstructs ################################################
+    # Subconstructs ###########################################################
     elif isinstance(
         constr,
         (
@@ -176,6 +176,7 @@ def include_metadata(
             cs.FixedSized,
             cs.NullStripped,
             cs.NullTerminated,
+            *custom_subconstructs,
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
@@ -278,3 +279,6 @@ def include_metadata(
     # - Transformed
     # - RestreamData
     raise ValueError(f"construct of type '{constr}' is not supported")
+
+
+custom_subconstructs: t.List[t.Type[cs.Subconstruct]] = []
