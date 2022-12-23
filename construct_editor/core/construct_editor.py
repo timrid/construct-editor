@@ -59,6 +59,12 @@ class ConstructEditor:
         Get the currently selected entry (or None if nothing is selected).
         """
 
+    @abc.abstractmethod
+    def select_entry(self, entry: "entries.EntryConstruct") -> None:
+        """
+        Select an entry programmatically.
+        """
+
     def change_construct(self, constr: cs.Construct) -> None:
         """
         Change the construct format, that is used for building/parsing.
@@ -259,6 +265,12 @@ class ConstructEditor:
         if entry in self._model.list_viewed_entries:
             return True
         return False
+
+    def get_model(self) -> ConstructEditorModel:
+        """
+        Return the model of the shown data.
+        """
+        return self._model
 
     def _get_list_viewed_column_count(self):
         """

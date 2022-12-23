@@ -161,21 +161,18 @@ class WxConstructHexEditor(wx.Panel):
         """
         self._contextkw = contextkw
 
+    def change_binary(self, binary: bytes):
+        """
+        Change the binary data, that should be displayed.
+        """
+        self.hex_panel.clear_sub_panels()
+        self.hex_panel.hex_editor.binary = binary
+
     def get_root_obj(self) -> t.Any:
         """
         Get the current root object of the parsed binary.
         """
         return self.construct_editor.get_root_obj()
-
-    # Property: binary ########################################################
-    @property
-    def binary(self) -> bytes:
-        return self.hex_panel.hex_editor.binary
-
-    @binary.setter
-    def binary(self, val: bytes):
-        self.hex_panel.clear_sub_panels()
-        self.hex_panel.hex_editor.binary = val
 
     # Internals ###############################################################
     def _convert_binary_to_struct(self):

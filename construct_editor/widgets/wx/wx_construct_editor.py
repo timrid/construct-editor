@@ -407,6 +407,17 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             return None
         return self._model.dvc_item_to_entry(item)
 
+    def select_entry(self, entry: EntryConstruct) -> None:
+        """
+        Select an entry programmatically.
+        """
+        dvc_item = self._model.entry_to_dvc_item(entry)
+        self._dvc.Select(dvc_item)
+
+        # calling "Select" dont trigger an dv.EVT_DATAVIEW_SELECTION_CHANGED event, so call
+        # it manually
+        self._on_dvc_selection_changed(None)
+
     def get_root_obj(self) -> t.Any:
         """
         Get the current root object of the parsed binary.
