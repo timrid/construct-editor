@@ -1,5 +1,8 @@
 import sys
+import traceback
+import typing as t
 from pathlib import Path
+from types import TracebackType
 
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
@@ -29,13 +32,13 @@ import construct_editor.gallery.test_ifthenelse_nested_switch
 import construct_editor.gallery.test_nullstripped
 import construct_editor.gallery.test_nullterminated
 import construct_editor.gallery.test_padded
+import construct_editor.gallery.test_padded_string
 import construct_editor.gallery.test_pass
 import construct_editor.gallery.test_pointer_peek_seek_tell
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_select
 import construct_editor.gallery.test_select_complex
 import construct_editor.gallery.test_stringencodded
-import construct_editor.gallery.test_padded_string
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_switch_dataclass
 import construct_editor.gallery.test_tenum
@@ -53,9 +56,27 @@ class ConstructGalleryFrame(wx.Frame):
         self.SetIcon(icon.GetIcon())
         self.Center()
 
+        # show uncatched exceptions in a dialog...
+        sys.excepthook = self.on_uncaught_exception
+
         self.main_panel = ConstructGallery(self)
 
         self.status_bar: wx.StatusBar = self.CreateStatusBar()
+
+    def on_uncaught_exception(
+        self, etype: t.Type[BaseException], value: BaseException, trace: TracebackType
+    ):
+        """
+        Handler for all unhandled exceptions.
+
+        :param `etype`: the exception type (`SyntaxError`, `ZeroDivisionError`, etc...);
+        :type `etype`: `Exception`
+        :param string `value`: the exception error message;
+        :param string `trace`: the traceback header, if any (otherwise, it prints the
+        standard Python header: ``Traceback (most recent call last)``.
+        """
+        dial = ExceptionDialog(None, etype, value, trace)
+        dial.ShowModal()
 
 
 class ConstructGallery(wx.Panel):
@@ -373,6 +394,73 @@ icon = PyEmbeddedImage(
     b"ADIwMjEtMDMtMjFUMTk6MTA6MjIrMDA6MDDMGKfHAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDIx"
     b"LTAzLTIxVDE5OjEwOjIyKzAwOjAwvUUfewAAAABJRU5ErkJggg=="
 )
+
+
+class ExceptionDialog(wx.Dialog):
+    def __init__(
+        self,
+        parent,
+        etype: t.Type[BaseException],
+        value: BaseException,
+        trace: TracebackType,
+    ):
+        wx.Dialog.__init__(
+            self,
+            parent,
+            id=wx.ID_ANY,
+            title="Uncaught Exception...",
+            pos=wx.DefaultPosition,
+            size=wx.Size(800, 600),
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+        )
+
+        self._init_gui()
+
+        self.exception_txt.SetValue(
+            "".join(traceback.format_exception_only(etype, value))
+        )
+        self.traceback_txt.SetValue("".join(traceback.format_tb(trace)))
+
+    def _init_gui(self):
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.ok_btn = wx.Button(
+            self, wx.ID_ANY, "OK", wx.DefaultPosition, wx.DefaultSize, 0
+        )
+        sizer.Add(self.ok_btn, 0, wx.ALL | wx.EXPAND, 5)
+
+        self.exception_txt = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            wx.EmptyString,
+            wx.DefaultPosition,
+            wx.Size(-1, -1),
+            wx.TE_MULTILINE | wx.TE_READONLY,
+        )
+        sizer.Add(self.exception_txt, 1, wx.ALL | wx.EXPAND, 5)
+
+        self.traceback_txt = wx.TextCtrl(
+            self,
+            wx.ID_ANY,
+            wx.EmptyString,
+            wx.DefaultPosition,
+            wx.Size(-1, -1),
+            wx.TE_MULTILINE | wx.TE_READONLY,
+        )
+        sizer.Add(self.traceback_txt, 2, wx.ALL | wx.EXPAND, 5)
+
+        self.SetSizer(sizer)
+        self.Layout()
+
+        self.Centre(wx.BOTH)
+
+        # Connect Events
+        self.ok_btn.Bind(wx.EVT_BUTTON, self.on_ok_clicked)
+
+    def on_ok_clicked(self, event):
+        self.Close()
 
 
 def main():
