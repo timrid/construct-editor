@@ -10,7 +10,7 @@ setup(
         "construct_editor",
         "construct_editor.core",
         "construct_editor.gallery",
-        "construct_editor.wx",
+        "construct_editor.wx_widgets",
     ],
     package_data={
         "construct_editor": ["py.typed"],

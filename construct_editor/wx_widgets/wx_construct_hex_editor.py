@@ -6,8 +6,8 @@ import wx
 
 from construct_editor.core.entries import EntryConstruct, StreamInfo
 from construct_editor.core.model import ConstructEditorModel
-from construct_editor.wx.wx_construct_editor import WxConstructEditor
-from construct_editor.wx.wx_hex_editor import HexEditorFormat, WxHexEditor
+from construct_editor.wx_widgets.wx_construct_editor import WxConstructEditor
+from construct_editor.wx_widgets.wx_hex_editor import HexEditorFormat, WxHexEditor
 
 
 class HexEditorPanel(wx.SplitterWindow):
