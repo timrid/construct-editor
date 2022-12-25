@@ -623,13 +623,13 @@ class EntryArray(EntrySubconstruct):
 
 # EntryIfThenElse #####################################################################################################
 class EntryIfThenElse(EntryConstruct):
-    construct: "cs.IfThenElse[Any, Any, Any, Any]"
+    construct: "cs.IfThenElse[Any, Any]"
 
     def __init__(
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.IfThenElse[Any, Any, Any, Any]",
+        construct: "cs.IfThenElse[Any, Any]",
         name: NameType,
         docs: str,
     ):
