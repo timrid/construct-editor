@@ -51,12 +51,15 @@ class AdapterObjEditorType(enum.Enum):
 
 
 def add_custom_adapter(
-    adapter: t.Type["cs.Adapter[t.Any,t.Any,t.Any, t.Any]"],
+    adapter: t.Union[
+        t.Type["cs.Adapter[t.Any,t.Any,t.Any, t.Any]"],  # for cs.Adapter
+        "cs.Adapter[t.Any,t.Any,t.Any, t.Any]",  # for cs.ExprAdapter
+    ],
     type_str: str,
     obj_editor_type: AdapterObjEditorType,
 ):
     """
-    Add compatibility of an custom `cs.Adapter` to the construct-editor.
+    Add compatibility of an custom `cs.Adapter` or `cs.ExprAdapter` to the construct-editor.
     """
 
     class EntryAdapter(entries.EntryConstruct):
