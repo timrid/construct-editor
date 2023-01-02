@@ -157,7 +157,7 @@ class ContextMenu:
             def on_remove_list_viewed_item(checked: bool):
                 self.parent.disable_list_view(e)
 
-            label = ".".join(e.path)
+            label = entries.create_path_str(e.path)
             submenu.subitems.append(
                 CheckboxMenuItem(
                     label,

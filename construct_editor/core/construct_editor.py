@@ -324,11 +324,11 @@ class ConstructEditor:
         column_names: t.List[str] = []
         flat_list = self._model.create_flat_subentry_list(selected_entry)
         for entry in flat_list:
-            column_name = entry.path
-            column_name = column_name[
+            column_path = entry.path
+            column_path = column_path[
                 len(selected_entry.path) :
             ]  # remove the path from the selected_entry
-            column_names.append(".".join(column_name))
+            column_names.append(entries.create_path_str(column_path))
         return column_names
 
     def _refresh_status_bar(self, entry: t.Optional["entries.EntryConstruct"]) -> None:
@@ -336,7 +336,7 @@ class ConstructEditor:
             self.show_status("", "")
             return
 
-        path_info = ".".join(entry.path)
+        path_info = entries.create_path_str(entry.path)
         bytes_info = ""
         stream_infos = entry.get_stream_infos()
 

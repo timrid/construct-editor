@@ -8,6 +8,7 @@ Enhanced ConstructEditor:
 - Implemented checkbox for `cs.Flag`
 - Fixed bug with PaddedString (#14)
 - Added module "construct_editor.core.custom" for easier addition of custom constructs.
+- Show arrays appropriately (use .[number]. instead of .number.) (#18)
 
 Enhanced HexEditor:
 - fix crash when selecting or extending selection before the beginning of the hex editor using the shift LEFT and UP arrow keys (#20)
