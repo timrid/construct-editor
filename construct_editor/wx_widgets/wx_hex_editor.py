@@ -841,7 +841,7 @@ class HexEditorGrid(Grid.Grid):
         Remove the selected bytes
 
         Return:
-         - true if copy is okay
+         - true if remove is okay
          - false if an error occured
         """
         if self.read_only is True:
@@ -862,6 +862,25 @@ class HexEditorGrid(Grid.Grid):
         self._selection = (None, None)
 
         self.refresh()
+        return True
+
+    def _insert_byte_at_selection(self) -> bool:
+        """
+        Insert one byte at the current selection
+
+        Return:
+         - true if insertation is okay
+         - false if an error occured
+        """
+        if self.read_only is True:
+            return False
+
+        sel = self._selection
+        if sel[0] is None:
+            return False
+
+        self._binary_data.insert_range(sel[0], b"\x00")
+        self._on_range_selecting_keyboard()
         return True
 
     def _copy_selection(self) -> bool:
@@ -967,6 +986,14 @@ class HexEditorGrid(Grid.Grid):
                     )
                 self.SetGridCursor(row, col)
                 self.MakeCellVisible(row, col)
+
+        # Del
+        elif event.GetKeyCode() == wx.WXK_DELETE:
+            self._remove_selection()
+
+        # Insert
+        elif event.GetKeyCode() == wx.WXK_INSERT:
+            self._insert_byte_at_selection()
 
         # Shift+Up
         elif event.ShiftDown() and event.GetKeyCode() == wx.WXK_UP:
