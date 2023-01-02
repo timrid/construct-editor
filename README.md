@@ -1,6 +1,4 @@
 # Construct Editor
-**!!! Work in progress !!!**
-
 This package provides a GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data. It can either be used standalone or embedded as a widget in another application.
 
 
@@ -15,7 +13,7 @@ Features:
     - FlagsEnum values
     - DateTime values
 - undo/redo in HexEditor and in ConstructEditor
-- extensible for custom adapters
+- extensible for custom constructs
 
 ## Installation
 The preferred way to installation is via PyPI:
@@ -50,7 +48,7 @@ frame.Show(True)
 app.MainLoop()
 ```
 
-This snipped generate a gui like this:
+This snipped generates a GUI like this:
 
 ![Screenshot of the example](https://raw.githubusercontent.com/timrid/construct-editor/main/doc/example.png)
 
@@ -58,13 +56,14 @@ This snipped generate a gui like this:
 ## Widgets
 ### ConstructHexEditor
 This is the main widget ot this library. It offers a look at the raw binary data and also at the parsed structure.
-It offers a way to modify the raw binary data, which is then automaticly converted to the structed view. And also it support to modify the structed data and build the binary data from it.
+It offers a way to modify the raw binary data, which is then automaticly converted to the structed view. It also supports to modify the structed data and build the binary data from it.
 
 
 ### ConstructEditor
 This is just the right side of the `ConstructHexEditor`, but can be used also used as standalone widget. It provides:
 - Viewing the structure of a construct (without binary data)
 - Parsing binary data according to the construct
+
 
 ### HexEditor
 Just the left side of the `ConstructHexEditor`, but can be used also used as standalone widget. It provides:

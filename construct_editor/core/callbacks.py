@@ -13,26 +13,26 @@ class CallbackList(Generic[P]):
 
     def append(self, callback: Callable[P, None]):
         """
-        Neue Callback-Funktion in die Liste einfügen (Duplikate werden ignoriert)
+        Add new callback function to the list (ignroe duplicates)
         """
         if callback not in self._callbacks:
             self._callbacks.append(callback)
 
     def remove(self, callback: Callable[P, None]):
         """
-        Callback-Funktion aus der Liste entfernen
+        Remove callback function from the list.
         """
         self._callbacks.remove(callback)
 
     def clear(self):
         """
-        Alle Callback-Funktion entfernen
+        Clear the complete list.
         """
         self._callbacks.clear()
 
     def fire(self, *args: P.args, **kwargs: P.kwargs):
         """
-        Alle Callbacks aufrufen
+        Call all callback functions, with the given parameters.
         """
         for callback in self._callbacks:
             callback(*args, **kwargs)
