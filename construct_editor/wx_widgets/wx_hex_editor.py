@@ -207,7 +207,10 @@ class HexEditorTable(Grid.GridTableBase):
         byte_idx = self.get_byte_idx(row, col)
         if value == "" and byte_idx >= len(self._binary_data):
             return
+        try:
             self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
+        except Exception:
+            return
 
     def GetValue(self, row: int, col: int):
         byte_idx = self.get_byte_idx(row, col)
@@ -1072,7 +1075,7 @@ class HexEditorGrid(Grid.Grid):
 # #####################################################################################################################
 class WxHexEditor(wx.Panel):
     """
-    HexEdior Panel.
+    HexEditor Panel.
     """
 
     def __init__(
