@@ -19,6 +19,7 @@ Enhanced HexEditor:
 - Add INSERT key to add a single byte (#20)
 - Add BACK and DELETE key in hex cell editor (#20)
 - Add basic arrow keys in hex cell editor doing the same as Escape (#20)
+- Optimize paste from clipboard (#17)
 
 -------------------------------------------------------------------------------
 ## [0.0.19] - 2022-09-07

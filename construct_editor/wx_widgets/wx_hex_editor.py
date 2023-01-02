@@ -2,6 +2,7 @@
 import dataclasses
 import logging
 import math
+import re
 import typing as t
 
 import wx
@@ -13,8 +14,6 @@ from construct_editor.core.callbacks import CallbackList
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False
-
-
 
 
 # #####################################################################################################################
@@ -600,6 +599,20 @@ class HexCellEditor(Grid.GridCellEditor):
         return HexCellEditor(self.parentgrid)
 
 
+@dataclasses.dataclass
+class ContextMenuItem:
+    wx_id: int
+    name: str
+    callback: t.Callable[[wx.CommandEvent], t.Any]
+
+    # None = option
+    # True = toggle selected
+    # False = toggle unselected
+    toggle_state: t.Optional[bool]
+
+    enabled: bool
+
+
 # #####################################################################################################################
 # ############################################## Grid.Grid ############################################################
 # #####################################################################################################################
@@ -620,7 +633,9 @@ class HexEditorGrid(Grid.Grid):
         self._table = table
         self._binary_data = binary_data
         self.read_only = read_only
-        self.on_selection_changed: "CallbackList[[int, t.Optional[int]]]" = CallbackList()
+        self.on_selection_changed: "CallbackList[[int, t.Optional[int]]]" = (
+            CallbackList()
+        )
 
         # The second parameter means that the grid is to take
         # ownership of the table and will destroy it when done.
@@ -865,7 +880,7 @@ class HexEditorGrid(Grid.Grid):
 
         self.ClearSelection()
         self._selection = (None, None)
-        
+
         idx = self._table.get_byte_idx(self.GetGridCursorRow(), self.GetGridCursorCol())
         if idx > len(self._editor.binary):
             self.SetGridCursor(0, 0)
@@ -953,17 +968,9 @@ class HexEditorGrid(Grid.Grid):
         clipboard = wx.TextDataObject()
         wx.TheClipboard.GetData(clipboard)
         wx.TheClipboard.Close()
-        byts_str: str = clipboard.GetText()
-
-        # convert string to bytes
-        try:
-            byts_str = byts_str.replace(" ", "")
-            byts = bytes.fromhex(byts_str)
-        except Exception as e:
-            wx.MessageBox(
-                f"Can't convert data from clipboard to bytes.\n\n{str(e)}\n\nClipboard Data:\n{byts_str}",
-                "Warning",
-            )
+        clipboard_txt: str = clipboard.GetText()
+        byts = self.string_to_byts(clipboard_txt)
+        if not byts:
             return False
 
         # copy new data to the binary data
@@ -974,6 +981,51 @@ class HexEditorGrid(Grid.Grid):
 
         self.select_range(sel[0], sel[0] + len(byts) - 1)
         return True
+
+    def string_to_byts(self, byts_str: str):
+        """
+        Normalize pasted string converting it to bytes (can be overridden).
+        Return a "bytes" variable, or None in case or error.
+
+        Possible Strings:
+         - 0102030405060708090a0b0c0d0e0f
+         - 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+         - 01.02.03.04.05.06.07.08.09.0a.0b.0c.0d.0e.0f
+         - 01-02-03-04-05-06-07-08-09-0a-0b-0c-0d-0e-0f
+         - 1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
+         - 1 2 3 4 5 6 7 8 9 a b c d e f
+         - "71 20 98 00 c0 7a 3e 6a 8d 7c c4 0d 04 10 02 f2 00"
+         - ("71 20 98 00 c0 7a 3e 6a 8d 7c c4 0d 04 10 02 f2 00")
+         - bytes.fromhex("71 20 98 00 c0 7a 3e 6a 8d 7c c4 0d 04 10 02 f2 00")
+         - '71209800c07a3e6a8d7cc40d041002f200'
+         - 0x12, 0x23, 0x45,
+         - b'\x00\x00\x00\xa4\xc18\xe1\x81_\x00\xcc#b\x0c\r\x15'
+        """
+        byts_str = re.sub(r".*[\"'](.*)[\"'].*", r"\1", byts_str)
+        try:
+            byts = bytes.fromhex(byts_str)
+            return byts
+        except Exception:
+            pass
+        try:
+            byts_str_conv = re.findall(r"[0-9A-Fa-fXx]+", byts_str)
+            byts = bytes(map(lambda x: int(x, 16), byts_str_conv))
+            return byts
+        except Exception:
+            pass
+        try:
+            byts = bytes(
+                byts_str.encode("utf8", "backslashreplace").decode("unicode_escape"),
+                encoding="raw_unicode_escape",
+            )
+            return byts
+        except Exception as e:
+            wx.MessageBox(
+                f"Can't convert data from clipboard to bytes.\n\n{str(e)}"
+                f"\n\nProcessed clipboard data:\n{byts_str}",
+                "Warning",
+            )
+        return None
 
     def _undo(self):
         self._binary_data.command_processor.Undo()
@@ -1068,52 +1120,72 @@ class HexEditorGrid(Grid.Grid):
         if select_cell:
             self.SetGridCursor(event.GetRow(), event.GetCol())
 
-        menus = [
-            (
-                wx.ID_CUT,
-                "Cut\tCtrl+X",
-                lambda event: self._cut_selection(),
-                not self.read_only,
-            ),
-            (wx.ID_COPY, "Copy\tCtrl+C", lambda event: self._copy_selection(), True),
-            (
-                wx.ID_PASTE,
-                "Paste (overwrite)\tCtrl+V",
-                lambda event: self._paste(overwrite=True),
-                not self.read_only,
-            ),
-            (
-                wx.ID_PASTE,
-                "Paste (insert)\tCtrl+Shift+V",
-                lambda event: self._paste(insert=True),
-                not self.read_only,
-            ),
-            None,
-            (
-                wx.ID_UNDO,
-                "Undo\tCtrl+Z",
-                lambda event: self._undo(),
-                self._binary_data.command_processor.CanUndo(),
-            ),
-            (
-                wx.ID_REDO,
-                "Redo\tCtrl+Y",
-                lambda event: self._redo(),
-                self._binary_data.command_processor.CanRedo(),
-            ),
-        ]
-
         popup_menu = wx.Menu()
-        for menu in menus:
+        for menu in self.build_context_menu():
             if menu is None:
                 popup_menu.AppendSeparator()
                 continue
-            item: wx.MenuItem = popup_menu.Append(menu[0], menu[1])
-            self.Bind(wx.EVT_MENU, menu[2], id=item.Id)
-            item.Enable(menu[3])
+            if menu.toggle_state != None:  # checkbox boolean state
+                item: wx.MenuItem = popup_menu.AppendCheckItem(menu.wx_id, menu.name)
+                item.Check(menu.toggle_state)
+            else:
+                item: wx.MenuItem = popup_menu.Append(menu.wx_id, menu.name)
+            self.Bind(wx.EVT_MENU, menu.callback, id=item.Id)
+            item.Enable(menu.enabled)
 
         self.PopupMenu(popup_menu, event.GetPosition())
         popup_menu.Destroy()
+
+    def build_context_menu(
+        self,
+    ) -> t.List[t.Optional[ContextMenuItem]]:
+        """Build the context menu. Can be overridden."""
+
+        return [
+            ContextMenuItem(
+                wx.ID_CUT,
+                "Cut\tCtrl+X",
+                lambda event: self._cut_selection(),
+                None,
+                not self.read_only,
+            ),
+            ContextMenuItem(
+                wx.ID_COPY,
+                "Copy\tCtrl+C",
+                lambda event: self._copy_selection(),
+                None,
+                True,
+            ),
+            ContextMenuItem(
+                wx.ID_PASTE,
+                "Paste (overwrite)\tCtrl+V",
+                lambda event: self._paste(overwrite=True),
+                None,
+                not self.read_only,
+            ),
+            ContextMenuItem(
+                wx.ID_PASTE,
+                "Paste (insert)\tCtrl+Shift+V",
+                lambda event: self._paste(insert=True),
+                None,
+                not self.read_only,
+            ),
+            None,
+            ContextMenuItem(
+                wx.ID_UNDO,
+                "Undo\tCtrl+Z",
+                lambda event: self._undo(),
+                None,
+                self._binary_data.command_processor.CanUndo(),
+            ),
+            ContextMenuItem(
+                wx.ID_REDO,
+                "Redo\tCtrl+Y",
+                lambda event: self._redo(),
+                None,
+                self._binary_data.command_processor.CanRedo(),
+            ),
+        ]
 
 
 # #####################################################################################################################
