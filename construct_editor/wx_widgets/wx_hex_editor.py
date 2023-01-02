@@ -128,9 +128,9 @@ class HexEditorBinaryData:
         """get the value at the given index"""
         return self._binary[idx]
 
-    def get_range(self, idx: int, len: int):
+    def get_range(self, idx: int, length: int):
         """get the value at the given index"""
-        return bytes(self._binary[idx : idx + len])
+        return bytes(self._binary[idx : idx + length])
 
     def get_bytes(self) -> bytes:
         """return readonly version of the data"""
@@ -207,7 +207,7 @@ class HexEditorTable(Grid.GridTableBase):
         byte_idx = self.get_byte_idx(row, col)
         if value == "" and byte_idx >= len(self._binary_data):
             return
-        self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
+            self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
 
     def GetValue(self, row: int, col: int):
         byte_idx = self.get_byte_idx(row, col)
@@ -841,12 +841,12 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         if sel[1] == None:
-            len = 1
+            length = 1
         else:
-            len = sel[1] - sel[0] + 1
+            length = sel[1] - sel[0] + 1
 
-        byts = self._binary_data.remove_range(sel[0], len)
-
+        byts = self._binary_data.remove_range(sel[0], length)
+    
         self.ClearSelection()
         self._selection = (None, None)
 
@@ -866,11 +866,11 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         if sel[1] == None:
-            len = 1
+            length = 1
         else:
-            len = sel[1] - sel[0] + 1
+            length = sel[1] - sel[0] + 1
 
-        byts = self._binary_data.get_range(sel[0], len)
+        byts = self._binary_data.get_range(sel[0], length)
 
         if wx.TheClipboard.Open():
             byts_str = byts.hex(" ")
