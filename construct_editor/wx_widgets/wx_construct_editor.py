@@ -546,7 +546,9 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         if col.ModelColumn == ConstructEditorColumn.Name:
             # only set tooltip if the obj changed. this prevents flickering
             if self._last_tooltip != (entry, ConstructEditorColumn.Name):
-                self._dvc_main_window.SetToolTip(textwrap.dedent(entry.docs or entry.name).strip())
+                self._dvc_main_window.SetToolTip(
+                    textwrap.dedent(entry.docs or entry.name).strip()
+                )
             self._last_tooltip = (entry, ConstructEditorColumn.Name)
         elif col.ModelColumn == ConstructEditorColumn.Type:
             # only set tooltip if the obj changed. this prevents flickering
@@ -591,11 +593,19 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
 
         # Ctrl+C
         elif event.ControlDown() and event.GetKeyCode() == ord("C"):
-            pass  # TODO
+            selected_entry = self.get_selected_entry()
+            if selected_entry is None:
+                event.Skip()
+                return
+            self.copy_entry_value_to_clipboard(selected_entry)
 
         # Ctrl+V
         elif event.ControlDown() and event.GetKeyCode() == ord("V"):
-            pass  # TODO
+            selected_entry = self.get_selected_entry()
+            if selected_entry is None:
+                event.Skip()
+                return
+            self.paste_entry_value_from_clipboard(selected_entry)
 
         else:
             event.Skip()
@@ -632,3 +642,25 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             return
         entry = self._model.dvc_item_to_entry(dvc_item)
         entry.row_expanded = False
+
+    def _put_to_clipboard(self, txt: str):
+        """
+        Put text to the clipboard.
+        """
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(wx.TextDataObject(txt))
+            wx.TheClipboard.Close()
+
+    def _get_from_clipboard(self):
+        """
+        Get text from the clipboard.
+        """
+        # get data from clipboard
+        if not wx.TheClipboard.Open():
+            wx.MessageBox("Can't open the clipboard", "Warning")
+            return None
+        clipboard = wx.TextDataObject()
+        wx.TheClipboard.GetData(clipboard)
+        wx.TheClipboard.Close()
+        txt: str = clipboard.GetText()
+        return txt

@@ -6,7 +6,7 @@ import construct as cs
 
 import construct_editor.core.entries as entries
 from construct_editor.core.callbacks import CallbackList
-from construct_editor.core.model import ConstructEditorModel
+from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
 from construct_editor.core.preprocessor import include_metadata
 
 
@@ -57,13 +57,61 @@ class ConstructEditor:
     def get_selected_entry(self) -> "entries.EntryConstruct":
         """
         Get the currently selected entry (or None if nothing is selected).
+
+        This has to be implemented by the derived class.
         """
 
     @abc.abstractmethod
     def select_entry(self, entry: "entries.EntryConstruct") -> None:
         """
         Select an entry programmatically.
+
+        This has to be implemented by the derived class.
         """
+
+    @abc.abstractmethod
+    def _put_to_clipboard(self, txt: str):
+        """
+        Put text to the clipboard.
+
+        This has to be implemented by the derived class.
+        """
+
+    @abc.abstractmethod
+    def _get_from_clipboard(self):
+        """
+        Get text from the clipboard.
+
+        This has to be implemented by the derived class.
+        """
+
+    def copy_entry_value_to_clipboard(self, entry: "entries.EntryConstruct"):
+        """
+        Copy the value of the entry to the clipboard.
+        """
+        copy_txt = entry.obj_str
+        self._put_to_clipboard(copy_txt)
+
+    def copy_entry_path_to_clipboard(self, entry: "entries.EntryConstruct"):
+        """
+        Copy the path of the entry to the clipboard.
+        """
+        copy_txt = entries.create_path_str(entry.path)
+        self._put_to_clipboard(copy_txt)
+
+    def paste_entry_value_from_clipboard(self, entry: "entries.EntryConstruct"):
+        """
+        Paste the value of the entry from the clipboard.
+        """
+        txt = self._get_from_clipboard()
+        if txt is None:
+            return
+
+        # TODO: This does not work correctly, because the clipboard only saves
+        # strings. So here is a string to entry.obj conversation needed, which is
+        # not so easy.
+        # self.model.set_value(txt, entry, ConstructEditorColumn.Value)
+        # self.on_root_obj_changed.fire(self.root_obj)
 
     def change_construct(self, constr: cs.Construct) -> None:
         """

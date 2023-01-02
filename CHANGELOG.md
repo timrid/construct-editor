@@ -10,6 +10,8 @@ Enhanced ConstructEditor:
 - Added module "construct_editor.core.custom" for easier addition of custom constructs.
 - Show arrays appropriately (use .[number]. instead of .number.) (#18)
 - Show full tooltip of the "name" column, which when fields are too long is shown with ellipses. (#18)
+- Implemented "Copy" / Ctrl+C (#18)
+- Added "Copy path to clipboard" button in the context menu (#18)
 
 Enhanced HexEditor:
 - fix crash when selecting or extending selection before the beginning of the hex editor using the shift LEFT and UP arrow keys (#20)

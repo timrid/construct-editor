@@ -95,8 +95,16 @@ class ContextMenu:
             ButtonMenuItem(
                 COPY_LABEL,
                 "Ctrl+C",
-                False,
-                self.on_copy,
+                True,
+                self.on_copy_value_to_clipboard,
+            )
+        )
+        self.add_menu_item(
+            ButtonMenuItem(
+                "Copy path to clipboard",
+                "",
+                True,
+                self.on_copy_path_to_clipboard,
             )
         )
         self.add_menu_item(
@@ -177,11 +185,20 @@ class ContextMenu:
         This has to be implemented by the derived class.
         """
 
-    def on_copy(self):
-        pass  # TODO: implement this
+    def on_copy_value_to_clipboard(self):
+        if self.entry is None:
+            return
+        self.parent.copy_entry_value_to_clipboard(self.entry)
+
+    def on_copy_path_to_clipboard(self):
+        if self.entry is None:
+            return
+        self.parent.copy_entry_path_to_clipboard(self.entry)
 
     def on_paste(self):
-        pass  # TODO: implement this
+        if self.entry is None:
+            return
+        self.parent.paste_entry_value_from_clipboard(self.entry)
 
     def on_undo(self):
         self.model.command_processor.undo()
