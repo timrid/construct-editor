@@ -380,6 +380,10 @@ class HexTextCtrl(wx.TextCtrl):
         logger.debug("key down before evt=%s" % evt.GetKeyCode())
         key = evt.GetKeyCode()
 
+        if key == wx.WXK_BACK or key == wx.WXK_DELETE:
+            self.SetValue(self.startValue)
+            self.Clear()
+
         if key == wx.WXK_TAB:
             wx.CallAfter(self.parentgrid._advance_cursor)
             return
