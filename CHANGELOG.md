@@ -9,6 +9,7 @@ Enhanced ConstructEditor:
 - Fixed bug with PaddedString (#14)
 - Added module "construct_editor.core.custom" for easier addition of custom constructs.
 - Show arrays appropriately (use .[number]. instead of .number.) (#18)
+- Show full tooltip of the "name" column, which when fields are too long is shown with ellipses. (#18)
 
 Enhanced HexEditor:
 - fix crash when selecting or extending selection before the beginning of the hex editor using the shift LEFT and UP arrow keys (#20)

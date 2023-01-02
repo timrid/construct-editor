@@ -546,7 +546,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         if col.ModelColumn == ConstructEditorColumn.Name:
             # only set tooltip if the obj changed. this prevents flickering
             if self._last_tooltip != (entry, ConstructEditorColumn.Name):
-                self._dvc_main_window.SetToolTip(textwrap.dedent(entry.docs).strip())
+                self._dvc_main_window.SetToolTip(textwrap.dedent(entry.docs or entry.name).strip())
             self._last_tooltip = (entry, ConstructEditorColumn.Name)
         elif col.ModelColumn == ConstructEditorColumn.Type:
             # only set tooltip if the obj changed. this prevents flickering
