@@ -862,9 +862,15 @@ class HexEditorGrid(Grid.Grid):
             length = sel[1] - sel[0] + 1
 
         byts = self._binary_data.remove_range(sel[0], length)
-    
+
         self.ClearSelection()
         self._selection = (None, None)
+        
+        idx = self._table.get_byte_idx(self.GetGridCursorRow(), self.GetGridCursorCol())
+        if idx > len(self._editor.binary):
+            self.SetGridCursor(0, 0)
+        else:
+            self.SetGridCursor(self.GetGridCursorCoords())
 
         self.refresh()
         return True
