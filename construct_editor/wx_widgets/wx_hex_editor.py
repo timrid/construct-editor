@@ -773,7 +773,13 @@ class HexEditorGrid(Grid.Grid):
                 other_idx = sel[0]
 
         cursor_row += row_diff
+        if cursor_row < 0:
+            return
+
         cursor_col += col_diff
+        if cursor_col < 0:
+            return
+
         cursor_idx = self._table.get_byte_idx(cursor_row, cursor_col)
 
         self.SetGridCursor(cursor_row, cursor_col)
@@ -790,6 +796,8 @@ class HexEditorGrid(Grid.Grid):
             idx1, idx2 = idx2, idx1
         start_row, start_col = self._table.get_byte_rowcol(idx1)
         end_row, end_col = self._table.get_byte_rowcol(idx2)
+        if start_row < 0 or end_row < 0:
+            return
 
         first_col = 0
         last_col = self._table.GetNumberCols() - 1
