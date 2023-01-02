@@ -390,8 +390,13 @@ class HexTextCtrl(wx.TextCtrl):
         if key == wx.WXK_TAB:
             wx.CallAfter(self.parentgrid._advance_cursor)
             return
-        if (key == wx.WXK_ESCAPE or key == wx.WXK_UP or key == wx.WXK_DOWN or
-                key == wx.WXK_LEFT or key == wx.WXK_RIGHT):
+        if (
+            key == wx.WXK_ESCAPE
+            or key == wx.WXK_UP
+            or key == wx.WXK_DOWN
+            or key == wx.WXK_LEFT
+            or key == wx.WXK_RIGHT
+        ):
             self.SetValue(self.startValue)
             wx.CallAfter(self.parentgrid._abort_edit)
             return
