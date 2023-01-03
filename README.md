@@ -1,6 +1,4 @@
 # Construct Editor
-**!!! Work in progress !!!**
-
 This package provides a GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data. It can either be used standalone or embedded as a widget in another application.
 
 
@@ -15,20 +13,13 @@ Features:
     - FlagsEnum values
     - DateTime values
 - undo/redo in HexEditor and in ConstructEditor
-- extensible for custom adapters
+- extensible for custom constructs
 
-## Installation (for use in your own project)
+## Installation
 The preferred way to installation is via PyPI:
 ```
 pip install construct-editor
 ```
-
-## Installation as standalone
-The preferred way to installation is:
-- Open a command line in the project folder (`construct-editor`)
-- Create a new virtual environment via `virtualenv .venv`
-- Activate it with `.venv\Scripts\activate.ps1` or `.venv\Scripts\activate.bat`
-- Install via `pip install -e .` (remember the `.` at the end of the line)
 
 ## Getting started (Standalone)
 To start the standalone version, just execute the following in the command line:
@@ -41,7 +32,7 @@ This is a simple example
 ```python
 import wx
 import construct as cs
-import construct_editor as cseditor
+from construct_editor.widgets.wx import WxConstructHexEditor
 
 constr = cs.Struct(
     "a" / cs.Int16sb,
@@ -50,8 +41,8 @@ constr = cs.Struct(
 b = bytes([0x12, 0x34, 0x56, 0x78])
 
 app = wx.App(False)
-frame = wx.Frame(None, title="Construct Hex Editor", size=(1000, 500))
-editor_panel = cseditor.ConstructHexEditor(frame, construct=constr, binary=b)
+frame = wx.Frame(None, title="Construct Hex Editor", size=(1000, 200))
+editor_panel = WxConstructHexEditor(frame, construct=constr, binary=b)
 editor_panel.construct_editor.expand_all()
 frame.Show(True)
 app.MainLoop()
@@ -59,17 +50,20 @@ app.MainLoop()
 
 This snipped generates a GUI like this:
 
-[Screenshot of the example]
+![Screenshot of the example](https://raw.githubusercontent.com/timrid/construct-editor/main/doc/example.png)
+
 
 ## Widgets
 ### ConstructHexEditor
 This is the main widget ot this library. It offers a look at the raw binary data and also at the parsed structure.
 It offers a way to modify the raw binary data, which is then automaticly converted to the structed view. It also supports to modify the structed data and build the binary data from it.
 
+
 ### ConstructEditor
 This is just the right side of the `ConstructHexEditor`, but can be used also used as standalone widget. It provides:
 - Viewing the structure of a construct (without binary data)
 - Parsing binary data according to the construct
+
 
 ### HexEditor
 Just the left side of the `ConstructHexEditor`, but can be used also used as standalone widget. It provides:
