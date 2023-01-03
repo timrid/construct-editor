@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
+import enum
 import io
 import typing as t
 
@@ -16,6 +17,30 @@ class GuiMetaData(t.TypedDict):
     child_gui_metadata: t.Optional["GuiMetaData"]
 
 
+class IntWithGuiMetadata(int):
+    pass
+
+
+class FloatWithGuiMetadata(float):
+    pass
+
+
+class BytesWithGuiMetadata(bytes):
+    pass
+
+
+class BytearrayWithGuiMetadata(bytearray):
+    pass
+
+
+class StrWithGuiMetadata(str):
+    pass
+
+
+class NoneWithGuiMetadata:
+    pass
+
+
 class ObjProxyWithGuiMetaData(wrapt.ObjectProxy):
     __slots__ = "__construct_editor_metadata__"
 
@@ -24,10 +49,6 @@ class ObjProxyWithGuiMetaData(wrapt.ObjectProxy):
         wrapt.ObjectProxy.__setattr__(
             self, "__construct_editor_metadata__", gui_metadata
         )
-
-
-class BytesWithGuiMetadata(bytes):
-    pass
 
 
 def get_gui_metadata(obj: t.Any) -> t.Optional[GuiMetaData]:
@@ -40,22 +61,34 @@ def get_gui_metadata(obj: t.Any) -> t.Optional[GuiMetaData]:
 
 def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
     """
-    Append gui_metadata to an object.
-
-    With immutable types like str, bytes, int, ... it is not possible to add
-    metadata to a type dynammically. With other types like enums it is possible,
-    but enums are singleton, so that the metadata of objects is overwritten by
-    the next object with the same value.
-
-    Because auf this for any object an proxy object is created, so that the
-    metadata can be added to this proxy object.
+    Append the private field "__construct_editor_metadata__" to an object
     """
-    if isinstance(obj, bytes):
-        # bytes has to be a subtype of bytes or the `stream_write` will raise an error...
+    obj_type = type(obj)
+    if isinstance(obj, enum.Enum):
+        obj = ObjProxyWithGuiMetaData(obj, gui_metadata)
+    elif (obj_type is int) or (obj_type is bool):
+        obj = IntWithGuiMetadata(obj)
+        obj.__construct_editor_metadata__ = gui_metadata
+    elif obj_type is float:
+        obj = FloatWithGuiMetadata(obj)
+        obj.__construct_editor_metadata__ = gui_metadata
+    elif obj_type is bytes:
         obj = BytesWithGuiMetadata(obj)
         obj.__construct_editor_metadata__ = gui_metadata
+    elif obj_type is bytearray:
+        obj = BytearrayWithGuiMetadata(obj)
+        obj.__construct_editor_metadata__ = gui_metadata
+    elif obj_type is str:
+        obj = StrWithGuiMetadata(obj)
+        obj.__construct_editor_metadata__ = gui_metadata
+    elif obj is None:
+        obj = NoneWithGuiMetadata()
+        obj.__construct_editor_metadata__ = gui_metadata
     else:
-        obj = ObjProxyWithGuiMetaData(obj, gui_metadata)
+        try:
+            obj.__construct_editor_metadata__ = gui_metadata  # type: ignore
+        except AttributeError:
+            raise ValueError(f"add_gui_metadata dont work with type of {type(obj)}")
     return obj
 
 

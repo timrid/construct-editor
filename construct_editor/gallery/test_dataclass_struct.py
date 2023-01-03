@@ -14,7 +14,7 @@ class DataclassStructTest(cst.DataclassMixin):
     @dataclasses.dataclass
     class Nested(cst.DataclassMixin):
         nested_width: int = cst.csfield(cs.Int16sb)
-        nested_height: int = cst.csfield(cs.Int16sb)
+        nested_height: int = cst.csfield(cs.Int24ub)
         nested_bytes: bytes = cst.csfield(cs.Bytes(2))
         nested_array: t.List[int] = cst.csfield(cs.Array(2, cs.Int8sb))
 
