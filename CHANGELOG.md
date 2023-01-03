@@ -1,5 +1,5 @@
 # Changelog
-## [Unreleased]
+## [0.1.0] - 2023-01-03
 Complete refactoring of the code, so that core components of the construct-editor are seperated vom GUI components. That makes it theoretically possible to add multiple GUI frameworks in the future. Besides this the following notable enhancements are implemented:
 
 Enhanced ConstructEditor:
