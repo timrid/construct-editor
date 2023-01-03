@@ -267,7 +267,7 @@ class EntryConstruct(object):
         if isinstance(obj, dict) or isinstance(obj, cst.DataclassMixin):
             obj[path[-1]] = val
         elif isinstance(obj, list):
-            obj[int(path[-1])] = val
+            obj[int(path[-1].strip("[]"))] = val
 
     # default "obj_str" #######################################################
     @property
