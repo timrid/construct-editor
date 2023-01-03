@@ -12,6 +12,7 @@ Enhanced ConstructEditor:
 - Show full tooltip of the "name" column, which when fields are too long is shown with ellipses. (#18)
 - Implemented "Copy" / Ctrl+C (#18)
 - Added "Copy path to clipboard" button in the context menu (#18)
+- Fixed a bug, when a struct has multiple times the same `Enum` construct. Then the metadata (eg. byte position) of the last parsed enum value is used for all enum values.
 
 Enhanced HexEditor:
 - fix crash when selecting or extending selection before the beginning of the hex editor using the shift LEFT and UP arrow keys (#20)

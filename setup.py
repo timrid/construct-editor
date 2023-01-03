@@ -33,7 +33,8 @@ setup(
         "construct==2.10.68",
         "construct-typing==0.5.4",
         "wxPython>=4.1.1",
-        "arrow>=1.0.0"
+        "arrow>=1.0.0",
+        "wrapt>=1.14.0"
     ],
     keywords=[
         "gui",

@@ -257,8 +257,6 @@ class WxObjEditor_Timestamp(wx.Panel):
         if not isinstance(self.entry.obj, arrow.Arrow):
             return
 
-        self.obj_type = type(self.entry.obj)
-
         # Obj
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         dt = self.entry.obj.datetime
@@ -312,7 +310,7 @@ class WxObjEditor_Timestamp(wx.Panel):
     def get_new_obj(self) -> t.Any:
         date: wx.DateTime = self.date_picker.GetValue()
         time: wx.DateTime = self.time_picker.GetValue()
-        new_obj = self.obj_type(
+        new_obj = arrow.Arrow(
             year=date.year,
             month=date.month + 1,  # in wx.adc.DatePickerCtrl the month start with 0
             day=date.day,
