@@ -140,9 +140,9 @@ class HexEditorBinaryData:
         """get the value at the given index"""
         return self._binary[idx]
 
-    def get_range(self, idx: int, len: int):
+    def get_range(self, idx: int, length: int):
         """get the value at the given index"""
-        return bytes(self._binary[idx : idx + len])
+        return bytes(self._binary[idx : idx + length])
 
     def get_bytes(self) -> bytes:
         """return readonly version of the data"""
@@ -219,7 +219,10 @@ class HexEditorTable(Grid.GridTableBase):
         byte_idx = self.get_byte_idx(row, col)
         if value == "" and byte_idx >= len(self._binary_data):
             return
-        self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
+        try:
+            self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
+        except Exception:
+            return
 
     def GetValue(self, row: int, col: int):
         byte_idx = self.get_byte_idx(row, col)
@@ -392,10 +395,15 @@ class HexTextCtrl(wx.TextCtrl):
         logger.debug("key down before evt=%s" % evt.GetKeyCode())
         key = evt.GetKeyCode()
 
+        if key == wx.WXK_BACK or key == wx.WXK_DELETE:
+            self.SetValue(self.startValue)
+            self.Clear()
+
         if key == wx.WXK_TAB:
             wx.CallAfter(self.parentgrid._advance_cursor)
             return
-        if key == wx.WXK_ESCAPE:
+        if (key == wx.WXK_ESCAPE or key == wx.WXK_UP or key == wx.WXK_DOWN or
+                key == wx.WXK_LEFT or key == wx.WXK_RIGHT):
             self.SetValue(self.startValue)
             wx.CallAfter(self.parentgrid._abort_edit)
             return
@@ -776,7 +784,11 @@ class HexEditorGrid(Grid.Grid):
             else:
                 other_idx = sel[0]
 
+        if cursor_row + row_diff < 0:
+            return
         cursor_row += row_diff
+        if cursor_col + col_diff < 0:
+            return
         cursor_col += col_diff
         cursor_idx = self._table.get_byte_idx(cursor_row, cursor_col)
 
@@ -794,6 +806,8 @@ class HexEditorGrid(Grid.Grid):
             idx1, idx2 = idx2, idx1
         start_row, start_col = self._table.get_byte_rowcol(idx1)
         end_row, end_col = self._table.get_byte_rowcol(idx2)
+        if start_row < 0 or end_row < 0:
+            return
 
         first_col = 0
         last_col = self._table.GetNumberCols() - 1
@@ -848,14 +862,20 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         if sel[1] == None:
-            len = 1
+            length = 1
         else:
-            len = sel[1] - sel[0] + 1
+            length = sel[1] - sel[0] + 1
 
-        byts = self._binary_data.remove_range(sel[0], len)
-
+        byts = self._binary_data.remove_range(sel[0], length)
+    
         self.ClearSelection()
         self._selection = (None, None)
+        idx = self._table.get_byte_idx(
+            self.GetGridCursorRow(), self.GetGridCursorCol())
+        if idx > len(self._editor.binary):
+            self.SetGridCursor(0, 0)
+        else:
+            self.SetGridCursor(self.GetGridCursorCoords())
 
         self.refresh()
         return True
@@ -873,11 +893,11 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         if sel[1] == None:
-            len = 1
+            length = 1
         else:
-            len = sel[1] - sel[0] + 1
+            length = sel[1] - sel[0] + 1
 
-        byts = self._binary_data.get_range(sel[0], len)
+        byts = self._binary_data.get_range(sel[0], length)
 
         if wx.TheClipboard.Open():
             byts_str = byts.hex(" ")
@@ -908,7 +928,8 @@ class HexEditorGrid(Grid.Grid):
 
         if overwrite and insert:
             wx.MessageBox(
-                "Only one option is supported. 'overwrite' or 'insert'", "Warning"
+                "Only one option is supported. 'overwrite' or 'insert'",
+                "Warning"
             )
             return False
 
@@ -983,6 +1004,20 @@ class HexEditorGrid(Grid.Grid):
                     )
                 self.SetGridCursor(row, col)
                 self.MakeCellVisible(row, col)
+
+        # Del
+        elif event.GetKeyCode() == wx.WXK_DELETE:
+            self._remove_selection()
+
+        # Insert
+        elif event.GetKeyCode() == wx.WXK_INSERT:
+            if self.read_only is True:
+                return False
+            sel = self._selection
+            if sel[0] is None:
+                return False
+            self._binary_data.insert_range(sel[0], b'\x00')
+            self._on_range_selecting_keyboard()
 
         # Shift+Up
         elif event.ShiftDown() and event.GetKeyCode() == wx.WXK_UP:
@@ -1116,7 +1151,7 @@ class HexEditorGrid(Grid.Grid):
 # #####################################################################################################################
 class HexEditor(wx.Panel):
     """
-    HexEdior Panel.
+    HexEditor Panel.
     """
 
     def __init__(
