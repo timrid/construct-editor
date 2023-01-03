@@ -17,6 +17,7 @@ from construct_editor.wx_widgets.wx_obj_view import (
     create_obj_editor,
     create_obj_renderer_helper,
 )
+from construct_editor.wx_widgets.wx_exception_dialog import WxExceptionDialog
 
 
 @dataclasses.dataclass
@@ -306,9 +307,21 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
 
         # Create InfoBars
         self._parse_error_info_bar = wx.InfoBar(self)
+        btn_id = wx.NewIdRef()
+        self._parse_error_info_bar.AddButton(btn_id, "Exception Infos")
+        self._parse_error_info_bar.Bind(
+            wx.EVT_BUTTON, self._parse_error_info_bar_btn_clicked, id=btn_id
+        )
+        self._parse_error_ex: t.Optional[Exception] = None
         vsizer.Add(self._parse_error_info_bar, 0, wx.EXPAND)
 
         self._build_error_info_bar = wx.InfoBar(self)
+        btn_id = wx.NewIdRef()
+        self._build_error_info_bar.AddButton(btn_id, "Exception Infos")
+        self._build_error_info_bar.Bind(
+            wx.EVT_BUTTON, self._build_error_info_bar_btn_clicked, id=btn_id
+        )
+        self._build_error_ex: t.Optional[Exception] = None
         vsizer.Add(self._build_error_info_bar, 0, wx.EXPAND)
 
         # create status bar
@@ -373,22 +386,24 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         finally:
             self.Thaw()
 
-    def show_parse_error_message(self, msg: t.Optional[str]):
+    def show_parse_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
         """
         Show an message to the user.
         """
         if msg is None:
             self._parse_error_info_bar.Dismiss()
         else:
+            self._parse_error_ex = ex
             self._parse_error_info_bar.ShowMessage(msg, wx.ICON_WARNING)
 
-    def show_build_error_message(self, msg: t.Optional[str]):
+    def show_build_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
         """
         Show an build error message to the user.
         """
         if msg is None:
             self._build_error_info_bar.Dismiss()
         else:
+            self._build_error_ex = ex
             self._build_error_info_bar.ShowMessage(msg, wx.ICON_WARNING)
 
     def show_status(self, path_info: str, bytes_info: str):
@@ -664,3 +679,17 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         wx.TheClipboard.Close()
         txt: str = clipboard.GetText()
         return txt
+
+    def _parse_error_info_bar_btn_clicked(self, event):
+        if self._parse_error_ex is None:
+            return
+
+        dial = WxExceptionDialog(None, "Parse error", self._parse_error_ex)
+        dial.ShowModal()
+
+    def _build_error_info_bar_btn_clicked(self, event):
+        if self._build_error_ex is None:
+            return
+
+        dial = WxExceptionDialog(None, "Build error", self._build_error_ex)
+        dial.ShowModal()

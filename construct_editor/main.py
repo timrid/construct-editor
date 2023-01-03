@@ -1,5 +1,4 @@
 import sys
-import traceback
 import typing as t
 from pathlib import Path
 from types import TracebackType
@@ -45,6 +44,10 @@ import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_tflagsenum
 import construct_editor.gallery.test_timestamp
 from construct_editor.wx_widgets import WxConstructHexEditor
+from construct_editor.wx_widgets.wx_exception_dialog import (
+    ExceptionInfo,
+    WxExceptionDialog,
+)
 
 
 class ConstructGalleryFrame(wx.Frame):
@@ -75,7 +78,9 @@ class ConstructGalleryFrame(wx.Frame):
         :param string `trace`: the traceback header, if any (otherwise, it prints the
         standard Python header: ``Traceback (most recent call last)``.
         """
-        dial = ExceptionDialog(None, etype, value, trace)
+        dial = WxExceptionDialog(
+            None, "Uncaught Exception...", ExceptionInfo(etype, value, trace)
+        )
         dial.ShowModal()
 
 
@@ -394,73 +399,6 @@ icon = PyEmbeddedImage(
     b"ADIwMjEtMDMtMjFUMTk6MTA6MjIrMDA6MDDMGKfHAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDIx"
     b"LTAzLTIxVDE5OjEwOjIyKzAwOjAwvUUfewAAAABJRU5ErkJggg=="
 )
-
-
-class ExceptionDialog(wx.Dialog):
-    def __init__(
-        self,
-        parent,
-        etype: t.Type[BaseException],
-        value: BaseException,
-        trace: TracebackType,
-    ):
-        wx.Dialog.__init__(
-            self,
-            parent,
-            id=wx.ID_ANY,
-            title="Uncaught Exception...",
-            pos=wx.DefaultPosition,
-            size=wx.Size(800, 600),
-            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
-        )
-
-        self._init_gui()
-
-        self.exception_txt.SetValue(
-            "".join(traceback.format_exception_only(etype, value))
-        )
-        self.traceback_txt.SetValue("".join(traceback.format_tb(trace)))
-
-    def _init_gui(self):
-        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
-
-        sizer = wx.BoxSizer(wx.VERTICAL)
-
-        self.ok_btn = wx.Button(
-            self, wx.ID_ANY, "OK", wx.DefaultPosition, wx.DefaultSize, 0
-        )
-        sizer.Add(self.ok_btn, 0, wx.ALL | wx.EXPAND, 5)
-
-        self.exception_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(-1, -1),
-            wx.TE_MULTILINE | wx.TE_READONLY,
-        )
-        sizer.Add(self.exception_txt, 1, wx.ALL | wx.EXPAND, 5)
-
-        self.traceback_txt = wx.TextCtrl(
-            self,
-            wx.ID_ANY,
-            wx.EmptyString,
-            wx.DefaultPosition,
-            wx.Size(-1, -1),
-            wx.TE_MULTILINE | wx.TE_READONLY,
-        )
-        sizer.Add(self.traceback_txt, 2, wx.ALL | wx.EXPAND, 5)
-
-        self.SetSizer(sizer)
-        self.Layout()
-
-        self.Centre(wx.BOTH)
-
-        # Connect Events
-        self.ok_btn.Bind(wx.EVT_BUTTON, self.on_ok_clicked)
-
-    def on_ok_clicked(self, event):
-        self.Close()
 
 
 def main():

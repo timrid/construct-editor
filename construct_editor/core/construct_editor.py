@@ -30,7 +30,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def show_parse_error_message(self, msg: t.Optional[str]):
+    def show_parse_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
         """
         Show an parse error message to the user.
 
@@ -38,7 +38,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def show_build_error_message(self, msg: t.Optional[str]):
+    def show_build_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
         """
         Show an build error message to the user.
 
@@ -118,8 +118,8 @@ class ConstructEditor:
         Change the construct format, that is used for building/parsing.
         """
         # reset error messages
-        self.show_build_error_message(None)
-        self.show_parse_error_message(None)
+        self.show_build_error_message(None, None)
+        self.show_parse_error_message(None, None)
 
         # add root name, is none is available
         if constr.name is None:
@@ -149,10 +149,10 @@ class ConstructEditor:
         """
         try:
             self._model.root_obj = self._construct.parse(binary, **contextkw)
-            self.show_parse_error_message(None)
+            self.show_parse_error_message(None, None)
         except Exception as e:
             self.show_parse_error_message(
-                f"Error while parsing binary data: {type(e).__name__}\n{str(e)}"
+                f"Error while parsing binary data: {type(e).__name__}\n{str(e)}", e
             )
             self._model.root_obj = None
 
@@ -166,10 +166,10 @@ class ConstructEditor:
         """
         try:
             binary = self._construct.build(self._model.root_obj, **contextkw)
-            self.show_build_error_message(None)
+            self.show_build_error_message(None, None)
         except Exception as e:
             self.show_build_error_message(
-                f"Error while building binary data: {type(e).__name__}\n{str(e)}"
+                f"Error while building binary data: {type(e).__name__}\n{str(e)}", e
             )
             raise e
 
