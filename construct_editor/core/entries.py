@@ -677,16 +677,18 @@ class EntryIfThenElse(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
-            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
+
+        metadata = get_gui_metadata(obj)
+        if metadata is None:
+            return None
+
+        ctx = metadata["context"]
+        cond = evaluate(self.construct.condfunc, ctx)
+        if cond:
+            return self._subentry_then
         else:
-            metadata = get_gui_metadata(obj)
-            ctx = metadata["context"] if metadata is not None else None
-            cond = evaluate(self.construct.condfunc, ctx)
-            if cond:
-                return self._subentry_then
-            else:
-                return self._subentry_else
+            return self._subentry_else
 
     @property
     def obj_str(self) -> str:
@@ -771,16 +773,18 @@ class EntrySwitch(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
-            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
+
+        metadata = get_gui_metadata(obj)
+        if metadata is None:
+            return None
+
+        ctx = metadata["context"]
+        key = evaluate(self.construct.keyfunc, ctx)
+        if key in self._subentry_cases:
+            return self._subentry_cases[key]
         else:
-            metadata = get_gui_metadata(obj)
-            ctx = metadata["context"] if metadata is not None else None
-            key = evaluate(self.construct.keyfunc, ctx)
-            if key in self._subentry_cases:
-                return self._subentry_cases[key]
-            else:
-                return self._subentry_default
+            return self._subentry_default
 
     @property
     def obj_str(self) -> str:
@@ -1262,14 +1266,16 @@ class EntryFocusedSeq(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
-            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
-        else:
-            metadata = get_gui_metadata(obj)
-            ctx = metadata["context"] if metadata is not None else None
-            parsebuildfrom = evaluate(self.construct.parsebuildfrom, ctx)
-            subentry = self._subentries[parsebuildfrom]
-            return subentry
+
+        metadata = get_gui_metadata(obj)
+        if metadata is None:
+            return None
+
+        ctx = metadata["context"]
+        parsebuildfrom = evaluate(self.construct.parsebuildfrom, ctx)
+        subentry = self._subentries[parsebuildfrom]
+        return subentry
 
     @property
     def obj_str(self) -> str:
@@ -1343,21 +1349,21 @@ class EntrySelect(EntryConstruct):
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
-            self._dvc_item = None  # reset dvc_item, so that the subentries can correctly identify its parents dvc_item
             return None
-        else:
-            metadata = get_gui_metadata(obj)
-            if metadata is None:
-                return None
-            # we are not interested in the metadata of the
-            # cs.Select, but of its childs
-            metadata = metadata["child_gui_metadata"]
-            if metadata is None:
-                return None
-            if id(metadata["construct"]) not in self._subentries:
-                print("error")
-            subentry = self._subentries[id(metadata["construct"])]
-            return subentry
+
+        metadata = get_gui_metadata(obj)
+        if metadata is None:
+            return None
+
+        # we are not interested in the metadata of the
+        # cs.Select, but of its childs
+        metadata = metadata["child_gui_metadata"]
+        if metadata is None:
+            return None
+        if id(metadata["construct"]) not in self._subentries:
+            print("error")
+        subentry = self._subentries[id(metadata["construct"])]
+        return subentry
 
     @property
     def obj_str(self) -> str:
