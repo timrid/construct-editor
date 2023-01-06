@@ -1,4 +1,9 @@
 # Changelog
+## [Unreleased]
+Enhanced ConstructEditor:
+- `cs.Bytes`, `cs.GreedyBytes`, `cs.Array`, `cs.GreedyRange` now use the length of the object instead of evaluating the length using the saved context. The problem was, that in some cases the context is dyamically created and modified while parsing. So it is not save to use it afterwarts.
+
+-------------------------------------------------------------------------------
 ## [0.1.0] - 2023-01-03
 Complete refactoring of the code, so that core components of the construct-editor are seperated vom GUI components. That makes it theoretically possible to add multiple GUI frameworks in the future. Besides this the following notable enhancements are implemented:
 

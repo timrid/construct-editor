@@ -563,21 +563,14 @@ class EntryArray(EntrySubconstruct):
 
     @property
     def typ_str(self) -> str:
-        obj = self.obj
-
-        if isinstance(self.construct, cs.Array):
-            try:
-                metadata = get_gui_metadata(obj)
-                ctx = metadata["context"] if metadata is not None else None
-                count = evaluate(self.construct.count, ctx)
-                return f"Array[{count}]"
-            except Exception:
+        try:
+            obj = self.obj
+            return f"Array[{len(obj)}]"
+        except Exception:
+            if isinstance(self.construct, cs.Array):
                 return f"Array[{self.construct.count}]"
-        else:
-            try:
-                return f"Array[{len(self.obj)}]"
-            except Exception:
-                return f"GreedyRange"
+            else:
+                return "GreedyRange"
 
     @property
     def obj_str(self) -> str:
@@ -1057,20 +1050,13 @@ class EntryBytes(EntryConstruct):
 
     @property
     def typ_str(self) -> str:
-        obj = self.obj
-
-        if isinstance(self.construct, cs.Bytes):
-            try:
-                metadata = get_gui_metadata(obj)
-                ctx = metadata["context"] if metadata is not None else None
-                length = evaluate(self.construct.length, ctx)
-                return f"Byte[{length}]"
-            except Exception:
+        try:
+            obj = self.obj
+            return f"Byte[{len(obj)}]"
+        except Exception:
+            if isinstance(self.construct, cs.Bytes):
                 return f"Byte[{self.construct.length}]"
-        else:
-            try:
-                return f"Byte[{len(self.obj)}]"
-            except Exception:
+            else:
                 return "GreedyBytes"
 
     @property
