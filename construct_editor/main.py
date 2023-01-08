@@ -82,6 +82,7 @@ class ConstructGalleryFrame(wx.Frame):
             None, "Uncaught Exception...", ExceptionInfo(etype, value, trace)
         )
         dial.ShowModal()
+        dial.Destroy()
 
 
 class ConstructGallery(wx.Panel):
