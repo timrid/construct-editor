@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
-import io
 import typing as t
 
 import construct as cs
 import wx
 
-from construct_editor.helper.wrapper import EntryConstruct, StreamInfo
-from construct_editor.widgets.construct_editor import ConstructEditor
-from construct_editor.widgets.hex_editor import (
-    HexEditor,
-    HexEditorBinaryData,
-    HexEditorFormat,
-)
+from construct_editor.core.entries import EntryConstruct, StreamInfo
+from construct_editor.core.model import ConstructEditorModel
+from construct_editor.wx_widgets.wx_construct_editor import WxConstructEditor
+from construct_editor.wx_widgets.wx_hex_editor import HexEditorFormat, WxHexEditor
 
 
 class HexEditorPanel(wx.SplitterWindow):
-    def __init__(self, parent, name: str, read_only: bool = False, bitwiese: bool = False):
+    def __init__(
+        self, parent, name: str, read_only: bool = False, bitwiese: bool = False
+    ):
         super().__init__(parent, style=wx.SP_LIVE_UPDATE)
         self.SetSashGravity(0.5)
-        
+
         panel = wx.Panel(self)
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -40,17 +38,16 @@ class HexEditorPanel(wx.SplitterWindow):
             self._name_txt.SetLabelText(name)
 
         # Create HexEditor
-        self.hex_editor: HexEditor = HexEditor(
+        self.hex_editor: WxHexEditor = WxHexEditor(
             panel,
             b"",
             HexEditorFormat(width=16),
             read_only=read_only,
-            bitwiese=bitwiese
+            bitwiese=bitwiese,
         )
         vsizer.Add(self.hex_editor, 1)
         panel.SetSizer(vsizer)
 
-        
         self.Initialize(panel)
 
         self.sub_panel: t.Optional["HexEditorPanel"] = None
@@ -65,14 +62,16 @@ class HexEditorPanel(wx.SplitterWindow):
     def create_sub_panel(self, name: str, bitwise: bool) -> "HexEditorPanel":
         """Create a new sub-panel"""
         if self.sub_panel is None:
-            self.sub_panel = HexEditorPanel(self, name, read_only=True, bitwiese=bitwise)
+            self.sub_panel = HexEditorPanel(
+                self, name, read_only=True, bitwiese=bitwise
+            )
             self.SplitHorizontally(self.GetWindow1(), self.sub_panel)
             return self.sub_panel
         else:
             raise RuntimeError("sub-panel already created")
 
 
-class ConstructHexEditor(wx.Panel):
+class WxConstructHexEditor(wx.Panel):
     def __init__(
         self,
         parent,
@@ -119,7 +118,7 @@ class ConstructHexEditor(wx.Panel):
         )
 
     def _init_gui_construct_editor(self, hsizer: wx.BoxSizer, construct: cs.Construct):
-        self.construct_editor: ConstructEditor = ConstructEditor(
+        self.construct_editor: WxConstructEditor = WxConstructEditor(
             self,
             construct,
         )
@@ -151,40 +150,83 @@ class ConstructHexEditor(wx.Panel):
         self.Refresh()
         self.Thaw()
 
-    # Property: construct #####################################################
+    def change_construct(self, constr: cs.Construct) -> None:
+        """
+        Change the construct format, that is used for building/parsing.
+        """
+        self.construct_editor.change_construct(constr)
+
+    def change_contextkw(self, contextkw: dict):
+        """
+        Change the contextkw used for building/parsing.
+        """
+        self._contextkw = contextkw
+
+    def change_binary(self, binary: bytes):
+        """
+        Change the binary data, that should be displayed.
+        """
+        self.hex_panel.clear_sub_panels()
+        self.hex_panel.hex_editor.binary = binary
+
     @property
     def construct(self) -> cs.Construct:
-        """construct used for parsing"""
+        """
+        Construct that is used for displaying.
+        """
         return self.construct_editor.construct
 
     @construct.setter
-    def construct(self, val: cs.Construct):
-        self.construct_editor.construct = val
+    def construct(self, constr: cs.Construct):
+        self.construct_editor.construct = constr
 
-    # Property: contextkw #####################################################
     @property
     def contextkw(self) -> dict:
-        """contextkw used for parsing the construct"""
+        """
+        Context used for building/parsing.
+        """
         return self._contextkw
 
     @contextkw.setter
-    def contextkw(self, val: dict):
-        self._contextkw = val
+    def contextkw(self, contextkw: dict):
+        self.change_contextkw(contextkw)
 
-    # Property: root_obj ######################################################
-    @property
-    def root_obj(self) -> t.Any:
-        return self.construct_editor.root_obj
-
-    # Property: binary ########################################################
     @property
     def binary(self) -> bytes:
+        """
+        Binary data, that should be displayed.
+        """
         return self.hex_panel.hex_editor.binary
 
     @binary.setter
-    def binary(self, val: bytes):
-        self.hex_panel.clear_sub_panels()
-        self.hex_panel.hex_editor.binary = val
+    def binary(self, binary: bytes):
+        self.change_binary(binary)
+
+    @property
+    def hide_protected(self) -> bool:
+        """
+        Hide protected members.
+        A protected member starts with an undescore (_)
+        """
+        return self.construct_editor.hide_protected
+
+    @hide_protected.setter
+    def hide_protected(self, hide_protected: bool):
+        self.construct_editor.hide_protected = hide_protected
+
+    @property
+    def root_obj(self) -> t.Any:
+        """
+        Root object that is displayed
+        """
+        return self.construct_editor.root_obj
+
+    @property
+    def model(self) -> ConstructEditorModel:
+        """
+        Model with the displayed data.
+        """
+        return self.construct_editor.model
 
     # Internals ###############################################################
     def _convert_binary_to_struct(self):
@@ -195,7 +237,7 @@ class ConstructHexEditor(wx.Panel):
             self._converting = True
             self.Freeze()
             self.construct_editor.parse(
-                self.hex_panel.hex_editor.binary, **self.contextkw
+                self.hex_panel.hex_editor.binary, **self._contextkw
             )
         finally:
             self.Thaw()
@@ -206,21 +248,22 @@ class ConstructHexEditor(wx.Panel):
         try:
             self._converting = True
             self.Freeze()
-            binary = self.construct_editor.build(**self.contextkw)
+            binary = self.construct_editor.build(**self._contextkw)
             self.hex_panel.hex_editor.binary = binary
+            self._on_entry_selected(self.construct_editor.get_selected_entry())
         except Exception:
             pass  # ignore errors, because they are already shown in the gui
         finally:
             self.Thaw()
             self._converting = False
 
-    def _on_entry_selected(self, entry: EntryConstruct):
+    def _on_entry_selected(self, entry: t.Optional[EntryConstruct]):
         try:
             self.Freeze()
             self.hex_panel.clear_sub_panels()
-            # self._show_byte_range(entry, None)
-            stream_infos = entry.get_stream_infos()
-            self._show_stream_infos(stream_infos)
+            if entry is not None:
+                stream_infos = entry.get_stream_infos()
+                self._show_stream_infos(stream_infos)
         finally:
             self.Thaw()
 
@@ -231,7 +274,9 @@ class ConstructHexEditor(wx.Panel):
         # Create all Sub-Panels
         for idx, stream_info in enumerate(stream_infos):
             if idx != 0:  # dont create Sub-Panel for the root stream
-                hex_pnl = hex_pnl.create_sub_panel(".".join(stream_info.path), stream_info.bitstream)
+                hex_pnl = hex_pnl.create_sub_panel(
+                    stream_info.path_str, stream_info.bitstream
+                )
                 hex_pnl.hex_editor.binary = stream_info.stream.getvalue()
 
             panel_stream_mapping.append((hex_pnl, stream_info))

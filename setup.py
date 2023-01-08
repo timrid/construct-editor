@@ -8,9 +8,9 @@ setup(
     version=version_string,  # type: ignore
     packages=[
         "construct_editor",
+        "construct_editor.core",
         "construct_editor.gallery",
-        "construct_editor.helper",
-        "construct_editor.widgets",
+        "construct_editor.wx_widgets",
     ],
     package_data={
         "construct_editor": ["py.typed"],
@@ -30,10 +30,12 @@ setup(
     author="Tim Riddermann",
     python_requires=">=3.8",
     install_requires=[
-        "construct==2.10.67",
-        "construct-typing==0.5.1",
+        "construct==2.10.68",
+        "construct-typing==0.5.4",
         "wxPython>=4.1.1",
-        "arrow>=1.0.0"
+        "arrow>=1.0.0",
+        "wrapt>=1.14.0",
+        "typing-extensions>=4.4.0"
     ],
     keywords=[
         "gui",

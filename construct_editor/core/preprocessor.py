@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
+import copy
+import enum
 import io
+import typing as t
+
 import construct as cs
 import construct_typed as cst
-import typing as t
-import copy
+import wrapt
 
 
 class GuiMetaData(t.TypedDict):
@@ -37,38 +41,52 @@ class NoneWithGuiMetadata:
     pass
 
 
+class ObjProxyWithGuiMetaData(wrapt.ObjectProxy):
+    __slots__ = "__construct_editor_metadata__"
+
+    def __init__(self, wrapped: t.Any, gui_metadata: GuiMetaData):
+        super(ObjProxyWithGuiMetaData, self).__init__(wrapped)
+        wrapt.ObjectProxy.__setattr__(
+            self, "__construct_editor_metadata__", gui_metadata
+        )
+
+
 def get_gui_metadata(obj: t.Any) -> t.Optional[GuiMetaData]:
     """Get the GUI metadata if they are available"""
     try:
-        return obj.__gui_metadata  # type: ignore
+        return getattr(obj, "__construct_editor_metadata__")
     except Exception:
         return None
 
 
 def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
-    """Append the private field "__gui_metadata" to an object"""
+    """
+    Append the private field "__construct_editor_metadata__" to an object
+    """
     obj_type = type(obj)
-    if (obj_type is int) or (obj_type is bool):
+    if isinstance(obj, enum.Enum):
+        obj = ObjProxyWithGuiMetaData(obj, gui_metadata)
+    elif (obj_type is int) or (obj_type is bool):
         obj = IntWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata
+        obj.__construct_editor_metadata__ = gui_metadata
     elif obj_type is float:
         obj = FloatWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata
+        obj.__construct_editor_metadata__ = gui_metadata
     elif obj_type is bytes:
         obj = BytesWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata
+        obj.__construct_editor_metadata__ = gui_metadata
     elif obj_type is bytearray:
         obj = BytearrayWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata
+        obj.__construct_editor_metadata__ = gui_metadata
     elif obj_type is str:
         obj = StrWithGuiMetadata(obj)
-        obj.__gui_metadata = gui_metadata
+        obj.__construct_editor_metadata__ = gui_metadata
     elif obj is None:
         obj = NoneWithGuiMetadata()
-        obj.__gui_metadata = gui_metadata
+        obj.__construct_editor_metadata__ = gui_metadata
     else:
         try:
-            obj.__gui_metadata = gui_metadata  # type: ignore
+            obj.__construct_editor_metadata__ = gui_metadata  # type: ignore
         except AttributeError:
             raise ValueError(f"add_gui_metadata dont work with type of {type(obj)}")
     return obj
@@ -117,7 +135,7 @@ def include_metadata(
     we know the offset in the byte-stream and the length
     """
 
-    # ########## Simple Constructs ############################################
+    # Simple Constructs #######################################################
     if isinstance(
         constr,
         (
@@ -139,7 +157,7 @@ def include_metadata(
     ):
         return IncludeGuiMetaData(constr, bitwise)
 
-    # ########## Bitwiese Construct ###########################################
+    # Bitwiese Construct ######################################################
     elif (
         isinstance(constr, (cs.Restreamed))
         and (constr.decoder is cs.bytes2bits)
@@ -153,7 +171,7 @@ def include_metadata(
         constr.subcon = include_metadata(constr.subcon, bitwise=True)
         return IncludeGuiMetaData(constr, bitwise)
 
-    # ########## Subconstructs ################################################
+    # Subconstructs ###########################################################
     elif isinstance(
         constr,
         (
@@ -174,6 +192,7 @@ def include_metadata(
             cs.FixedSized,
             cs.NullStripped,
             cs.NullTerminated,
+            *custom_subconstructs,
         ),
     ):
         constr = copy.copy(constr)  # constr is modified, so we have to make a copy
@@ -276,3 +295,6 @@ def include_metadata(
     # - Transformed
     # - RestreamData
     raise ValueError(f"construct of type '{constr}' is not supported")
+
+
+custom_subconstructs: t.List[t.Type[cs.Subconstruct]] = []

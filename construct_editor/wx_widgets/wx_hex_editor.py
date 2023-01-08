@@ -1,31 +1,19 @@
 # -*- coding: utf-8 -*-
-import logging
-
 import dataclasses
-import wx
-import wx.stc
-import wx.grid as Grid
-import wx.lib.newevent
-from typing import Optional, Callable, List
+import logging
 import math
+import re
 import typing as t
 
-from construct_editor.helper import CallbackList
+import wx
+import wx.grid as Grid
+import wx.lib.newevent
+import wx.stc
+
+from construct_editor.core.callbacks import CallbackList
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False
-
-
-class BinaryChangedCallbackList(CallbackList[Callable[["HexEditorBinaryData"], None]]):
-    def fire(self, binary_data: "HexEditorBinaryData"):
-        for listener in self:
-            listener(binary_data)
-
-
-class SelectionChangedCallbackList(CallbackList[Callable[[int, Optional[int]], None]]):
-    def fire(self, start_idx: int, end_idx: Optional[int]):
-        for listener in self:
-            listener(start_idx, end_idx)
 
 
 # #####################################################################################################################
@@ -40,7 +28,7 @@ class HexEditorBinaryData:
     def __init__(self, binary: bytes) -> None:
         self._binary = bytearray(binary)
 
-        self.on_binary_changed = BinaryChangedCallbackList()
+        self.on_binary_changed: "CallbackList[[HexEditorBinaryData]]" = CallbackList()
         self.command_processor = wx.CommandProcessor()
 
     def overwrite_all(self, byts: bytes):
@@ -139,9 +127,9 @@ class HexEditorBinaryData:
         """get the value at the given index"""
         return self._binary[idx]
 
-    def get_range(self, idx: int, len: int):
+    def get_range(self, idx: int, length: int):
         """get the value at the given index"""
-        return bytes(self._binary[idx : idx + len])
+        return bytes(self._binary[idx : idx + length])
 
     def get_bytes(self) -> bytes:
         """return readonly version of the data"""
@@ -163,7 +151,7 @@ class HexEditorFormat:
 
 
 class HexEditorTable(Grid.GridTableBase):
-    def __init__(self, editor: "HexEditor", binary_data: HexEditorBinaryData):
+    def __init__(self, editor: "WxHexEditor", binary_data: HexEditorBinaryData):
         super().__init__()
 
         self._editor = editor
@@ -218,7 +206,10 @@ class HexEditorTable(Grid.GridTableBase):
         byte_idx = self.get_byte_idx(row, col)
         if value == "" and byte_idx >= len(self._binary_data):
             return
-        self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
+        try:
+            self._binary_data.overwrite_range(byte_idx, bytes([int(value, 16)]))
+        except Exception:
+            return
 
     def GetValue(self, row: int, col: int):
         byte_idx = self.get_byte_idx(row, col)
@@ -391,10 +382,20 @@ class HexTextCtrl(wx.TextCtrl):
         logger.debug("key down before evt=%s" % evt.GetKeyCode())
         key = evt.GetKeyCode()
 
+        if key == wx.WXK_BACK or key == wx.WXK_DELETE:
+            self.SetValue(self.startValue)
+            self.Clear()
+
         if key == wx.WXK_TAB:
             wx.CallAfter(self.parentgrid._advance_cursor)
             return
-        if key == wx.WXK_ESCAPE:
+        if (
+            key == wx.WXK_ESCAPE
+            or key == wx.WXK_UP
+            or key == wx.WXK_DOWN
+            or key == wx.WXK_LEFT
+            or key == wx.WXK_RIGHT
+        ):
             self.SetValue(self.startValue)
             wx.CallAfter(self.parentgrid._abort_edit)
             return
@@ -598,6 +599,20 @@ class HexCellEditor(Grid.GridCellEditor):
         return HexCellEditor(self.parentgrid)
 
 
+@dataclasses.dataclass
+class ContextMenuItem:
+    wx_id: int
+    name: str
+    callback: t.Callable[[wx.CommandEvent], t.Any]
+
+    # None = option
+    # True = toggle selected
+    # False = toggle unselected
+    toggle_state: t.Optional[bool]
+
+    enabled: bool
+
+
 # #####################################################################################################################
 # ############################################## Grid.Grid ############################################################
 # #####################################################################################################################
@@ -608,7 +623,7 @@ class HexEditorGrid(Grid.Grid):
 
     def __init__(
         self,
-        editor: "HexEditor",
+        editor: "WxHexEditor",
         table: HexEditorTable,
         binary_data: HexEditorBinaryData,
         read_only: bool = False,
@@ -618,7 +633,9 @@ class HexEditorGrid(Grid.Grid):
         self._table = table
         self._binary_data = binary_data
         self.read_only = read_only
-        self.on_selection_changed = SelectionChangedCallbackList()
+        self.on_selection_changed: "CallbackList[[int, t.Optional[int]]]" = (
+            CallbackList()
+        )
 
         # The second parameter means that the grid is to take
         # ownership of the table and will destroy it when done.
@@ -650,7 +667,7 @@ class HexEditorGrid(Grid.Grid):
 
         self.refresh()
 
-        self._selection: t.Tuple[Optional[int], Optional[int]] = (None, None)
+        self._selection: t.Tuple[t.Optional[int], t.Optional[int]] = (None, None)
 
     def refresh(self):
         """
@@ -739,7 +756,7 @@ class HexEditorGrid(Grid.Grid):
         idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
         self.ClearSelection()
         self._selection = (idx, None)
-        self.on_selection_changed.fire(start_idx=idx, end_idx=None)
+        self.on_selection_changed.fire(idx, None)
 
     def _on_range_selecting_mouse(self, event):
         """Change selection from a rectangular block to a range between two indexes"""
@@ -776,7 +793,13 @@ class HexEditorGrid(Grid.Grid):
                 other_idx = sel[0]
 
         cursor_row += row_diff
+        if cursor_row < 0:
+            return
+
         cursor_col += col_diff
+        if cursor_col < 0:
+            return
+
         cursor_idx = self._table.get_byte_idx(cursor_row, cursor_col)
 
         self.SetGridCursor(cursor_row, cursor_col)
@@ -793,6 +816,8 @@ class HexEditorGrid(Grid.Grid):
             idx1, idx2 = idx2, idx1
         start_row, start_col = self._table.get_byte_rowcol(idx1)
         end_row, end_col = self._table.get_byte_rowcol(idx2)
+        if start_row < 0 or end_row < 0:
+            return
 
         first_col = 0
         last_col = self._table.GetNumberCols() - 1
@@ -812,7 +837,7 @@ class HexEditorGrid(Grid.Grid):
             self.SelectBlock(start_row + 1, first_col, end_row - 1, last_col, True)
 
         self._selection = (idx1, idx2)
-        self.on_selection_changed.fire(start_idx=idx1, end_idx=idx2)
+        self.on_selection_changed.fire(idx1, idx2)
 
     def _cut_selection(self) -> bool:
         """
@@ -836,7 +861,7 @@ class HexEditorGrid(Grid.Grid):
         Remove the selected bytes
 
         Return:
-         - true if copy is okay
+         - true if remove is okay
          - false if an error occured
         """
         if self.read_only is True:
@@ -847,16 +872,41 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         if sel[1] == None:
-            len = 1
+            length = 1
         else:
-            len = sel[1] - sel[0] + 1
+            length = sel[1] - sel[0] + 1
 
-        byts = self._binary_data.remove_range(sel[0], len)
+        byts = self._binary_data.remove_range(sel[0], length)
 
         self.ClearSelection()
         self._selection = (None, None)
 
+        idx = self._table.get_byte_idx(self.GetGridCursorRow(), self.GetGridCursorCol())
+        if idx > len(self._editor.binary):
+            self.SetGridCursor(0, 0)
+        else:
+            self.SetGridCursor(self.GetGridCursorCoords())
+
         self.refresh()
+        return True
+
+    def _insert_byte_at_selection(self) -> bool:
+        """
+        Insert one byte at the current selection
+
+        Return:
+         - true if insertation is okay
+         - false if an error occured
+        """
+        if self.read_only is True:
+            return False
+
+        sel = self._selection
+        if sel[0] is None:
+            return False
+
+        self._binary_data.insert_range(sel[0], b"\x00")
+        self._on_range_selecting_keyboard()
         return True
 
     def _copy_selection(self) -> bool:
@@ -872,11 +922,11 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         if sel[1] == None:
-            len = 1
+            length = 1
         else:
-            len = sel[1] - sel[0] + 1
+            length = sel[1] - sel[0] + 1
 
-        byts = self._binary_data.get_range(sel[0], len)
+        byts = self._binary_data.get_range(sel[0], length)
 
         if wx.TheClipboard.Open():
             byts_str = byts.hex(" ")
@@ -918,17 +968,9 @@ class HexEditorGrid(Grid.Grid):
         clipboard = wx.TextDataObject()
         wx.TheClipboard.GetData(clipboard)
         wx.TheClipboard.Close()
-        byts_str: str = clipboard.GetText()
-
-        # convert string to bytes
-        try:
-            byts_str = byts_str.replace(" ", "")
-            byts = bytes.fromhex(byts_str)
-        except Exception as e:
-            wx.MessageBox(
-                f"Can't convert data from clipboard to bytes.\n\n{str(e)}\n\nClipboard Data:\n{byts_str}",
-                "Warning",
-            )
+        clipboard_txt: str = clipboard.GetText()
+        byts = self.string_to_byts(clipboard_txt)
+        if not byts:
             return False
 
         # copy new data to the binary data
@@ -939,6 +981,51 @@ class HexEditorGrid(Grid.Grid):
 
         self.select_range(sel[0], sel[0] + len(byts) - 1)
         return True
+
+    def string_to_byts(self, byts_str: str):
+        """
+        Normalize pasted string converting it to bytes (can be overridden).
+        Return a "bytes" variable, or None in case or error.
+
+        Possible Strings:
+         - 0102030405060708090a0b0c0d0e0f
+         - 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+         - 01.02.03.04.05.06.07.08.09.0a.0b.0c.0d.0e.0f
+         - 01-02-03-04-05-06-07-08-09-0a-0b-0c-0d-0e-0f
+         - 1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
+         - 1 2 3 4 5 6 7 8 9 a b c d e f
+         - "71 20 98 00 c0 7a 3e 6a 8d 7c c4 0d 04 10 02 f2 00"
+         - ("71 20 98 00 c0 7a 3e 6a 8d 7c c4 0d 04 10 02 f2 00")
+         - bytes.fromhex("71 20 98 00 c0 7a 3e 6a 8d 7c c4 0d 04 10 02 f2 00")
+         - '71209800c07a3e6a8d7cc40d041002f200'
+         - 0x12, 0x23, 0x45,
+         - b'\x00\x00\x00\xa4\xc18\xe1\x81_\x00\xcc#b\x0c\r\x15'
+        """
+        byts_str = re.sub(r".*[\"'](.*)[\"'].*", r"\1", byts_str)
+        try:
+            byts = bytes.fromhex(byts_str)
+            return byts
+        except Exception:
+            pass
+        try:
+            byts_str_conv = re.findall(r"[0-9A-Fa-fXx]+", byts_str)
+            byts = bytes(map(lambda x: int(x, 16), byts_str_conv))
+            return byts
+        except Exception:
+            pass
+        try:
+            byts = bytes(
+                byts_str.encode("utf8", "backslashreplace").decode("unicode_escape"),
+                encoding="raw_unicode_escape",
+            )
+            return byts
+        except Exception as e:
+            wx.MessageBox(
+                f"Can't convert data from clipboard to bytes.\n\n{str(e)}"
+                f"\n\nProcessed clipboard data:\n{byts_str}",
+                "Warning",
+            )
+        return None
 
     def _undo(self):
         self._binary_data.command_processor.Undo()
@@ -962,6 +1049,14 @@ class HexEditorGrid(Grid.Grid):
                     )
                 self.SetGridCursor(row, col)
                 self.MakeCellVisible(row, col)
+
+        # Del
+        elif event.GetKeyCode() == wx.WXK_DELETE:
+            self._remove_selection()
+
+        # Insert
+        elif event.GetKeyCode() == wx.WXK_INSERT:
+            self._insert_byte_at_selection()
 
         # Shift+Up
         elif event.ShiftDown() and event.GetKeyCode() == wx.WXK_UP:
@@ -1025,67 +1120,87 @@ class HexEditorGrid(Grid.Grid):
         if select_cell:
             self.SetGridCursor(event.GetRow(), event.GetCol())
 
-        menus = [
-            (
-                wx.ID_CUT,
-                "Cut\tCtrl+X",
-                lambda event: self._cut_selection(),
-                not self.read_only,
-            ),
-            (wx.ID_COPY, "Copy\tCtrl+C", lambda event: self._copy_selection(), True),
-            (
-                wx.ID_PASTE,
-                "Paste (overwrite)\tCtrl+V",
-                lambda event: self._paste(overwrite=True),
-                not self.read_only,
-            ),
-            (
-                wx.ID_PASTE,
-                "Paste (insert)\tCtrl+Shift+V",
-                lambda event: self._paste(insert=True),
-                not self.read_only,
-            ),
-            None,
-            (
-                wx.ID_UNDO,
-                "Undo\tCtrl+Z",
-                lambda event: self._undo(),
-                self._binary_data.command_processor.CanUndo(),
-            ),
-            (
-                wx.ID_REDO,
-                "Redo\tCtrl+Y",
-                lambda event: self._redo(),
-                self._binary_data.command_processor.CanRedo(),
-            ),
-        ]
-
         popup_menu = wx.Menu()
-        for menu in menus:
+        for menu in self.build_context_menu():
             if menu is None:
                 popup_menu.AppendSeparator()
                 continue
-            item: wx.MenuItem = popup_menu.Append(menu[0], menu[1])
-            self.Bind(wx.EVT_MENU, menu[2], id=item.Id)
-            item.Enable(menu[3])
+            if menu.toggle_state != None:  # checkbox boolean state
+                item: wx.MenuItem = popup_menu.AppendCheckItem(menu.wx_id, menu.name)
+                item.Check(menu.toggle_state)
+            else:
+                item: wx.MenuItem = popup_menu.Append(menu.wx_id, menu.name)
+            self.Bind(wx.EVT_MENU, menu.callback, id=item.Id)
+            item.Enable(menu.enabled)
 
         self.PopupMenu(popup_menu, event.GetPosition())
         popup_menu.Destroy()
 
+    def build_context_menu(
+        self,
+    ) -> t.List[t.Optional[ContextMenuItem]]:
+        """Build the context menu. Can be overridden."""
+
+        return [
+            ContextMenuItem(
+                wx.ID_CUT,
+                "Cut\tCtrl+X",
+                lambda event: self._cut_selection(),
+                None,
+                not self.read_only,
+            ),
+            ContextMenuItem(
+                wx.ID_COPY,
+                "Copy\tCtrl+C",
+                lambda event: self._copy_selection(),
+                None,
+                True,
+            ),
+            ContextMenuItem(
+                wx.ID_PASTE,
+                "Paste (overwrite)\tCtrl+V",
+                lambda event: self._paste(overwrite=True),
+                None,
+                not self.read_only,
+            ),
+            ContextMenuItem(
+                wx.ID_PASTE,
+                "Paste (insert)\tCtrl+Shift+V",
+                lambda event: self._paste(insert=True),
+                None,
+                not self.read_only,
+            ),
+            None,
+            ContextMenuItem(
+                wx.ID_UNDO,
+                "Undo\tCtrl+Z",
+                lambda event: self._undo(),
+                None,
+                self._binary_data.command_processor.CanUndo(),
+            ),
+            ContextMenuItem(
+                wx.ID_REDO,
+                "Redo\tCtrl+Y",
+                lambda event: self._redo(),
+                None,
+                self._binary_data.command_processor.CanRedo(),
+            ),
+        ]
+
 
 # #####################################################################################################################
-# ############################################## HexEditor ############################################################
+# ############################################## WxHexEditor ##########################################################
 # #####################################################################################################################
-class HexEditor(wx.Panel):
+class WxHexEditor(wx.Panel):
     """
-    HexEdior Panel.
+    HexEditor Panel.
     """
 
     def __init__(
         self,
         parent,
         binary: bytes = b"",
-        format: Optional[HexEditorFormat] = None,
+        format: t.Optional[HexEditorFormat] = None,
         read_only: bool = False,
         bitwiese: bool = False,
     ):
@@ -1133,7 +1248,7 @@ class HexEditor(wx.Panel):
         self._status_bar.SetStatusText(msg, 0)
         self.refresh()
 
-    def _on_selection_changed(self, idx1: int, idx2: Optional[int]):
+    def _on_selection_changed(self, idx1: int, idx2: t.Optional[int]):
         if idx2 is None:
             msg = f"Selection: {idx1:n}"
         else:
@@ -1187,12 +1302,12 @@ class HexEditor(wx.Panel):
 
     # Property: on_binary_changed #############################################
     @property
-    def on_binary_changed(self) -> BinaryChangedCallbackList:
+    def on_binary_changed(self) -> "CallbackList[[HexEditorBinaryData]]":
         return self._binary_data.on_binary_changed
 
     # Property: on_binary_changed #############################################
     @property
-    def on_selection_changed(self) -> SelectionChangedCallbackList:
+    def on_selection_changed(self) -> "CallbackList[[int, t.Optional[int]]]":
         return self._grid.on_selection_changed
 
 
@@ -1205,12 +1320,12 @@ if __name__ == "__main__":
             wx.Frame.__init__(self, parent, title=title, size=(420, 800))
 
             # Create an instance of our model...
-            self.hex_editor = HexEditor(self)
+            self.hex_editor = WxHexEditor(self)
 
             self.hex_editor.binary = bytearray(500)
 
             self.Show(True)
 
     app = wx.App(False)
-    frame = MyFrame(None, "HexEditor Example")
+    frame = MyFrame(None, "WxHexEditor Example")
     app.MainLoop()

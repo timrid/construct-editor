@@ -130,28 +130,7 @@ gallery_item = GalleryItem(
 # ######################################################################################
 # ################## Adding new constructs to construct-editor #########################
 # ######################################################################################
-import construct_editor.helper.preprocessor as cse_preprocessor  # type: ignore
-import construct_editor.helper.wrapper as cse_wrapper  # type: ignore
-
-cse_wrapper.construct_entry_mapping.update(
-    {
-        DefaultSized: cse_wrapper.EntryTransparentSubcon,
-    }
-)
-
-_original_include_metadata = cse_preprocessor.include_metadata
+import construct_editor.core.custom as custom
 
 
-def include_metadata(
-    constr: "cs.Construct[t.Any, t.Any]", bitwise: bool = False
-) -> "cs.Construct[t.Any, t.Any]":
-    if isinstance(constr, DefaultSized):
-        constr = copy.copy(constr)  # constr is modified, so we have to make a copy
-        constr.subcon = cse_preprocessor.include_metadata(constr.subcon, bitwise)
-        return cse_preprocessor.IncludeGuiMetaData(constr, bitwise)
-    else:
-        return _original_include_metadata(constr, bitwise)
-
-
-# monkey patch construct-editor
-cse_preprocessor.include_metadata = include_metadata
+custom.add_custom_transparent_subconstruct(DefaultSized)

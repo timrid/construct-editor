@@ -1,51 +1,53 @@
-from __future__ import annotations
-
-import dataclasses
 import sys
 import typing as t
-
 from pathlib import Path
-import construct as cs
+from types import TracebackType
+
 import wx
 from wx.lib.embeddedimage import PyEmbeddedImage
 
-import construct_editor.gallery.example_pe32coff
+import construct_editor.gallery.example_cmd_resp
 import construct_editor.gallery.example_ipstack
-import construct_editor.gallery.test_bytes_greedybytes
+import construct_editor.gallery.example_pe32coff
+import construct_editor.gallery.test_aligned
 import construct_editor.gallery.test_array
-import construct_editor.gallery.test_greedyrange
-import construct_editor.gallery.test_bitwise
 import construct_editor.gallery.test_bits_swapped_bitwise
+import construct_editor.gallery.test_bitwise
+import construct_editor.gallery.test_bytes_greedybytes
+import construct_editor.gallery.test_checksum
+import construct_editor.gallery.test_compressed
+import construct_editor.gallery.test_computed
+import construct_editor.gallery.test_const
+import construct_editor.gallery.test_dataclass_bit_struct
+import construct_editor.gallery.test_dataclass_struct
+import construct_editor.gallery.test_enum
+import construct_editor.gallery.test_fixedsized
+import construct_editor.gallery.test_flag
+import construct_editor.gallery.test_flagsenum
+import construct_editor.gallery.test_focusedseq
+import construct_editor.gallery.test_greedyrange
+import construct_editor.gallery.test_ifthenelse
+import construct_editor.gallery.test_ifthenelse_nested_switch
+import construct_editor.gallery.test_nullstripped
+import construct_editor.gallery.test_nullterminated
+import construct_editor.gallery.test_padded
+import construct_editor.gallery.test_padded_string
+import construct_editor.gallery.test_pass
+import construct_editor.gallery.test_pointer_peek_seek_tell
 import construct_editor.gallery.test_renamed
 import construct_editor.gallery.test_select
 import construct_editor.gallery.test_select_complex
-import construct_editor.gallery.test_ifthenelse
-import construct_editor.gallery.test_ifthenelse_nested_switch
+import construct_editor.gallery.test_stringencodded
 import construct_editor.gallery.test_switch
 import construct_editor.gallery.test_switch_dataclass
-import construct_editor.gallery.test_dataclass_struct
-import construct_editor.gallery.test_dataclass_bit_struct
-import construct_editor.gallery.test_flag
-import construct_editor.gallery.test_enum
-import construct_editor.gallery.test_flagsenum
 import construct_editor.gallery.test_tenum
 import construct_editor.gallery.test_tflagsenum
-import construct_editor.gallery.test_const
-import construct_editor.gallery.test_computed
-import construct_editor.gallery.test_focusedseq
 import construct_editor.gallery.test_timestamp
-import construct_editor.gallery.test_padded
-import construct_editor.gallery.test_aligned
-import construct_editor.gallery.test_pointer_peek_seek_tell
-import construct_editor.gallery.test_pass
-import construct_editor.gallery.test_fixedsized
-import construct_editor.gallery.test_nullstripped
-import construct_editor.gallery.test_nullterminated
-import construct_editor.gallery.test_checksum
-import construct_editor.gallery.test_compressed
-import construct_editor.gallery.test_stringencodded
-import construct_editor.gallery.example_cmd_resp
-from construct_editor.widgets.construct_hex_editor import ConstructHexEditor
+from construct_editor.wx_widgets import WxConstructHexEditor
+from construct_editor.wx_widgets.wx_exception_dialog import (
+    ExceptionInfo,
+    WxExceptionDialog,
+)
 
 
 class ConstructGalleryFrame(wx.Frame):
@@ -64,6 +66,9 @@ class ConstructGalleryFrame(wx.Frame):
         self.SetIcon(icon.GetIcon())
         self.Center()
 
+        # show uncatched exceptions in a dialog...
+        sys.excepthook = self.on_uncaught_exception
+
         self.main_panel = ConstructGallery(
             self,
             construct_gallery=construct_gallery,
@@ -71,6 +76,24 @@ class ConstructGalleryFrame(wx.Frame):
         )
 
         self.status_bar: wx.StatusBar = self.CreateStatusBar()
+
+    def on_uncaught_exception(
+        self, etype: t.Type[BaseException], value: BaseException, trace: TracebackType
+    ):
+        """
+        Handler for all unhandled exceptions.
+
+        :param `etype`: the exception type (`SyntaxError`, `ZeroDivisionError`, etc...);
+        :type `etype`: `Exception`
+        :param string `value`: the exception error message;
+        :param string `trace`: the traceback header, if any (otherwise, it prints the
+        standard Python header: ``Traceback (most recent call last)``.
+        """
+        dial = WxExceptionDialog(
+            None, "Uncaught Exception...", ExceptionInfo(etype, value, trace)
+        )
+        dial.ShowModal()
+        dial.Destroy()
 
 
 class ConstructGallery(wx.Panel):
@@ -92,6 +115,7 @@ class ConstructGallery(wx.Panel):
         "Test: BitsSwapped/Bitwiese": construct_editor.gallery.test_bits_swapped_bitwise.gallery_item,
         "## strings #######################": None,
         "Test: StringEncoded": construct_editor.gallery.test_stringencodded.gallery_item,
+        "Test: PaddedString": construct_editor.gallery.test_padded_string.gallery_item,
         "## mappings ######################": None,
         "Test: Flag": construct_editor.gallery.test_flag.gallery_item,
         "Test: Enum": construct_editor.gallery.test_enum.gallery_item,
@@ -256,12 +280,12 @@ class ConstructGallery(wx.Panel):
         )
 
         # construct hex editor
-        self.construct_hex_editor = ConstructHexEditor(
+        self.construct_hex_editor = WxConstructHexEditor(
             self,
             construct=default_gallery_item.construct,
             contextkw=default_gallery_item.contextkw,
         )
-        self.construct_hex_editor.construct_editor.expand_all()
+        # self.construct_hex_editor.construct_editor.expand_all()
         self.sizer.Add(self.construct_hex_editor, 1, wx.ALL | wx.EXPAND, 0)
 
         self.SetSizer(self.sizer)
@@ -308,8 +332,8 @@ class ConstructGallery(wx.Panel):
             example_binary = bytes(0)
 
         self.Freeze()
-        self.construct_hex_editor.construct = gallery_item.construct
-        self.construct_hex_editor.contextkw = gallery_item.contextkw
+        self.construct_hex_editor.change_construct(gallery_item.construct)
+        self.construct_hex_editor.change_contextkw(gallery_item.contextkw)
         self.construct_hex_editor.binary = example_binary
         self.construct_hex_editor.construct_editor.expand_all()
         self.Thaw()

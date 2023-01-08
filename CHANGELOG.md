@@ -1,5 +1,32 @@
 # Changelog
 ## [Unreleased]
+Enhanced ConstructEditor:
+- `cs.Bytes`, `cs.GreedyBytes`, `cs.Array`, `cs.GreedyRange` now use the length of the object instead of evaluating the length using the saved context. The problem was, that in some cases the context is dyamically created and modified while parsing. So it is not save to use it afterwarts.
+
+-------------------------------------------------------------------------------
+## [0.1.0] - 2023-01-03
+Complete refactoring of the code, so that core components of the construct-editor are seperated vom GUI components. That makes it theoretically possible to add multiple GUI frameworks in the future. Besides this the following notable enhancements are implemented:
+
+Enhanced ConstructEditor:
+- Any keypress of an printable key will start editing an item. No ENTER or double click is reqired any more.
+- Protected entries (starting with _) are not visible in list view if "hide protected" is activated. (#13)
+- Implemented checkbox for `cs.Flag`
+- Fixed bug with PaddedString (#14)
+- Added module "construct_editor.core.custom" for easier addition of custom constructs.
+- Show arrays appropriately (use .[number]. instead of .number.) (#18)
+- Show full tooltip of the "name" column, which when fields are too long is shown with ellipses. (#18)
+- Implemented "Copy" / Ctrl+C (#18)
+- Added "Copy path to clipboard" button in the context menu (#18)
+- Fixed a bug, when a struct has multiple times the same `Enum` construct. Then the metadata (eg. byte position) of the last parsed enum value is used for all enum values.
+- Added exception dialog to show the complete parse/build exception.
+
+Enhanced HexEditor:
+- fix crash when selecting or extending selection before the beginning of the hex editor using the shift LEFT and UP arrow keys (#20)
+- Add DELETE key to remove a single byte (#20)
+- Add INSERT key to add a single byte (#20)
+- Add BACK and DELETE key in hex cell editor (#20)
+- Add basic arrow keys in hex cell editor doing the same as Escape (#20)
+- Optimize paste from clipboard (#17)
 
 -------------------------------------------------------------------------------
 ## [0.0.19] - 2022-09-07

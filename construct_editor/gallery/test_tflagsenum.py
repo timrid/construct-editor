@@ -81,6 +81,7 @@ class FlagsEnumTest(cst.DataclassMixin):
     permissions: Permission = cst.csfield(cst.TFlagsEnum(cs.Int8ul, Permission))
     days: Day = cst.csfield(cst.TFlagsEnum(cs.Int8ul, Day))
     long_list: LongList = cst.csfield(cst.TFlagsEnum(cs.Int64ul, LongList))
+    days2: Day = cst.csfield(cst.TFlagsEnum(cs.Int8ul, Day))
 
 
 constr = cst.DataclassStruct(FlagsEnumTest)
@@ -93,6 +94,7 @@ gallery_item = GalleryItem(
                 permissions=Permission.R | Permission.W,
                 days=Day.Monday | Day.Sunday,
                 long_list=LongList.Entry49 | LongList.Entry50,
+                days2=Day.Monday | Day.Sunday,
             )
         ),
         "1": constr.build(
@@ -100,6 +102,7 @@ gallery_item = GalleryItem(
                 permissions=Permission.R,
                 days=Day.Monday,
                 long_list=LongList.Entry0,
+                days2=Day.Monday,
             )
         ),
         "Zeros": constr.build(
@@ -107,6 +110,7 @@ gallery_item = GalleryItem(
                 permissions=Permission(0),
                 days=Day(0),
                 long_list=LongList(0),
+                days2=Day(0),
             )
         ),
     },
