@@ -32,7 +32,7 @@ This is a simple example
 ```python
 import wx
 import construct as cs
-from construct_editor.widgets.wx import WxConstructHexEditor
+from construct_editor.wx_widgets import WxConstructHexEditor
 
 constr = cs.Struct(
     "a" / cs.Int16sb,
