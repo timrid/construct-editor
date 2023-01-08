@@ -34,7 +34,8 @@ setup(
         "construct-typing==0.5.4",
         "wxPython>=4.1.1",
         "arrow>=1.0.0",
-        "wrapt>=1.14.0"
+        "wrapt>=1.14.0",
+        "typing-extensions>=4.4.0"
     ],
     keywords=[
         "gui",
