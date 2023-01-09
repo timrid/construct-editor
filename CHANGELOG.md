@@ -2,6 +2,7 @@
 ## [Unreleased]
 Enhanced ConstructEditor:
 - `cs.Bytes`, `cs.GreedyBytes`, `cs.Array`, `cs.GreedyRange` now use the length of the object instead of evaluating the length using the saved context. The problem was, that in some cases the context is dyamically created and modified while parsing. So it is not save to use it afterwarts.
+- `cs.Struct._subcons` and `cs.FocusedSeq._subcons` are now correctly updated and accessable
 
 -------------------------------------------------------------------------------
 ## [0.1.0] - 2023-01-03

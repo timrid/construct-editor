@@ -125,6 +125,9 @@ class IncludeGuiMetaData(cs.Subconstruct):
         buildret = self.subcon._build(obj, stream, context, path)  # type: ignore
         return obj
 
+    # passthrought attribute access
+    def __getattr__(self, name):
+        return getattr(self.subcon, name)
 
 # #############################################################################
 def include_metadata(
@@ -206,6 +209,7 @@ def include_metadata(
         for subcon in constr.subcons:
             new_subcons.append(include_metadata(subcon, bitwise))
         constr.subcons = new_subcons
+        constr._subcons = cs.Container((sc.name,sc) for sc in constr.subcons if sc.name)
         return IncludeGuiMetaData(constr, bitwise)
 
     # FocusedSeq ##############################################################
@@ -215,6 +219,7 @@ def include_metadata(
         for subcon in constr.subcons:
             new_subcons.append(include_metadata(subcon, bitwise))
         constr.subcons = new_subcons
+        constr._subcons = cs.Container((sc.name,sc) for sc in constr.subcons if sc.name)
         return IncludeGuiMetaData(constr, bitwise)
 
     # Select ##################################################################
