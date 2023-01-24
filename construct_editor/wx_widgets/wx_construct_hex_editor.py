@@ -269,6 +269,7 @@ class WxConstructHexEditor(wx.Panel):
 
     def _show_stream_infos(self, stream_infos: t.List[StreamInfo]):
         hex_pnl = self.hex_panel
+        hex_pnl.hex_editor._grid.ClearSelection()
         panel_stream_mapping: t.List[t.Tuple[HexEditorPanel, StreamInfo]] = []
 
         # Create all Sub-Panels
