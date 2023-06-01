@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+Enhanced ConstructEditor:
+- Fixed wrong enum name in Python 3.11 (#30)
+
+-------------------------------------------------------------------------------
 ## [0.1.2] - 2023-05-09
 - updated construct-typing dependency to v0.5.6
 

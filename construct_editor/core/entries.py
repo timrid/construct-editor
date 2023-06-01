@@ -1711,6 +1711,10 @@ class EntryFlagsEnum(EntrySubconstruct):
 
 
 # EntryTEnum ##########################################################################################################
+def get_enum_name(e: cst.EnumBase):
+    return f"{e.__class__.__name__}.{e.name}"
+
+
 class EntryTEnum(EntrySubconstruct):
     construct: "cst.TEnum[Any]"
 
@@ -1731,7 +1735,8 @@ class EntryTEnum(EntrySubconstruct):
     @property
     def obj_str(self) -> str:
         try:
-            return f"{int_to_str(self.model.integer_format, int(self.obj.value))} ({str(self.obj)})"
+            obj: cst.EnumBase = self.obj
+            return f"{int_to_str(self.model.integer_format, int(obj.value))} ({get_enum_name(obj)})"
         except Exception:
             return str(self.obj)
 
@@ -1744,13 +1749,15 @@ class EntryTEnum(EntrySubconstruct):
         items: t.List[EnumItem] = []
         enum_type: t.Type[cst.EnumBase] = self.construct.enum_type
         for e in enum_type:
-            items.append(EnumItem(name=str(e), value=e.value))
+            items.append(
+                EnumItem(name=get_enum_name(e), value=e.value)
+            )
         return items
 
     def get_enum_item_from_obj(self) -> EnumItem:
         """Get items to select in the ComboBox"""
         obj: cst.EnumBase = self.obj
-        return EnumItem(name=str(obj), value=obj.value)
+        return EnumItem(name=get_enum_name(obj), value=obj.value)
 
     def conv_str_to_obj(self, s: str) -> Any:
         """Convert string (enum name or integer value) to object"""
