@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.3] - 2023-06-01
 Enhanced ConstructEditor:
 - Fixed wrong enum name in Python 3.11 (#30)
 
