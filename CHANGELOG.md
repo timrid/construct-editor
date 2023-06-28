@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.4] - 2023-06-028
+Enhanced ConstructEditor:
+- Fixed wrong enum flags name in Python 3.11
+
+-------------------------------------------------------------------------------
 ## [0.1.3] - 2023-06-01
 Enhanced ConstructEditor:
 - Fixed wrong enum name in Python 3.11 (#30)
