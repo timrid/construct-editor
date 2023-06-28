@@ -1818,7 +1818,7 @@ class EntryTFlagsEnum(EntrySubconstruct):
         for flag in enum_type:
             items.append(
                 FlagsEnumItem(
-                    name=str(flag),
+                    name=flag.name,
                     value=flag.value,
                     checked=True if flag & obj == flag else False,
                 )
