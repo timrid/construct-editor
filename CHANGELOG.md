@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.1.4] - 2023-06-028
+## [0.1.5] - 2023-07-24
+- updated construct-typing dependency to v0.6.*
+
+-------------------------------------------------------------------------------
+
+## [0.1.4] - 2023-06-28
 Enhanced ConstructEditor:
 - Fixed wrong enum flags name in Python 3.11
 
