@@ -110,7 +110,7 @@ class WxConstructHexEditor(wx.Panel):
 
     def _init_gui_hex_visibility(self, hsizer: wx.BoxSizer):
         self.toggle_hex_visibility_btn = wx.Button(
-            self, wx.ID_ANY, "«", size=wx.Size(12, -1)
+            self, wx.ID_ANY, "«", style=wx.BU_EXACTFIT
         )
         hsizer.Add(self.toggle_hex_visibility_btn, 0, wx.EXPAND | wx.ALL, 0)
         self.toggle_hex_visibility_btn.Bind(
