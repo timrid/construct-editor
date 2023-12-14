@@ -502,7 +502,8 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         # visible area. I guess the flickering comes, because at first the
         # fixed size is used and then an Event occures an sets the corret size
         # of the dvc. This Yield forces to process this event.
-        wx.Yield()
+        if 'wxGTK' not in wx.PlatformInfo:
+            wx.Yield()
 
     def _rename_dvc_columns(self, entry: EntryConstruct):
         """
