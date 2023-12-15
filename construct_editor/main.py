@@ -55,7 +55,8 @@ class ConstructGalleryFrame(wx.Frame):
         super().__init__(*args, **kwargs)
 
         self.SetTitle("Construct Gallery")
-        self.SetSize(1600, 1000)
+        width, height = wx.GetDisplaySize()
+        self.SetSize(int(width * 90 / 100), int(height * 90 / 100))
         self.SetIcon(icon.GetIcon())
         self.Center()
 
