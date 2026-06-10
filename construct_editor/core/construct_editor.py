@@ -6,7 +6,7 @@ import construct as cs
 
 import construct_editor.core.entries as entries
 from construct_editor.core.callbacks import CallbackList
-from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
+from construct_editor.core.model import ConstructEditorModel
 from construct_editor.core.preprocessor import include_metadata
 
 

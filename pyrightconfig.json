@@ -1,8 +1,0 @@
-{
-    "exclude": [
-        ".venv",
-        ".venv_38",
-        ".venv_39",
-        ".venv_310"
-    ]
-}

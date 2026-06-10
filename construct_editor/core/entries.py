@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import dataclasses
-import enum
 import io
 import string
 import typing as t

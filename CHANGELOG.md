@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0] - 2026-06-09
+- bumped minimum required Python version to 3.10 (previousl: 3.8 which has reached end-of-life)
+- updated `typing_extensions` dependency to >=4.12.0 for Python 3.13 compatibility
+- removed `version.py`, use `importlib.metadata` instead to get the version number
+
+-------------------------------------------------------------------------------
+
 ## [0.1.5] - 2023-07-24
 - updated construct-typing dependency to v0.6.*
 
@@ -53,7 +60,7 @@ Enhanced HexEditor:
 -------------------------------------------------------------------------------
 ## [0.0.19] - 2022-09-07
 Enhanced ConstructHexEditor:
-- Fixed a bug which leads to an "Fatal Python error" as of wxPython 4.2.
+- Fixed a bug which leads to "Fatal Python error" as of wxPython 4.2.
 
 -------------------------------------------------------------------------------
 ## [0.0.18] - 2022-09-07

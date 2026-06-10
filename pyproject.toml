@@ -1,0 +1,176 @@
+[build-system]
+requires = ["setuptools>=82.0.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "construct-editor"
+version = "0.2.0"
+description = "GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Tim Riddermann" }]
+requires-python = ">=3.10"
+keywords = [
+    "gui",
+    "wx",
+    "wxpython",
+    "widget",
+    "binary",
+    "editor",
+    "construct",
+    "kaitai",
+    "declarative",
+    "data structure",
+    "struct",
+    "symmetric",
+    "parser",
+    "builder",
+    "parsing",
+    "building",
+    "pack",
+    "unpack",
+    "packer",
+    "unpacker",
+    "bitstring",
+    "bytestring",
+    "bitstruct",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Typing :: Typed",
+]
+dependencies = [
+    "arrow>=1.0.0",
+    "construct>=2.10.68",
+    "construct-typing==0.7.*",
+    "typing-extensions>=4.12.0",
+    "wrapt>=1.14.0",
+    "wxPython>=4.2.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/timrid/construct-editor"
+
+[project.gui-scripts]
+construct-editor = "construct_editor.main:main"
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.46.0",
+    "pyright>=1.1.410",
+    "ruff>=0.15.16",
+    "ty>=0.0.46",
+    "cryptography",  # optional "extra" from construct that the user may or may not have installed
+    "cloudpickle",  # optional "extra" from construct that the user may or may not have installed
+    "lz4",  # optional "extra" from construct that the user may or may not have installed
+    "numpy>=1.20.0",  # optional "extra" from construct that the user may or may not have installed
+    "ruamel.yaml",  # optional "extra" from construct that the user may or may not have installed
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "construct_editor",
+    "construct_editor.core",
+    "construct_editor.gallery",
+    "construct_editor.wx_widgets",
+]
+
+[tool.setuptools.package-data]
+construct_editor = ["py.typed"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    ".history",
+    ".venv",
+    ".venv*",
+    "build",
+    "dist",
+    "libs",
+]
+
+# These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
+# Valid values: "error", "warning", "information", "none"
+reportArgumentType = "none"
+reportAttributeAccessIssue = "none"
+reportGeneralTypeIssues = "none"
+reportIncompatibleMethodOverride = "none"
+reportInvalidTypeArguments = "none"
+reportMissingParameterType = "none"
+reportMissingTypeArgument = "none"
+reportMissingTypeStubs = "none"
+reportOptionalMemberAccess = "none"
+reportUnknownArgumentType = "none"
+reportUnknownLambdaType = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
+reportUnknownVariableType = "none"
+reportUnnecessaryComparison = "none"
+reportUnusedVariable = "none"
+# These "unnecessary isinstance" checks often enhance readability or increase the future-proofness of the code,
+# since you can then explicitly "raise" for other types. So we don't want to complain about them.
+reportUnnecessaryIsInstance = "none"
+
+[tool.ty.src]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    ".history",
+    ".venv",
+    ".venv*",
+    "build",
+    "dist",
+    "libs",
+]
+
+# These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
+# Valid values: "error", "warn", "ignore"
+[tool.ty.rules]
+invalid-assignment = "ignore"
+invalid-method-override = "ignore"
+invalid-type-arguments = "ignore"
+unresolved-attribute = "ignore"
+unused-type-ignore-comment = "ignore"
+
+[tool.ty.terminal]
+error-on-warning = true
+output-format = "concise"  # "full" | "concise" | "github" | "gitlab" | "junit"
+
+[tool.ruff]
+line-length = 140
+indent-width = 4
+output-format = "concise"  # "full" | "concise" | "grouped" | "json" | "junit" | "github" | "gitlab" | "pylint" | "azure"
+
+[tool.ruff.lint]
+allowed-confusables = ["×", "–", "‘", "’"]
+
+# select = [] Use Default ruleset, cp. https://docs.astral.sh/ruff/rules/
+
+# These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
+ignore = [
+    "E402",  # Module level import not at top of file
+    "E711",  # Comparison to `None` should be `cond is None`
+    "E712",  # Avoid equality comparisons to `True`
+    "F403",  # `from ... import *` used; unable to detect undefined names
+    "F405",  # `...` may be undefined, or defined from star imports
+    "F841",  # Local variable `...` is assigned to but never used
+]
+
+[tool.poe.tasks.typecheck]
+sequence = [
+    { cmd = "ruff check --fix --show-fixes" },
+    { cmd = "ty check" },
+    { cmd = "pyright" },
+]
+executor = {type = "uv", isolated = true}

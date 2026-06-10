@@ -13,7 +13,7 @@ class CallbackList(Generic[P]):
 
     def append(self, callback: Callable[P, None]):
         """
-        Add new callback function to the list (ignroe duplicates)
+        Add new callback function to the list (ignore duplicates)
         """
         if callback not in self._callbacks:
             self._callbacks.append(callback)

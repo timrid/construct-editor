@@ -7,8 +7,6 @@ import typing as t
 
 import wx
 import wx.grid as Grid
-import wx.lib.newevent
-import wx.stc
 
 from construct_editor.core.callbacks import CallbackList
 

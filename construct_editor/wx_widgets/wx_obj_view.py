@@ -12,7 +12,6 @@ from construct_editor.core.entries import (
     FlagsEnumItem,
     ObjViewSettings,
     ObjViewSettings_Bytes,
-    ObjViewSettings_Default,
     ObjViewSettings_Enum,
     ObjViewSettings_Flag,
     ObjViewSettings_FlagsEnum,
