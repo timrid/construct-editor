@@ -18,6 +18,7 @@ import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_const
+import construct_editor.gallery.test_default
 import construct_editor.gallery.test_dataclass_bit_struct
 import construct_editor.gallery.test_dataclass_struct
 import construct_editor.gallery.test_enum
@@ -60,29 +61,23 @@ class ConstructGalleryFrame(wx.Frame):
         self.Center()
 
         # show uncatched exceptions in a dialog...
-        sys.excepthook = self.on_uncaught_exception
+        sys.excepthook = on_uncaught_exception
 
         self.main_panel = ConstructGallery(self)
 
         self.status_bar: wx.StatusBar = self.CreateStatusBar()
 
-    def on_uncaught_exception(
-        self, etype: t.Type[BaseException], value: BaseException, trace: TracebackType
-    ):
-        """
-        Handler for all unhandled exceptions.
 
-        :param `etype`: the exception type (`SyntaxError`, `ZeroDivisionError`, etc...);
-        :type `etype`: `Exception`
-        :param string `value`: the exception error message;
-        :param string `trace`: the traceback header, if any (otherwise, it prints the
-        standard Python header: ``Traceback (most recent call last)``.
-        """
-        dial = WxExceptionDialog(
-            None, "Uncaught Exception...", ExceptionInfo(etype, value, trace)
-        )
+def on_uncaught_exception(etype: t.Type[BaseException], value: BaseException, trace: TracebackType | None):
+    """
+    Handler for all unhandled exceptions.
+
+    :param etype: the exception type (`SyntaxError`, `ZeroDivisionError`, etc...);
+    :param value: the exception error message;
+    :param trace: the traceback header, if any (otherwise, it prints the standard Python header: ``Traceback (most recent call last)``.
+    """
+    with WxExceptionDialog(None, "Uncaught Exception...", ExceptionInfo(etype, value, trace)) as dial:
         dial.ShowModal()
-        dial.Destroy()
 
 
 class ConstructGallery(wx.Panel):
@@ -126,13 +121,13 @@ class ConstructGallery(wx.Panel):
             "## specials ##########################": None,
             "Test: Renamed": construct_editor.gallery.test_renamed.gallery_item,
             "## miscellaneous ##########################": None,
-            "Test: Const": construct_editor.gallery.test_const.gallery_item,
+            # "Test: Check (TODO)": None,
             "Test: Computed": construct_editor.gallery.test_computed.gallery_item,
+            "Test: Const": construct_editor.gallery.test_const.gallery_item,
+            "Test: Default": construct_editor.gallery.test_default.gallery_item,
+            # "Test: Error (TODO)": None,
             # "Test: Index (TODO)": None,
             # "Test: Rebuild (TODO)": None,
-            # "Test: Default (TODO)": None,
-            # "Test: Check (TODO)": None,
-            # "Test: Error (TODO)": None,
             "Test: FocusedSeq": construct_editor.gallery.test_focusedseq.gallery_item,
             # "Test: Pickled (TODO)": None,
             # "Test: Numpy (TODO)": None,
@@ -285,9 +280,7 @@ class ConstructGallery(wx.Panel):
         selection = self.gallery_selector_lbx.GetStringSelection()
         gallery_item = self.construct_gallery[selection]
         if gallery_item is None:
-            self.gallery_selector_lbx.SetSelection(
-                self.gallery_selection
-            )  # restore old selection
+            self.gallery_selector_lbx.SetSelection(self.gallery_selection)  # restore old selection
             return
 
         # save currently shown selection
@@ -335,7 +328,6 @@ class ConstructGallery(wx.Panel):
             wildcard="binary files (*.*)|*.*",
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
         ) as fileDialog:
-
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return  # the user changed their mind
 

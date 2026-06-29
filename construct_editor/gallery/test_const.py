@@ -12,11 +12,9 @@ class CarBrand(cst.EnumBase):
 
 @dataclasses.dataclass
 class Car(cst.DataclassMixin):
-    const_brand: CarBrand = cst.csfield(
-        cs.Const(CarBrand.Audi, cst.TEnum(cs.Int8ul, CarBrand))
-    )
-    const_int: int = cst.csfield(cs.Const(15, cs.Int8ul))
-    const_bytes: bytes = cst.csfield(cs.Const(b"1234"))
+    const_brand: CarBrand = cst.csfield_const(cst.TEnum(cs.Int8ul, CarBrand), CarBrand.Audi)
+    const_int: int = cst.csfield_const(cs.Int8ul, 15)
+    const_bytes: bytes = cst.csfield_const(cs.Bytes(4), b"1234")
 
 
 constr = cst.DataclassStruct(Car)

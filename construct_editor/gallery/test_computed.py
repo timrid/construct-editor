@@ -6,13 +6,11 @@ from . import GalleryItem
 
 @dataclasses.dataclass
 class ComputedTest(cst.DataclassMixin):
-    type_int: int = cst.csfield(cs.Computed(lambda ctx: 50))
-    type_float: float = cst.csfield(cs.Computed(lambda ctx: 80.0))
-    type_bool: bool = cst.csfield(cs.Computed(lambda ctx: True))
-    type_bytes: bytes = cst.csfield(cs.Computed(lambda ctx: bytes([0x00, 0xAB])))
-    type_bytearray: bytearray = cst.csfield(
-        cs.Computed(lambda ctx: bytearray([0x00, 0xAB, 0xFF]))
-    )
+    type_int: int | None = cst.csfield_noinit(cs.Computed(lambda ctx: 50))
+    type_float: float | None = cst.csfield_noinit(cs.Computed(lambda ctx: 80.0))
+    type_bool: bool | None = cst.csfield_noinit(cs.Computed(lambda ctx: True))
+    type_bytes: bytes | None = cst.csfield_noinit(cs.Computed(lambda ctx: bytes([0x00, 0xAB])))
+    type_bytearray: bytearray | None = cst.csfield_noinit(cs.Computed(lambda ctx: bytearray([0x00, 0xAB, 0xFF])))
 
 
 constr = cst.DataclassStruct(ComputedTest)
