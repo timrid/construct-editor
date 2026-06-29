@@ -68,13 +68,13 @@ class ConstructGalleryFrame(wx.Frame):
         self.status_bar: wx.StatusBar = self.CreateStatusBar()
 
 
-def on_uncaught_exception(etype: t.Type[BaseException], value: BaseException, trace: TracebackType | None):
+def on_uncaught_exception(etype: t.Type[BaseException], value: BaseException, trace: TracebackType | None) -> None:
     """
     Handler for all unhandled exceptions.
 
     :param etype: the exception type (`SyntaxError`, `ZeroDivisionError`, etc...);
     :param value: the exception error message;
-    :param trace: the traceback header, if any (otherwise, it prints the standard Python header: ``Traceback (most recent call last)``.
+    :param trace: the traceback header, if any (otherwise, it prints the standard Python header: ``Traceback (most recent call last)``).
     """
     with WxExceptionDialog(None, "Uncaught Exception...", ExceptionInfo(etype, value, trace)) as dial:
         dial.ShowModal()

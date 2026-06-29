@@ -1320,7 +1320,7 @@ if __name__ == "__main__":
             # Create an instance of our model...
             self.hex_editor = WxHexEditor(self)
 
-            self.hex_editor.binary = bytearray(500)
+            self.hex_editor.binary = bytes(500)
 
             self.Show(True)
 
