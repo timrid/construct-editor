@@ -28,10 +28,10 @@ from construct_editor.core.entries import (
 # Value Editors
 # #####################################################################################################################
 class WxObjEditor_Default(wx.TextCtrl):
-    def __init__(self, parent, settings: ObjViewSettings):
+    def __init__(self, parent: wx.Window, settings: ObjViewSettings):
         self.entry = settings.entry
 
-        super(wx.TextCtrl, self).__init__(
+        super().__init__(
             parent,
             wx.ID_ANY,
             self.entry.obj_str,
@@ -48,7 +48,7 @@ class WxObjEditor_String(wx.TextCtrl):
     def __init__(self, parent, settings: ObjViewSettings_String):
         self.entry = settings.entry
 
-        super(wx.TextCtrl, self).__init__(
+        super().__init__(
             parent,
             wx.ID_ANY,
             self.entry.obj_str,
@@ -66,7 +66,7 @@ class WxObjEditor_Integer(wx.TextCtrl):
     def __init__(self, parent, settings: ObjViewSettings_Integer):
         self.entry = settings.entry
 
-        super(wx.TextCtrl, self).__init__(
+        super().__init__(
             parent,
             wx.ID_ANY,
             self.entry.obj_str,
@@ -91,7 +91,7 @@ class WxObjEditor_Bytes(wx.TextCtrl):
     def __init__(self, parent, settings: ObjViewSettings_Bytes):
         self.entry = settings.entry
 
-        super(wx.TextCtrl, self).__init__(
+        super().__init__(
             parent,
             wx.ID_ANY,
             settings.entry.obj_str,

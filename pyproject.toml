@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=82.0.1", "wheel"]
+requires = ["setuptools>=83.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "construct-editor"
 version = "0.2.0"
 description = "GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data."
 readme = "README.md"
-license = "MIT"
+license = { file = "LICENSE" }
 authors = [{ name = "Tim Riddermann" }]
 requires-python = ">=3.10"
 keywords = [
@@ -63,10 +63,11 @@ construct-editor = "construct_editor.main:main"
 
 [dependency-groups]
 dev = [
-    "poethepoet>=0.46.0",
-    "pyright>=1.1.410",
-    "ruff>=0.15.16",
-    "ty>=0.0.46",
+    "poethepoet>=0.48.0",
+    "pyright>=1.1.411",
+    "ruff>=0.15.21",
+    "ty>=0.0.59",
+    "setuptools>=83.0.0",
     "cryptography",  # optional "extra" from construct that the user may or may not have installed
     "cloudpickle",  # optional "extra" from construct that the user may or may not have installed
     "lz4",  # optional "extra" from construct that the user may or may not have installed
@@ -103,7 +104,6 @@ exclude = [
 # Valid values: "error", "warning", "information", "none"
 reportArgumentType = "none"
 reportAttributeAccessIssue = "none"
-reportGeneralTypeIssues = "none"
 reportIncompatibleMethodOverride = "none"
 reportInvalidTypeArguments = "none"
 reportMissingParameterType = "none"
@@ -137,6 +137,7 @@ exclude = [
 # These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
 # Valid values: "error", "warn", "ignore"
 [tool.ty.rules]
+invalid-argument-type = "ignore"
 invalid-assignment = "ignore"
 invalid-method-override = "ignore"
 invalid-type-arguments = "ignore"

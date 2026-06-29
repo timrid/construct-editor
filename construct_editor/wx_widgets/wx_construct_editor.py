@@ -77,14 +77,14 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
             (see `HasEditorCtrl`, `CreateEditorCtrl`, `GetValueFromEditorCtrl`)
 
         """
-        # `SetValue` is not called befor `GetMode` is called, so
+        # `SetValue` is not called before `GetMode` is called, so
         # `self.entry_renderer_helper` is not valid to use here. So we
-        # have to detect the selecte item of the dvc and assume that
+        # have to detect the selected item of the dvc and assume that
         # we need to get the mode for this item. (Fingers crossed that
         # this always works.)
 
         dvc: "dv.DataViewCtrl" = self.GetView()
-        editor: "WxConstructEditor" = dvc.GetParent()
+        editor = t.cast("WxConstructEditor", dvc.GetParent())
         selected_entry = editor.get_selected_entry()
         if selected_entry is None:
             mode = dv.DATAVIEW_CELL_INERT
@@ -126,8 +126,8 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     ) -> WxObjEditor:
         view_settings = value.obj_view_settings
         editor: WxObjEditor = create_obj_editor(parent, view_settings)
-        editor.SetPosition(labelRect.Position)
-        editor.SetSize(labelRect.Size)
+        editor.SetPosition(labelRect.GetPosition())
+        editor.SetSize(labelRect.GetSize())
         return editor
 
     def GetValueFromEditorCtrl(self, editor: WxObjEditor):

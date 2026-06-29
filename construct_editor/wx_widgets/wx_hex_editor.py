@@ -164,7 +164,7 @@ class HexEditorTable(Grid.GridTableBase):
 
         self._attr_default = Grid.GridCellAttr()
         self._attr_default.SetFont(self.font)
-        self._attr_default.SetBackgroundColour("white")
+        self._attr_default.SetBackgroundColour(wx.WHITE)
 
         self._attr_selected = Grid.GridCellAttr()
         self._attr_selected.SetFont(self.font)
@@ -381,7 +381,7 @@ class HexTextCtrl(wx.TextCtrl):
         key = evt.GetKeyCode()
 
         if key == wx.WXK_BACK or key == wx.WXK_DELETE:
-            self.SetValue(self.startValue)
+            self.SetValue(self.startValue or "")
             self.Clear()
 
         if key == wx.WXK_TAB:
@@ -394,7 +394,7 @@ class HexTextCtrl(wx.TextCtrl):
             or key == wx.WXK_LEFT
             or key == wx.WXK_RIGHT
         ):
-            self.SetValue(self.startValue)
+            self.SetValue(self.startValue or "")
             wx.CallAfter(self.parentgrid._abort_edit)
             return
         elif self.mode == "hex":
@@ -1315,7 +1315,7 @@ if __name__ == "__main__":
         """We simply derive a new class of Frame."""
 
         def __init__(self, parent, title):
-            wx.Frame.__init__(self, parent, title=title, size=(420, 800))
+            wx.Frame.__init__(self, parent, title=title, size=wx.Size(420, 800))
 
             # Create an instance of our model...
             self.hex_editor = WxHexEditor(self)
