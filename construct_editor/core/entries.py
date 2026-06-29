@@ -515,7 +515,7 @@ class EntryStruct(EntryConstruct):
 # EntryArray ##########################################################################################################
 class EntryArray(EntrySubconstruct):
     construct: t.Union[
-        "cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"
+        "cs.Array[Any, Any]", "cs.GreedyRange[Any, Any]"
     ]
 
     def __init__(
@@ -523,7 +523,7 @@ class EntryArray(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: t.Union[
-            "cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"
+            "cs.Array[Any, Any]", "cs.GreedyRange[Any, Any]"
         ],
         name: NameType | None,
         docs: str,
@@ -1146,7 +1146,7 @@ class EntryConst(EntrySubconstruct):
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Const[Any, Any, Any, Any]",
+        construct: "cs.Const[Any, Any]",
         name: NameType | None,
         docs: str,
     ):
@@ -1163,7 +1163,7 @@ class EntryComputed(EntryConstruct):
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Computed[Any, Any]",
+        construct: "cs.Computed[Any]",
         name: NameType | None,
         docs: str,
     ):
@@ -1519,7 +1519,7 @@ class EntryRawCopy(EntrySubconstruct):
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.RawCopy[Any, Any, Any, Any]",
+        construct: "cs.RawCopy[Any, Any]",
         name: NameType | None,
         docs: str,
     ):

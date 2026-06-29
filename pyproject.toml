@@ -162,7 +162,6 @@ exclude = [
 invalid-argument-type = "ignore"
 invalid-assignment = "ignore"
 invalid-method-override = "ignore"
-invalid-type-arguments = "ignore"
 unresolved-attribute = "ignore"
 unused-type-ignore-comment = "ignore"
 
