@@ -243,8 +243,8 @@ class HexEditorTable(Grid.GridTableBase):
         byte_idx = self.get_byte_idx(row, col)
 
         selected = False
-        for sel in self.selections:
-            if sel[0] <= byte_idx < sel[1]:
+        for sel0, sel1 in self.selections:
+            if sel0 <= byte_idx < sel1:
                 selected = True
                 break
 
@@ -775,20 +775,20 @@ class HexEditorGrid(Grid.Grid):
 
     def _on_range_selecting_keyboard(self, row_diff: int = 0, col_diff: int = 0):
         """Change selection from the keyboard"""
-        sel = self._selection
-        if sel[0] is None:
+        sel0, sel1 = self._selection
+        if sel0 is None:
             return  # nothing is currently selected
 
         cursor_row, cursor_col = self.GetGridCursorCoords()
         cursor_idx = self._table.get_byte_idx(cursor_row, cursor_col)
 
-        if sel[1] is None:
+        if sel1 is None:
             other_idx = cursor_idx
         else:
-            if sel[0] == cursor_idx:
-                other_idx = sel[1]
+            if sel0 == cursor_idx:
+                other_idx = sel1
             else:
-                other_idx = sel[0]
+                other_idx = sel0
 
         cursor_row += row_diff
         if cursor_row < 0:
@@ -865,17 +865,16 @@ class HexEditorGrid(Grid.Grid):
         if self.read_only is True:
             return False
 
-        sel = self._selection
-        if sel[0] is None:
+        sel0, sel1 = self._selection
+        if sel0 is None:
             return False
 
-        if sel[1] == None:
+        if sel1 is None:
             length = 1
         else:
-            length = sel[1] - sel[0] + 1
+            length = sel1 - sel0 + 1
 
-        byts = self._binary_data.remove_range(sel[0], length)
-
+        self._binary_data.remove_range(sel0, length)
         self.ClearSelection()
         self._selection = (None, None)
 
@@ -899,11 +898,11 @@ class HexEditorGrid(Grid.Grid):
         if self.read_only is True:
             return False
 
-        sel = self._selection
-        if sel[0] is None:
+        sel0, _ = self._selection
+        if sel0 is None:
             return False
 
-        self._binary_data.insert_range(sel[0], b"\x00")
+        self._binary_data.insert_range(sel0, b"\x00")
         self._on_range_selecting_keyboard()
         return True
 
@@ -915,16 +914,16 @@ class HexEditorGrid(Grid.Grid):
          - true if copy is okay
          - false if an error occured
         """
-        sel = self._selection
-        if sel[0] is None:
+        sel0, sel1 = self._selection
+        if sel0 is None:
             return False
 
-        if sel[1] == None:
+        if sel1 is None:
             length = 1
         else:
-            length = sel[1] - sel[0] + 1
+            length = sel1 - sel0 + 1
 
-        byts = self._binary_data.get_range(sel[0], length)
+        byts = self._binary_data.get_range(sel0, length)
 
         if wx.TheClipboard.Open():
             byts_str = byts.hex(" ")
@@ -1108,11 +1107,11 @@ class HexEditorGrid(Grid.Grid):
         """Show context menu"""
         # Check if the click is inside the current selection.
         # If not, select the current cell
-        sel = self._selection
+        sel0, sel1 = self._selection
         select_cell = True
-        if sel[0] is not None and sel[1] is not None:
+        if sel0 is not None and sel1 is not None:
             idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
-            if sel[0] <= idx <= sel[1]:
+            if sel0 <= idx <= sel1:
                 select_cell = False
 
         if select_cell:
@@ -1123,7 +1122,7 @@ class HexEditorGrid(Grid.Grid):
             if menu is None:
                 popup_menu.AppendSeparator()
                 continue
-            if menu.toggle_state != None:  # checkbox boolean state
+            if menu.toggle_state is not None:  # checkbox boolean state
                 item: wx.MenuItem = popup_menu.AppendCheckItem(menu.wx_id, menu.name)
                 item.Check(menu.toggle_state)
             else:

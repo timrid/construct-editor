@@ -122,7 +122,7 @@ class IncludeGuiMetaData(cs.Subconstruct):
         return add_gui_metadata(obj, gui_metadata)
 
     def _build(self, obj, stream, context, path):
-        buildret = self.subcon._build(obj, stream, context, path)  # type: ignore
+        _buildret = self.subcon._build(obj, stream, context, path)
         return obj
 
     # passthrought attribute access

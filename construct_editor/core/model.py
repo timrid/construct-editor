@@ -90,7 +90,7 @@ class ConstructEditorModel:
         for subentry in entry.subentries:
             name = subentry.name
 
-            if (self.hide_protected == True) and (name.startswith("_") or name == ""):
+            if self.hide_protected and (name.startswith("_") or name == ""):
                 subentry.visible_row = False
                 continue
 

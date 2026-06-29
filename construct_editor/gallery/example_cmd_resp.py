@@ -127,6 +127,6 @@ gallery_item = GalleryItem(
 # ######################################################################################
 # ################## Adding new constructs to construct-editor #########################
 # ######################################################################################
-import construct_editor.core.custom as custom
+import construct_editor.core.custom as custom  # noqa: E402
 
 custom.add_custom_transparent_subconstruct(DefaultSized)
