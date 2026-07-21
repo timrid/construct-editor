@@ -7,7 +7,8 @@ name = "construct-editor"
 version = "0.2.0"
 description = "GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Tim Riddermann" }]
 requires-python = ">=3.10"
 keywords = [
