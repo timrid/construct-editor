@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=83.0.0", "wheel"]
+requires = ["setuptools>=82.0.1", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -67,7 +67,6 @@ dev = [
     "pyright>=1.1.411",
     "ruff>=0.15.21",
     "ty>=0.0.59",
-    "setuptools>=83.0.0",
     "cryptography",  # optional "extra" from construct that the user may or may not have installed
     "cloudpickle",  # optional "extra" from construct that the user may or may not have installed
     "lz4",  # optional "extra" from construct that the user may or may not have installed
