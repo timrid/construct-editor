@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.2.0] - 2026-06-09
-- bumped minimum required Python version to 3.10 (previousl: 3.8 which has reached end-of-life)
-- updated `typing_extensions` dependency to >=4.12.0 for Python 3.13 compatibility
-- removed `version.py`, use `importlib.metadata` instead to get the version number
+## [UNRELEASED]
+- Updated construct-typing dependency to v0.8.* and updated the DataClass definitions to reflect the breaking changes.
+- Bumped minimum required Python version to 3.10 (previously: 3.8 which has reached end-of-life).
+- Updated `typing_extensions` dependency to >=4.12.0 for Python 3.13 compatibility.
+- Removed `version.py`, use `importlib.metadata` instead to get the version number.
 
 -------------------------------------------------------------------------------
 

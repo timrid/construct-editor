@@ -1,7 +1,6 @@
 import construct as cs
 import construct_typed as cst
 import dataclasses
-import typing as t
 from . import GalleryItem
 
 
@@ -41,7 +40,7 @@ class SwitchTest(cst.DataclassMixin):
             return cls(0)
 
     choice: int = cst.csfield(cst.TEnum(cs.Int8ub, Choice))
-    switch: t.Union[Case1, Case2, CaseDefault] = cst.csfield(
+    switch: Case1 | Case2 | CaseDefault | None = cst.csfield_noinit(
         cs.Switch(
             cs.this.choice,
             cases={
@@ -54,7 +53,7 @@ class SwitchTest(cst.DataclassMixin):
         )
     )
 
-    switch_without_default: t.Union[Case1, Case2, None] = cst.csfield(
+    switch_without_default: Case1 | Case2 | None = cst.csfield_noinit(
         cs.Switch(
             cs.this.choice,
             cases={

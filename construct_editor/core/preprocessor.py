@@ -11,8 +11,8 @@ import wrapt
 
 class GuiMetaData(t.TypedDict):
     byte_range: t.Tuple[int, int]
-    construct: cs.Construct
-    context: "cs.Context"
+    construct: cst.Construct
+    context: cst.Context
     stream: io.BytesIO
     child_gui_metadata: t.Optional["GuiMetaData"]
 

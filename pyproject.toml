@@ -50,7 +50,7 @@ classifiers = [
 dependencies = [
     "arrow>=1.0.0",
     "construct>=2.10.68",
-    "construct-typing==0.7.*",
+    "construct-typing==0.8.*",
     "typing-extensions>=4.12.0",
     "wrapt>=1.14.0",
     "wxPython>=4.2.2",

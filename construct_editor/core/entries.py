@@ -1800,8 +1800,9 @@ class EntryTFlagsEnum(EntrySubconstruct):
 
     def conv_obj_to_str(self, obj: Any) -> str:
         try:
+            enum_type = t.cast(t.Type[cst.FlagsEnumBase], self.construct.enum_type)
             flags = []
-            for flag in self.construct.enum_type:
+            for flag in enum_type:
                 if flag & obj == flag:
                     flags.append(flag.name)
 
@@ -1812,8 +1813,8 @@ class EntryTFlagsEnum(EntrySubconstruct):
     def get_flagsenum_items_from_obj(self) -> t.List[FlagsEnumItem]:
         """Get items to show in the ComboBox"""
         items: t.List[FlagsEnumItem] = []
-        enum_type: t.Type[cst.FlagsEnumBase] = self.construct.enum_type
-        obj: cst.FlagsEnumBase = self.obj
+        enum_type = t.cast(t.Type[cst.FlagsEnumBase], self.construct.enum_type)
+        obj = t.cast(cst.FlagsEnumBase, self.obj)
         for flag in enum_type:
             items.append(
                 FlagsEnumItem(
@@ -1826,7 +1827,7 @@ class EntryTFlagsEnum(EntrySubconstruct):
 
     def conv_flagsenum_items_to_obj(self, items: t.List[FlagsEnumItem]) -> Any:
         """Convert flagsenum items to object"""
-        enum_type: t.Type[cst.FlagsEnumBase] = self.construct.enum_type
+        enum_type = t.cast(t.Type[cst.FlagsEnumBase], self.construct.enum_type)
         new_obj = enum_type(0)
         for item in items:
             if item.checked:
