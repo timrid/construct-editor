@@ -326,15 +326,15 @@ class WxObjEditor_Timestamp(wx.Panel):
         evt_handler.ProcessEvent(event)
 
 
-WxObjEditor = t.Union[
-    WxObjEditor_Default,
-    WxObjEditor_String,
-    WxObjEditor_Integer,
-    WxObjEditor_Bytes,
-    WxObjEditor_Enum,
-    WxObjEditor_FlagsEnum,
-    WxObjEditor_Timestamp,
-]
+WxObjEditor = (
+    WxObjEditor_Default
+    | WxObjEditor_String
+    | WxObjEditor_Integer
+    | WxObjEditor_Bytes
+    | WxObjEditor_Enum
+    | WxObjEditor_FlagsEnum
+    | WxObjEditor_Timestamp
+)
 
 
 # #####################################################################################################################
@@ -401,7 +401,7 @@ class WxObjRendererHelper_Default:
         model: dv.DataViewModel,
         item: dv.DataViewItem,
         col: int,
-        mouse_event: t.Optional[wx.MouseEvent],
+        mouse_event: wx.MouseEvent | None,
     ):
         return False
 
@@ -446,7 +446,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
         model: dv.DataViewModel,
         item: dv.DataViewItem,
         col: int,
-        mouse_event: t.Optional[wx.MouseEvent],
+        mouse_event: wx.MouseEvent | None,
     ):
         # see wxWidgets: wxDataViewToggleRenderer::WXActivateCell
 
@@ -469,10 +469,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
         return True
 
 
-WxObjRendererHelper = t.Union[
-    WxObjRendererHelper_Default,
-    WxObjRendererHelper_Flag,
-]
+WxObjRendererHelper = WxObjRendererHelper_Default | WxObjRendererHelper_Flag
 
 
 def create_obj_renderer_helper(settings: ObjViewSettings) -> WxObjRendererHelper:

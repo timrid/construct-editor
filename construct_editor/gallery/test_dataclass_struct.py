@@ -1,7 +1,9 @@
-import construct as cs
-import construct_typed as cst
 import dataclasses
 import typing as t
+
+import construct as cs
+import construct_typed as cst
+
 from . import GalleryItem
 
 

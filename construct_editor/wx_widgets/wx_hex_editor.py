@@ -606,7 +606,7 @@ class ContextMenuItem:
     # None = option
     # True = toggle selected
     # False = toggle unselected
-    toggle_state: t.Optional[bool]
+    toggle_state: bool | None
 
     enabled: bool
 
@@ -631,7 +631,7 @@ class HexEditorGrid(Grid.Grid):
         self._table = table
         self._binary_data = binary_data
         self.read_only = read_only
-        self.on_selection_changed: "CallbackList[[int, t.Optional[int]]]" = (
+        self.on_selection_changed: "CallbackList[[int, int | None]]" = (
             CallbackList()
         )
 
@@ -665,7 +665,7 @@ class HexEditorGrid(Grid.Grid):
 
         self.refresh()
 
-        self._selection: t.Tuple[t.Optional[int], t.Optional[int]] = (None, None)
+        self._selection: t.Tuple[int | None, int | None] = (None, None)
 
     def refresh(self):
         """
@@ -1136,7 +1136,7 @@ class HexEditorGrid(Grid.Grid):
 
     def build_context_menu(
         self,
-    ) -> t.List[t.Optional[ContextMenuItem]]:
+    ) -> t.List[ContextMenuItem | None]:
         """Build the context menu. Can be overridden."""
 
         return [
@@ -1198,7 +1198,7 @@ class WxHexEditor(wx.Panel):
         self,
         parent,
         binary: bytes = b"",
-        format: t.Optional[HexEditorFormat] = None,
+        format: HexEditorFormat | None = None,
         read_only: bool = False,
         bitwiese: bool = False,
     ):
@@ -1246,7 +1246,7 @@ class WxHexEditor(wx.Panel):
         self._status_bar.SetStatusText(msg, 0)
         self.refresh()
 
-    def _on_selection_changed(self, idx1: int, idx2: t.Optional[int]):
+    def _on_selection_changed(self, idx1: int, idx2: int | None):
         if idx2 is None:
             msg = f"Selection: {idx1:n}"
         else:
@@ -1305,7 +1305,7 @@ class WxHexEditor(wx.Panel):
 
     # Property: on_binary_changed #############################################
     @property
-    def on_selection_changed(self) -> "CallbackList[[int, t.Optional[int]]]":
+    def on_selection_changed(self) -> "CallbackList[[int, int | None]]":
         return self._grid.on_selection_changed
 
 

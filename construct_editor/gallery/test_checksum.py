@@ -1,7 +1,8 @@
 import hashlib
-import construct as cs
-from . import GalleryItem
 
+import construct as cs
+
+from . import GalleryItem
 
 constr = cs.Struct(
     "checksum_start" / cs.Tell,

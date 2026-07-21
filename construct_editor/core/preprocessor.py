@@ -51,7 +51,7 @@ class ObjProxyWithGuiMetaData(wrapt.ObjectProxy):
         )
 
 
-def get_gui_metadata(obj: t.Any) -> t.Optional[GuiMetaData]:
+def get_gui_metadata(obj: t.Any) -> GuiMetaData | None:
     """Get the GUI metadata if they are available"""
     try:
         return getattr(obj, "__construct_editor_metadata__")

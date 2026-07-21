@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import keyword
-
 import sys
+
 import wx
 import wx.stc as stc
 

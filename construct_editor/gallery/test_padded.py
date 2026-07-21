@@ -1,6 +1,6 @@
 import construct as cs
-from . import GalleryItem
 
+from . import GalleryItem
 
 constr = cs.Struct(
     "padded" / cs.Padded(5, cs.Bytes(3)),

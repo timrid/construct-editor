@@ -6,9 +6,10 @@ WARNING: before parsing the application layer over a TCP stream, you must first 
 
 from construct import *  # type: ignore
 from construct.lib import *  # type: ignore
-import construct_editor.core.custom as custom
-from . import GalleryItem
 
+import construct_editor.core.custom as custom
+
+from . import GalleryItem
 
 #===============================================================================
 # layer 2, Ethernet

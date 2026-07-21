@@ -22,7 +22,7 @@ class CommandProcessor:
         self._max_commands = max_commands
 
         self._history: t.List[Command] = []
-        self._current_command_idx: t.Optional[int] = None
+        self._current_command_idx: int | None = None
 
     def can_undo(self) -> bool:
         """
@@ -131,7 +131,7 @@ class CommandProcessor:
         self._history.clear()
         self._current_command_idx = None
 
-    def get_current_command(self) -> t.Optional[Command]:
+    def get_current_command(self) -> Command | None:
         """
         Returns the current command.
         """
@@ -140,7 +140,7 @@ class CommandProcessor:
 
         return self._history[self._current_command_idx]
 
-    def get_next_command(self) -> t.Optional[Command]:
+    def get_next_command(self) -> Command | None:
         """
         Returns the next command.
         """

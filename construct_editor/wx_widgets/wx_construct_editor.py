@@ -11,13 +11,13 @@ from construct_editor.core.construct_editor import ConstructEditor
 from construct_editor.core.entries import EntryConstruct
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
 from construct_editor.wx_widgets.wx_context_menu import WxContextMenu
+from construct_editor.wx_widgets.wx_exception_dialog import WxExceptionDialog
 from construct_editor.wx_widgets.wx_obj_view import (
     WxObjEditor,
     WxObjRendererHelper,
     create_obj_editor,
     create_obj_renderer_helper,
 )
-from construct_editor.wx_widgets.wx_exception_dialog import WxExceptionDialog
 
 
 @dataclasses.dataclass
@@ -34,8 +34,8 @@ class ValueFromEditorCtrl:
 class ObjectRenderer(dv.DataViewCustomRenderer):
     def __init__(self):
         super().__init__(varianttype="PyObject")
-        self.entry: t.Optional[EntryConstruct] = None
-        self.entry_renderer_helper: t.Optional[WxObjRendererHelper] = None
+        self.entry: EntryConstruct | None = None
+        self.entry_renderer_helper: WxObjRendererHelper | None = None
         self.EnableEllipsize(wx.ELLIPSIZE_END)
 
     def SetValue(self, value: EntryConstruct):
@@ -105,7 +105,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         model: dv.DataViewModel,
         item: dv.DataViewItem,
         col: int,
-        mouseEvent: t.Optional[wx.MouseEvent],
+        mouseEvent: wx.MouseEvent | None,
     ):
         if self.entry_renderer_helper is None:
             raise ValueError("`entry_renderer_helper` not set")
@@ -312,7 +312,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._parse_error_info_bar.Bind(
             wx.EVT_BUTTON, self._parse_error_info_bar_btn_clicked, id=btn_id
         )
-        self._parse_error_ex: t.Optional[Exception] = None
+        self._parse_error_ex: Exception | None = None
         vsizer.Add(self._parse_error_info_bar, 0, wx.EXPAND)
 
         self._build_error_info_bar = wx.InfoBar(self)
@@ -321,7 +321,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._build_error_info_bar.Bind(
             wx.EVT_BUTTON, self._build_error_info_bar_btn_clicked, id=btn_id
         )
-        self._build_error_ex: t.Optional[Exception] = None
+        self._build_error_ex: Exception | None = None
         vsizer.Add(self._build_error_info_bar, 0, wx.EXPAND)
 
         # create status bar
@@ -354,9 +354,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
         self._dvc_main_window.Bind(wx.EVT_KEY_DOWN, self._on_dvc_key_down)
         self._dvc_main_window.Bind(wx.EVT_CHAR, self._on_dvc_char)
-        self._last_tooltip: t.Optional[
-            t.Tuple[EntryConstruct, ConstructEditorColumn]
-        ] = None
+        self._last_tooltip: t.Tuple[EntryConstruct, ConstructEditorColumn] | None = None
 
     def reload(self):
         """
@@ -386,7 +384,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         finally:
             self.Thaw()
 
-    def show_parse_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_parse_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an message to the user.
         """
@@ -396,7 +394,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             self._parse_error_ex = ex
             self._parse_error_info_bar.ShowMessage(msg, wx.ICON_WARNING)
 
-    def show_build_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_build_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an build error message to the user.
         """
@@ -413,7 +411,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._status_bar.SetStatusText(path_info, 0)
         self._status_bar.SetStatusText(bytes_info, 1)
 
-    def get_selected_entry(self) -> t.Optional[EntryConstruct]:
+    def get_selected_entry(self) -> EntryConstruct | None:
         """
         Get the currently selected entry (or None if nothing is selected).
         """
@@ -581,7 +579,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         Then a context menu is created
         """
         item = event.GetItem()
-        entry: t.Optional["EntryConstruct"]
+        entry: "EntryConstruct | None"
         if item.ID is not None:
             entry = self._model.dvc_item_to_entry(item)
         else:

@@ -18,9 +18,9 @@ import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_const
-import construct_editor.gallery.test_default
 import construct_editor.gallery.test_dataclass_bit_struct
 import construct_editor.gallery.test_dataclass_struct
+import construct_editor.gallery.test_default
 import construct_editor.gallery.test_enum
 import construct_editor.gallery.test_fixedsized
 import construct_editor.gallery.test_flag

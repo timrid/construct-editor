@@ -49,8 +49,8 @@ class ConstructEditorModel:
     """
 
     def __init__(self):
-        self.root_entry: t.Optional["entries.EntryConstruct"] = None
-        self.root_obj: t.Optional[t.Any] = None
+        self.root_entry: "entries.EntryConstruct | None" = None
+        self.root_obj: t.Any | None = None
 
         # Modelwide flag, if hidden entries should be shown (hidden means starting with an underscore)
         self.hide_protected = True

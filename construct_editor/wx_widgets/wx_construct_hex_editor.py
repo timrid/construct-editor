@@ -50,7 +50,7 @@ class HexEditorPanel(wx.SplitterWindow):
 
         self.Initialize(panel)
 
-        self.sub_panel: t.Optional["HexEditorPanel"] = None
+        self.sub_panel: "HexEditorPanel | None" = None
 
     def clear_sub_panels(self):
         """Clears all sub-panels recursivly"""
@@ -257,7 +257,7 @@ class WxConstructHexEditor(wx.Panel):
             self.Thaw()
             self._converting = False
 
-    def _on_entry_selected(self, entry: t.Optional[EntryConstruct]):
+    def _on_entry_selected(self, entry: EntryConstruct | None):
         try:
             self.Freeze()
             self.hex_panel.clear_sub_panels()

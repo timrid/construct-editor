@@ -89,16 +89,16 @@ class ObjViewSettings_Timestamp:
     entry: "EntryTimestamp"
 
 
-ObjViewSettings = t.Union[
-    ObjViewSettings_Default,
-    ObjViewSettings_String,
-    ObjViewSettings_Integer,
-    ObjViewSettings_Flag,
-    ObjViewSettings_Bytes,
-    ObjViewSettings_Enum,
-    ObjViewSettings_FlagsEnum,
-    ObjViewSettings_Timestamp,
-]
+ObjViewSettings = (
+    ObjViewSettings_Default
+    | ObjViewSettings_String
+    | ObjViewSettings_Integer
+    | ObjViewSettings_Flag
+    | ObjViewSettings_Bytes
+    | ObjViewSettings_Enum
+    | ObjViewSettings_FlagsEnum
+    | ObjViewSettings_Timestamp
+)
 
 
 def _convert_restreamed(stream: cs.RestreamedBytesIO) -> io.BytesIO:
@@ -109,7 +109,7 @@ def _convert_restreamed(stream: cs.RestreamedBytesIO) -> io.BytesIO:
       - `cs.BitsSwapped(cs.Bitwise(cs.GreedyRange(cs.Bit)))`
     """
 
-    def reset_substream_recursively(stream: t.Union[io.BytesIO, cs.RestreamedBytesIO]):
+    def reset_substream_recursively(stream: io.BytesIO | cs.RestreamedBytesIO):
         if isinstance(stream, cs.RestreamedBytesIO):
             if stream.substream is None:
                 raise RuntimeError(
@@ -120,7 +120,7 @@ def _convert_restreamed(stream: cs.RestreamedBytesIO) -> io.BytesIO:
             stream.seek(0)
 
     # check if there is already a cached version
-    bytes_io_stream: t.Optional[io.BytesIO] = getattr(
+    bytes_io_stream: io.BytesIO | None = getattr(
         stream, "_construct_bytes_io", None
     )
 
@@ -169,9 +169,9 @@ class ListIndexName(str):
     pass
 
 
-NameType = t.Union[str, NameExcludedFromPath, ListIndexName]
+NameType = str | NameExcludedFromPath | ListIndexName
 
-PathType = t.List[t.Union[str, ListIndexName]]
+PathType = t.List[str | ListIndexName]
 
 
 def create_path_str(path: PathType) -> str:
@@ -197,7 +197,7 @@ class EntryConstruct(object):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Construct[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         self.model = model
@@ -275,7 +275,7 @@ class EntryConstruct(object):
 
     # default "obj_metadata" ##################################################
     @property
-    def obj_metadata(self) -> t.Optional[GuiMetaData]:
+    def obj_metadata(self) -> GuiMetaData | None:
         return get_gui_metadata(self.obj)
 
     # default "name" ##########################################################
@@ -298,7 +298,7 @@ class EntryConstruct(object):
 
     # default "subentries" ####################################################
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         return None
 
     # default "visible_row" ###################################################
@@ -366,7 +366,7 @@ class EntryConstruct(object):
         return path
 
     def get_stream_infos(
-        self, child_stream: t.Optional[t.BinaryIO] = None
+        self, child_stream: t.BinaryIO | None = None
     ) -> t.List[StreamInfo]:
         """
         Get infos about the current and parent streams.
@@ -414,7 +414,7 @@ class EntrySubconstruct(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Subconstruct[Any, Any, Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -435,7 +435,7 @@ class EntrySubconstruct(EntryConstruct):
 
     # pass throught "subentries" to subentry ##################################
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         return self.subentry.subentries
 
     # pass throught "obj_view_settings" to subentry ###########################
@@ -457,7 +457,7 @@ class EntryStruct(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Struct[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -471,7 +471,7 @@ class EntryStruct(EntryConstruct):
             self._subentries.append(subentry)
 
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         return self._subentries
 
     @property
@@ -525,7 +525,7 @@ class EntryArray(EntrySubconstruct):
         construct: t.Union[
             "cs.Array[Any, Any, Any, Any]", "cs.GreedyRange[Any, Any, Any, Any]"
         ],
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -533,7 +533,7 @@ class EntryArray(EntrySubconstruct):
         self._subentries = []
 
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         # get length of array
         try:
             array_len = len(self.obj)
@@ -638,7 +638,7 @@ class EntryIfThenElse(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.IfThenElse[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -665,7 +665,7 @@ class EntryIfThenElse(EntryConstruct):
             self._subentry_else,
         ]
 
-    def _get_subentry(self) -> "Optional[EntryConstruct]":
+    def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
@@ -699,7 +699,7 @@ class EntryIfThenElse(EntryConstruct):
             return subentry.typ_str
 
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         subentry = self._get_subentry()
         if subentry is None:
             return self._subentries
@@ -731,14 +731,14 @@ class EntrySwitch(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Switch[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
 
         self._subentries: List[EntryConstruct] = []
         self._subentry_cases: Dict[str, EntryConstruct] = {}
-        self._subentry_default: Optional[EntryConstruct] = None
+        self._subentry_default: EntryConstruct | None = None
 
         for key, value in self.construct.cases.items():
             subentry_case = create_entry_from_construct(
@@ -761,7 +761,7 @@ class EntrySwitch(EntryConstruct):
             )
             self._subentries.append(self._subentry_default)
 
-    def _get_subentry(self) -> "Optional[EntryConstruct]":
+    def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
@@ -795,7 +795,7 @@ class EntrySwitch(EntryConstruct):
             return subentry.typ_str
 
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         subentry = self._get_subentry()
         if subentry is None:
             return self._subentries
@@ -833,7 +833,7 @@ class FormatFieldFloat:
 
 class EntryFormatField(EntryConstruct):
     construct: "cs.FormatField[Any, Any]"
-    type_mapping: t.Dict[str, t.Union[FormatFieldInt, FormatFieldFloat]] = {
+    type_mapping: t.Dict[str, FormatFieldInt | FormatFieldFloat] = {
         ">B": FormatFieldInt("Int8ub", 8, False),
         ">H": FormatFieldInt("Int16ub", 16, False),
         ">L": FormatFieldInt("Int32ub", 32, False),
@@ -874,7 +874,7 @@ class EntryFormatField(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.FormatField[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -920,7 +920,7 @@ class EntryBytesInteger(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.BytesInteger[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -966,7 +966,7 @@ class EntryBitsInteger(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.BitsInteger[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1002,7 +1002,7 @@ class EntryStringEncoded(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.StringEncoded[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)  # type: ignore
@@ -1025,7 +1025,7 @@ class EntryBytes(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: t.Union["cs.Bytes[Any, Any]", "cs.Construct[bytes, bytes]"],
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1086,7 +1086,7 @@ class EntryTell(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Construct[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1105,7 +1105,7 @@ class EntrySeek(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Seek",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1126,7 +1126,7 @@ class EntryPass(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Construct[None, None]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1147,7 +1147,7 @@ class EntryConst(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Const[Any, Any, Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1164,7 +1164,7 @@ class EntryComputed(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Computed[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1188,7 +1188,7 @@ class EntryDefault(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Subconstruct[Any, Any, Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1219,7 +1219,7 @@ class EntryFocusedSeq(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.FocusedSeq",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1247,7 +1247,7 @@ class EntryFocusedSeq(EntryConstruct):
             )
             self._subentries[name] = subentry
 
-    def _get_subentry(self) -> "Optional[EntryConstruct]":
+    def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
@@ -1279,7 +1279,7 @@ class EntryFocusedSeq(EntryConstruct):
             return subentry.typ_str
 
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         subentry = self._get_subentry()
         if subentry is None:
             return list(self._subentries.values())
@@ -1311,7 +1311,7 @@ class EntrySelect(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Select",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1330,7 +1330,7 @@ class EntrySelect(EntryConstruct):
             )
             self._subentries[id(subentry.construct)] = subentry
 
-    def _get_subentry(self) -> "Optional[EntryConstruct]":
+    def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
         obj = self.obj
         if obj is None:
@@ -1367,7 +1367,7 @@ class EntrySelect(EntryConstruct):
             return subentry.typ_str
 
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         subentry = self._get_subentry()
         if subentry is None:
             return list(self._subentries.values())
@@ -1397,7 +1397,7 @@ class EntryTimestamp(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.TimestampAdapter[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1418,7 +1418,7 @@ class EntryTransparentSubcon(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Subconstruct[Any, Any, Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1433,7 +1433,7 @@ class EntryNullStripped(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.NullStripped[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1452,7 +1452,7 @@ class EntryNullTerminated(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.NullTerminated[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1469,7 +1469,7 @@ class EntryChecksumSubcon(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Checksum[Any, Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         # Don't access EntrySubconstruct's __init__() via super(), because "subcon" is no member of "cs.Checksum"
@@ -1488,7 +1488,7 @@ class EntryCompressed(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Compressed[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1507,7 +1507,7 @@ class EntryPeek(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Peek",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1520,7 +1520,7 @@ class EntryRawCopy(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.RawCopy[Any, Any, Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1537,13 +1537,13 @@ class EntryDataclassStruct(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cst.DataclassStruct[Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
 
     @property
-    def subentries(self) -> Optional[List["EntryConstruct"]]:
+    def subentries(self) -> List["EntryConstruct"] | None:
         subentries = super().subentries
         if (subentries is not None) and self.construct.reverse:
             return list(reversed(subentries))
@@ -1563,7 +1563,7 @@ class EntryFlag(EntryConstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.FormatField[Any, Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1591,7 +1591,7 @@ class EntryEnum(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.Enum",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1658,7 +1658,7 @@ class EntryFlagsEnum(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cs.FlagsEnum",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1722,7 +1722,7 @@ class EntryTEnum(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cst.TEnum[Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1781,7 +1781,7 @@ class EntryTFlagsEnum(EntrySubconstruct):
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
         construct: "cst.TFlagsEnum[Any]",
-        name: t.Optional[NameType],
+        name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
@@ -1957,7 +1957,7 @@ def create_entry_from_construct(
     model: "model.ConstructEditorModel",
     parent: Optional["EntryConstruct"],
     subcon: "cs.Construct[Any, Any]",
-    name: t.Optional[NameType],
+    name: NameType | None,
     docs: str,
 ) -> "EntryConstruct":
 

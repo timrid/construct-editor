@@ -1,6 +1,6 @@
 import construct as cs
-from . import GalleryItem
 
+from . import GalleryItem
 
 constr = cs.BitsSwapped(cs.Bitwise(cs.GreedyRange(cs.Bit)))
 

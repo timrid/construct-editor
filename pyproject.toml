@@ -177,8 +177,12 @@ output-format = "concise"  # "full" | "concise" | "grouped" | "json" | "junit" |
 
 [tool.ruff.lint]
 allowed-confusables = ["×", "–", "‘", "’"]
-
-# select = [] Use Default ruleset, cp. https://docs.astral.sh/ruff/rules/
+select = [
+    "F",
+    "I",
+    "UP007",
+    "UP045",
+]
 
 # These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
 ignore = [

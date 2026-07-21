@@ -30,7 +30,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def show_parse_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_parse_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an parse error message to the user.
 
@@ -38,7 +38,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def show_build_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_build_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an build error message to the user.
 

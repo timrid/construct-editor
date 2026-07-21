@@ -1,5 +1,4 @@
 import dataclasses
-import typing as t
 
 import construct as cs
 import construct_typed as cst
@@ -24,7 +23,7 @@ class SmallImage(cst.DataclassMixin):
 @dataclasses.dataclass
 class Image(cst.DataclassMixin):
     is_big: int = cst.csfield(cs.Int8ub)
-    data: t.Union[BigImage, SmallImage] = cst.csfield(
+    data: BigImage | SmallImage = cst.csfield(
         cs.Select(
             cs.IfThenElse(
                 condfunc=cs.this.is_big == 1,

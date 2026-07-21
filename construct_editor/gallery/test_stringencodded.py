@@ -1,6 +1,8 @@
+from typing import Any, Dict
+
 import construct as cs
+
 from . import GalleryItem
-from typing import Dict, Any
 
 ENCODDINGS = dict(
 ASCII="ascii", 

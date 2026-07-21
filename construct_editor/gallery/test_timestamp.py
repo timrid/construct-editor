@@ -1,7 +1,9 @@
+import dataclasses
+
+import arrow
 import construct as cs
 import construct_typed as cst
-import dataclasses
-import arrow
+
 from . import GalleryItem
 
 
