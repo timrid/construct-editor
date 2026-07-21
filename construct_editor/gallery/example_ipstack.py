@@ -4,7 +4,6 @@ TCP/IP Protocol Stack
 WARNING: before parsing the application layer over a TCP stream, you must first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
 """
 
-import typing as t
 
 from construct import *  # type: ignore
 from construct.lib import *  # type: ignore
@@ -616,7 +615,7 @@ udp_header = Struct(
 #===============================================================================
 
 
-class DnsStringAdapter(Adapter[t.Any, t.Any, t.Any, t.Any]):
+class DnsStringAdapter(Adapter):  # type: ignore[type-arg]
     def _decode(self, obj, context, path):
         return u".".join(obj[:-1])  # type: ignore
 
@@ -624,7 +623,7 @@ class DnsStringAdapter(Adapter[t.Any, t.Any, t.Any, t.Any]):
         return obj.split(u".") + [u""]  # type: ignore
 
 
-class DnsNamesAdapter(Adapter[t.Any, t.Any, t.Any, t.Any]):
+class DnsNamesAdapter(Adapter):  # type: ignore[type-arg]
     def _decode(self, obj, context, path):
         return [x.label if x.islabel else x.pointer & 0x3fff for x in obj]  # type: ignore
 

@@ -11,14 +11,14 @@ class DefaultSizedError(cs.ConstructError):
     pass
 
 
-class DefaultSized(cs.Subconstruct[t.Any, t.Any, t.Any, t.Any]):
+class DefaultSized(cs.Subconstruct):  # type: ignore[type-arg]
     r"""
     Returns a size when calling sizeof of GreedyBytes. Parsing and building is not changed.
 
     :param subcon: Construct instance
     :param default_size: size that should be returned
 
-    :raises DefaultSizedError: anouter GreedyBytes than GreedyBytes is passed
+    :raises DefaultSizedError: another GreedyBytes than GreedyBytes is passed
 
     Example::
 
