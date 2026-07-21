@@ -86,6 +86,27 @@ include = [
 [tool.setuptools.package-data]
 construct_editor = ["py.typed"]
 
+[tool.mypy]
+strict = true
+# These errors should be activated in the future, but for now we don't want to refactor the entire codebase right now.
+disable_error_code = [
+    "arg-type",
+    "assignment",
+    "attr-defined",
+    "import-untyped",
+    "misc",
+    "no-any-return",
+    "no-untyped-call",
+    "no-untyped-def",
+    "no-redef",
+    "return-value",
+    "str-bytes-safe",
+    "type-arg",
+    "union-attr",
+    "unused-ignore",
+    "var-annotated",
+]
+
 [tool.pyright]
 typeCheckingMode = "strict"
 exclude = [
@@ -168,10 +189,42 @@ ignore = [
     "F841",  # Local variable `...` is assigned to but never used
 ]
 
+[tool.poe.tasks.test]
+# Tests are not yet implemented and will be added with PR #40.
+# cmd = "pytest $POE_EXTRA_ARGS"
+sequence = []
+executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.lint]
+cmd = "ruff check --fix --show-fixes"
+executor = { type = "uv", isolated = true }
+
+[tool.poe.tasks.lint-checkonly]
+cmd = "ruff check"
+executor = { type = "uv", isolated = true }
+
+[tool.poe.tasks.ty]
+cmd = "ty check"
+executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.pyright]
+cmd = "pyright"
+executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.mypy]
+cmd = "mypy construct_editor"
+executor = {type = "uv", isolated = true}
+
 [tool.poe.tasks.typecheck]
 sequence = [
-    { cmd = "ruff check --fix --show-fixes" },
-    { cmd = "ty check" },
-    { cmd = "pyright" },
+    "ty",
+    "pyright",
+    "mypy"
 ]
-executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.check-all]
+sequence = [
+    "lint",
+    "typecheck",
+    "test",
+]

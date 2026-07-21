@@ -54,7 +54,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def get_selected_entry(self) -> "entries.EntryConstruct":
+    def get_selected_entry(self) -> "entries.EntryConstruct | None":
         """
         Get the currently selected entry (or None if nothing is selected).
 
