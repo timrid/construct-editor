@@ -391,7 +391,7 @@ class WxObjRendererHelper_Default:
         renderer.RenderText(obj_str, 0, rect, dc, state)
         return True
 
-    def get_mode(self):
+    def get_mode(self) -> int:
         return dv.DATAVIEW_CELL_EDITABLE
 
     def activate_cell(
@@ -402,7 +402,7 @@ class WxObjRendererHelper_Default:
         item: dv.DataViewItem,
         col: int,
         mouse_event: wx.MouseEvent | None,
-    ):
+    ) -> bool:
         return False
 
 
@@ -436,7 +436,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
         native_renderer.DrawCheckBox(win, dc, rect, flags)
         return True
 
-    def get_mode(self):
+    def get_mode(self) -> int:
         return dv.DATAVIEW_CELL_ACTIVATABLE
 
     def activate_cell(
@@ -447,7 +447,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
         item: dv.DataViewItem,
         col: int,
         mouse_event: wx.MouseEvent | None,
-    ):
+    ) -> bool:
         # see wxWidgets: wxDataViewToggleRenderer::WXActivateCell
 
         if mouse_event is not None:

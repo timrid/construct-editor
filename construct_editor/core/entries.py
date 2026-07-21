@@ -450,13 +450,11 @@ class EntrySubconstruct(EntryConstruct):
 
 # EntryStruct #########################################################################################################
 class EntryStruct(EntryConstruct):
-    construct: "cs.Struct[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Struct[Any, Any]",
+        construct: "cs.Struct",
         name: NameType | None,
         docs: str,
     ):
@@ -469,6 +467,10 @@ class EntryStruct(EntryConstruct):
         for subcon in self.construct.subcons:
             subentry = create_entry_from_construct(model, self, subcon, None, "")
             self._subentries.append(subentry)
+
+    @property
+    def construct(self) -> "cs.Struct":
+        return t.cast("cs.Struct", self._construct)
 
     @property
     def subentries(self) -> List["EntryConstruct"] | None:
@@ -514,23 +516,21 @@ class EntryStruct(EntryConstruct):
 
 # EntryArray ##########################################################################################################
 class EntryArray(EntrySubconstruct):
-    construct: t.Union[
-        "cs.Array[Any, Any]", "cs.GreedyRange[Any, Any]"
-    ]
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: t.Union[
-            "cs.Array[Any, Any]", "cs.GreedyRange[Any, Any]"
-        ],
+        construct: "cs.Array[Any, Any] | cs.GreedyRange[Any, Any]",
         name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
 
         self._subentries = []
+
+    @property
+    def construct(self) -> "cs.Array[Any, Any] | cs.GreedyRange[Any, Any]":
+        return t.cast("cs.Array[Any, Any] | cs.GreedyRange[Any, Any]", self._construct)
 
     @property
     def subentries(self) -> List["EntryConstruct"] | None:
@@ -631,8 +631,6 @@ class EntryArray(EntrySubconstruct):
 
 # EntryIfThenElse #####################################################################################################
 class EntryIfThenElse(EntryConstruct):
-    construct: "cs.IfThenElse[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -664,6 +662,10 @@ class EntryIfThenElse(EntryConstruct):
             self._subentry_then,
             self._subentry_else,
         ]
+
+    @property
+    def construct(self) -> "cs.IfThenElse[Any, Any]":
+        return t.cast("cs.IfThenElse[Any, Any]", self._construct)
 
     def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
@@ -724,8 +726,6 @@ class EntryIfThenElse(EntryConstruct):
 
 # EntrySwitch #########################################################################################################
 class EntrySwitch(EntryConstruct):
-    construct: "cs.Switch[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -751,7 +751,7 @@ class EntrySwitch(EntryConstruct):
             self._subentry_cases[key] = subentry_case
             self._subentries.append(subentry_case)
 
-        if self.construct.default is not None:
+        if self.construct.default is not None:  # type: ignore[reportUnnecessaryComparison]
             self._subentry_default = create_entry_from_construct(
                 self.model,
                 self,
@@ -760,6 +760,10 @@ class EntrySwitch(EntryConstruct):
                 "",
             )
             self._subentries.append(self._subentry_default)
+
+    @property
+    def construct(self) -> "cs.Switch[Any, Any]":
+        return t.cast("cs.Switch[Any, Any]", self._construct)
 
     def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
@@ -832,7 +836,6 @@ class FormatFieldFloat:
 
 
 class EntryFormatField(EntryConstruct):
-    construct: "cs.FormatField[Any, Any]"
     type_mapping: t.Dict[str, FormatFieldInt | FormatFieldFloat] = {
         ">B": FormatFieldInt("Int8ub", 8, False),
         ">H": FormatFieldInt("Int16ub", 16, False),
@@ -885,6 +888,10 @@ class EntryFormatField(EntryConstruct):
             self.type_infos = self.type_mapping[construct.fmtstr]
 
     @property
+    def construct(self) -> "cs.FormatField[Any, Any]":
+        return t.cast("cs.FormatField[Any, Any]", self._construct)
+
+    @property
     def obj_view_settings(self) -> ObjViewSettings:
         if isinstance(self.type_infos, FormatFieldInt):
             return ObjViewSettings_Integer(self)
@@ -913,17 +920,19 @@ class EntryFormatField(EntryConstruct):
 
 # EntryBytesInteger ###################################################################################################
 class EntryBytesInteger(EntryConstruct):
-    construct: "cs.BytesInteger[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.BytesInteger[Any, Any]",
+        construct: "cs.BytesInteger",
         name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.BytesInteger":
+        return t.cast("cs.BytesInteger", self._construct)
 
     @property
     def typ_str(self) -> str:
@@ -959,17 +968,19 @@ class EntryBytesInteger(EntryConstruct):
 
 # EntryBitsInteger ####################################################################################################
 class EntryBitsInteger(EntryConstruct):
-    construct: "cs.BitsInteger[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.BitsInteger[Any, Any]",
+        construct: "cs.BitsInteger",
         name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.BitsInteger":
+        return t.cast("cs.BitsInteger", self._construct)
 
     @property
     def typ_str(self) -> str:
@@ -1001,7 +1012,7 @@ class EntryStringEncoded(EntrySubconstruct):
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.StringEncoded[Any, Any]",
+        construct: "cs.StringEncoded",
         name: NameType | None,
         docs: str,
     ):
@@ -1018,18 +1029,20 @@ class EntryStringEncoded(EntrySubconstruct):
 
 # EntryBytes ##########################################################################################################
 class EntryBytes(EntryConstruct):
-    construct: t.Union["cs.Bytes[Any, Any]", "cs.Construct[bytes, bytes]"]
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: t.Union["cs.Bytes[Any, Any]", "cs.Construct[bytes, bytes]"],
+        construct: "cs.Bytes | cs.Construct[bytes, bytes]",
         name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
         self.ascii_view = False
+
+    @property
+    def construct(self) -> "cs.Bytes | cs.Construct[bytes, bytes]":
+        return t.cast("cs.Bytes | cs.Construct[bytes, bytes]", self._construct)
 
     @property
     def obj_str(self) -> str:
@@ -1098,8 +1111,6 @@ class EntryTell(EntryConstruct):
 
 # EntrySeek ###########################################################################################################
 class EntrySeek(EntryConstruct):
-    construct: "cs.Seek"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1109,6 +1120,10 @@ class EntrySeek(EntryConstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.Seek":
+        return t.cast("cs.Seek", self._construct)
 
     @property
     def typ_str(self) -> str:
@@ -1212,8 +1227,6 @@ class EntryDefault(EntrySubconstruct):
 
 # EntryFocusedSeq ###################################################################################################
 class EntryFocusedSeq(EntryConstruct):
-    construct: "cs.FocusedSeq"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1246,6 +1259,10 @@ class EntryFocusedSeq(EntryConstruct):
                 "",
             )
             self._subentries[name] = subentry
+
+    @property
+    def construct(self) -> "cs.FocusedSeq":
+        return t.cast("cs.FocusedSeq", self._construct)
 
     def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
@@ -1304,8 +1321,6 @@ class EntryFocusedSeq(EntryConstruct):
 
 # EntrySelect ###################################################################################################
 class EntrySelect(EntryConstruct):
-    construct: "cs.Select"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1329,6 +1344,10 @@ class EntrySelect(EntryConstruct):
                 "",
             )
             self._subentries[id(subentry.construct)] = subentry
+
+    @property
+    def construct(self) -> "cs.Select":
+        return t.cast("cs.Select", self._construct)
 
     def _get_subentry(self) -> "EntryConstruct | None":
         """Evaluate the conditional function to detect the type of the subentry"""
@@ -1426,8 +1445,6 @@ class EntryTransparentSubcon(EntrySubconstruct):
 
 # EntryNullStripped ###################################################################################################
 class EntryNullStripped(EntrySubconstruct):
-    construct: "cs.NullStripped[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1439,14 +1456,16 @@ class EntryNullStripped(EntrySubconstruct):
         super().__init__(model, parent, construct, name, docs)
 
     @property
+    def construct(self) -> "cs.NullStripped[Any, Any]":
+        return t.cast("cs.NullStripped[Any, Any]", self._construct)
+
+    @property
     def typ_str(self) -> str:
         return f"NullStripped[{self.subentry.typ_str}, Pad={self.construct.pad}]"
 
 
 # EntryNullTerminated #################################################################################################
 class EntryNullTerminated(EntrySubconstruct):
-    construct: "cs.NullTerminated[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1456,6 +1475,10 @@ class EntryNullTerminated(EntrySubconstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.NullTerminated[Any, Any]":
+        return t.cast("cs.NullTerminated[Any, Any]", self._construct)
 
     @property
     def typ_str(self) -> str:
@@ -1500,17 +1523,19 @@ class EntryCompressed(EntrySubconstruct):
 
 # EntryPeek ###########################################################################################################
 class EntryPeek(EntrySubconstruct):
-    construct: "cs.Peek"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
         parent: Optional["EntryConstruct"],
-        construct: "cs.Peek",
+        construct: "cs.Peek[Any, Any]",
         name: NameType | None,
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.Peek[Any, Any]":
+        return t.cast("cs.Peek[Any, Any]", self._construct)
 
 
 # EntryRawCopy #######################################################################################################
@@ -1530,8 +1555,6 @@ class EntryRawCopy(EntrySubconstruct):
 
 # EntryDataclassStruct ################################################################################################
 class EntryDataclassStruct(EntrySubconstruct):
-    construct: "cst.DataclassStruct[Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1541,6 +1564,10 @@ class EntryDataclassStruct(EntrySubconstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cst.DataclassStruct[Any]":
+        return t.cast("cst.DataclassStruct[Any]", self._construct)
 
     @property
     def subentries(self) -> List["EntryConstruct"] | None:
@@ -1556,8 +1583,6 @@ class EntryDataclassStruct(EntrySubconstruct):
 
 # EntryFlag ####################################################################################################
 class EntryFlag(EntryConstruct):
-    construct: "cs.FormatField[Any, Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1567,6 +1592,10 @@ class EntryFlag(EntryConstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.FormatField[Any, Any]":
+        return t.cast("cs.FormatField[Any, Any]", self._construct)
 
     @property
     def obj_view_settings(self) -> ObjViewSettings:
@@ -1584,8 +1613,6 @@ class EntryFlag(EntryConstruct):
 
 # EntryEnum ###########################################################################################################
 class EntryEnum(EntrySubconstruct):
-    construct: "cs.Enum"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1595,6 +1622,10 @@ class EntryEnum(EntrySubconstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.Enum":
+        return t.cast("cs.Enum", self._construct)
 
     @property
     def typ_str(self) -> str:
@@ -1651,8 +1682,6 @@ class EntryEnum(EntrySubconstruct):
 
 # EntryFlagsEnum ######################################################################################################
 class EntryFlagsEnum(EntrySubconstruct):
-    construct: "cs.FlagsEnum"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1662,6 +1691,10 @@ class EntryFlagsEnum(EntrySubconstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cs.FlagsEnum":
+        return t.cast("cs.FlagsEnum", self._construct)
 
     @property
     def typ_str(self) -> str:
@@ -1715,8 +1748,6 @@ def get_enum_name(e: cst.EnumBase):
 
 
 class EntryTEnum(EntrySubconstruct):
-    construct: "cst.TEnum[Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1726,6 +1757,10 @@ class EntryTEnum(EntrySubconstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cst.TEnum[Any]":
+        return t.cast("cst.TEnum[Any]", self._construct)
 
     @property
     def typ_str(self) -> str:
@@ -1774,8 +1809,6 @@ class EntryTEnum(EntrySubconstruct):
 
 # EntryTFlagsEnum #####################################################################################################
 class EntryTFlagsEnum(EntrySubconstruct):
-    construct: "cst.TFlagsEnum[Any]"
-
     def __init__(
         self,
         model: "model.ConstructEditorModel",
@@ -1785,6 +1818,10 @@ class EntryTFlagsEnum(EntrySubconstruct):
         docs: str,
     ):
         super().__init__(model, parent, construct, name, docs)
+
+    @property
+    def construct(self) -> "cst.TFlagsEnum[Any]":
+        return t.cast("cst.TFlagsEnum[Any]", self._construct)
 
     @property
     def typ_str(self) -> str:

@@ -124,21 +124,14 @@ exclude = [
 
 # These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
 # Valid values: "error", "warning", "information", "none"
-reportArgumentType = "none"
-reportAttributeAccessIssue = "none"
-reportIncompatibleMethodOverride = "none"
-reportInvalidTypeArguments = "none"
-reportMissingParameterType = "none"
-reportMissingTypeArgument = "none"
-reportMissingTypeStubs = "none"
-reportOptionalMemberAccess = "none"
-reportUnknownArgumentType = "none"
-reportUnknownLambdaType = "none"
-reportUnknownMemberType = "none"
-reportUnknownParameterType = "none"
-reportUnknownVariableType = "none"
-reportUnnecessaryComparison = "none"
-reportUnusedVariable = "none"
+reportArgumentType = "none"  # 6 errors
+reportAttributeAccessIssue = "none"  # 8 errors
+reportMissingParameterType = "none"  # 130 errors
+reportMissingTypeStubs = "none"  # 11 errors
+reportUnknownArgumentType = "none"  # 132 errors
+reportUnknownMemberType = "none"  # 242 errors
+reportUnknownParameterType = "none"  # 64 errors
+reportUnknownVariableType = "none"  # 61 errors
 # These "unnecessary isinstance" checks often enhance readability or increase the future-proofness of the code,
 # since you can then explicitly "raise" for other types. So we don't want to complain about them.
 reportUnnecessaryIsInstance = "none"

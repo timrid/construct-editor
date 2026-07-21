@@ -11,7 +11,7 @@ from construct_editor.core.preprocessor import include_metadata
 
 
 class ConstructEditor:
-    def __init__(self, construct: cs.Construct, model: ConstructEditorModel):
+    def __init__(self, construct: cs.Construct[t.Any, t.Any], model: ConstructEditorModel):
         self._model = model
 
         self.change_construct(construct)
@@ -78,7 +78,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def _get_from_clipboard(self):
+    def _get_from_clipboard(self) -> str | None:
         """
         Get text from the clipboard.
 
@@ -113,7 +113,7 @@ class ConstructEditor:
         # self.model.set_value(txt, entry, ConstructEditorColumn.Value)
         # self.on_root_obj_changed.fire(self.root_obj)
 
-    def change_construct(self, constr: cs.Construct) -> None:
+    def change_construct(self, constr: cs.Construct[t.Any, t.Any]) -> None:
         """
         Change the construct format, that is used for building/parsing.
         """
@@ -309,14 +309,14 @@ class ConstructEditor:
         return False
 
     @property
-    def construct(self) -> cs.Construct:
+    def construct(self) -> cs.Construct[t.Any, t.Any]:
         """
         Construct that is used for displaying.
         """
         return self._construct
 
     @construct.setter
-    def construct(self, constr: cs.Construct):
+    def construct(self, constr: cs.Construct[t.Any, t.Any]):
         self.change_construct(constr)
 
     @property

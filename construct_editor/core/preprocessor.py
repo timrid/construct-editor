@@ -11,7 +11,7 @@ import wrapt
 
 class GuiMetaData(t.TypedDict):
     byte_range: t.Tuple[int, int]
-    construct: cst.Construct
+    construct: cst.Construct[t.Any, t.Any]
     context: cst.Context
     stream: io.BytesIO
     child_gui_metadata: t.Optional["GuiMetaData"]
@@ -41,7 +41,7 @@ class NoneWithGuiMetadata:
     pass
 
 
-class ObjProxyWithGuiMetaData(wrapt.ObjectProxy):
+class ObjProxyWithGuiMetaData(wrapt.ObjectProxy[t.Any]):
     __slots__ = "__construct_editor_metadata__"
 
     def __init__(self, wrapped: t.Any, gui_metadata: GuiMetaData):
@@ -92,7 +92,7 @@ def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
     return obj
 
 
-class IncludeGuiMetaData(cs.Subconstruct):
+class IncludeGuiMetaData(cs.Subconstruct[t.Any, t.Any, t.Any, t.Any]):
     """Include GUI metadata to the parsed object"""
 
     def __init__(self, subcon, bitwise: bool):
@@ -245,7 +245,7 @@ def include_metadata(
         for key, subcon in constr.cases.items():
             new_cases[key] = include_metadata(subcon, bitwise)
         constr.cases = new_cases
-        if constr.default is not None:
+        if constr.default is not None:  # type: ignore[reportUnnecessaryComparison]
             constr.default = include_metadata(constr.default, bitwise)
         return IncludeGuiMetaData(constr, bitwise)
 
@@ -302,4 +302,4 @@ def include_metadata(
     raise ValueError(f"construct of type '{constr}' is not supported")
 
 
-custom_subconstructs: t.List[t.Type[cs.Subconstruct]] = []
+custom_subconstructs: t.List[t.Type[cs.Subconstruct[t.Any, t.Any, t.Any, t.Any]]] = []

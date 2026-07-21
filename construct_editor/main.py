@@ -181,6 +181,7 @@ class ConstructGallery(wx.Panel):
         self.gallery_selection = 1
         default_gallery = list(self.construct_gallery.keys())[self.gallery_selection]
         default_gallery_item = self.construct_gallery[default_gallery]
+        assert default_gallery_item is not None
 
         # Define GUI elements #############################################
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -296,7 +297,7 @@ class ConstructGallery(wx.Panel):
             )
 
             example = self.example_selector_lbx.GetStringSelection()
-            example_binary = self.construct_gallery[selection].example_binarys[example]
+            example_binary = gallery_item.example_binarys[example]
         else:
             example_binary = bytes(0)
 
@@ -315,11 +316,12 @@ class ConstructGallery(wx.Panel):
     def on_example_selection_changed(self, event):
         selection = self.gallery_selector_lbx.GetStringSelection()
         example = self.example_selector_lbx.GetStringSelection()
-        example_binary = self.construct_gallery[selection].example_binarys[example]
-
-        # Set example binary
-        self.construct_hex_editor.binary = example_binary
-        self.construct_hex_editor.construct_editor.expand_all()
+        gallery_item = self.construct_gallery[selection]
+        if gallery_item is not None:
+            # Set example binary
+            example_binary = gallery_item.example_binarys[example]
+            self.construct_hex_editor.binary = example_binary
+            self.construct_hex_editor.construct_editor.expand_all()
 
     def on_load_binary_file_clicked(self, event):
         with wx.FileDialog(
@@ -403,7 +405,7 @@ def main():
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     inspect = False
-    if inspect is True:
+    if inspect is True:  # type: ignore[reportUnnecessaryComparison]
         import wx.lib.mixins.inspection as wit
 
         app = wit.InspectableApp()

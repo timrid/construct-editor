@@ -6,6 +6,7 @@ import typing as t
 import construct as cs
 import wx
 import wx.dataview as dv
+from wx.dataview import DataViewItem
 
 from construct_editor.core.construct_editor import ConstructEditor
 from construct_editor.core.entries import EntryConstruct
@@ -53,10 +54,10 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
             raise ValueError("`entry_renderer_helper` not set")
         return self.entry_renderer_helper.get_size(self)
 
-    def Render(self, rect: wx.Rect, dc: wx.DC, state):
+    def Render(self, cell: wx.Rect, dc: wx.DC, state: int) -> bool:
         if self.entry_renderer_helper is None:
             raise ValueError("`entry_renderer_helper` not set")
-        return self.entry_renderer_helper.render(self, rect, dc, state)
+        return self.entry_renderer_helper.render(self, cell, dc, state)
 
     def GetMode(self) -> int:
         """
@@ -101,16 +102,16 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
 
     def ActivateCell(
         self,
-        rect: wx.Rect,
+        cell: wx.Rect,
         model: dv.DataViewModel,
         item: dv.DataViewItem,
         col: int,
-        mouseEvent: wx.MouseEvent | None,
-    ):
+        mouseEvent: wx.MouseEvent,
+    ) -> bool:
         if self.entry_renderer_helper is None:
             raise ValueError("`entry_renderer_helper` not set")
         return self.entry_renderer_helper.activate_cell(
-            self, rect, model, item, col, mouseEvent
+            self, cell, model, item, col, mouseEvent
         )
 
     # The HasEditorCtrl, CreateEditorCtrl and GetValueFromEditorCtrl
@@ -130,7 +131,8 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         editor.SetSize(labelRect.GetSize())
         return editor
 
-    def GetValueFromEditorCtrl(self, editor: WxObjEditor):
+    def GetValueFromEditorCtrl(self, editor: wx.Window) -> ValueFromEditorCtrl:
+        editor = t.cast("WxObjEditor", editor)
         new_obj = editor.get_new_obj()
         return ValueFromEditorCtrl(new_obj)
 
@@ -191,7 +193,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
     # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
     # #################################################################################################################
-    def GetChildren(self, parent, children):
+    def GetChildren(self, item: dv.DataViewItem, children: t.List[dv.DataViewItem]) -> int:
         # The view calls this method to find the children of any node in the
         # control. There is an implicit hidden root node, and the top level
         # item(s) should be reported as children of this node. A List view
@@ -206,11 +208,11 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         if self.root_entry is None:
             return 0
 
-        if not parent:
+        if not item:
             # hidden root
             entry = None
         else:
-            entry = self.dvc_item_to_entry(parent)
+            entry = self.dvc_item_to_entry(item)
 
         childs = self.get_children(entry)
         for child in childs:
@@ -256,12 +258,12 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
 
         return self.get_value(entry, col)
 
-    def SetValue(self, value: ValueFromEditorCtrl, item: dv.DataViewItem, col: int):
-        if not isinstance(value, ValueFromEditorCtrl):
-            raise ValueError(f"value has the wrong type ({value})")
+    def SetValue(self, variant: ValueFromEditorCtrl, item: DataViewItem, col: int) -> bool:
+        if not isinstance(variant, ValueFromEditorCtrl):
+            raise ValueError(f"value has the wrong type ({variant})")
 
         entry = self.dvc_item_to_entry(item)
-        self.set_value(value.new_obj, entry, col)
+        self.set_value(variant.new_obj, entry, col)
 
         return True
 
@@ -269,7 +271,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         entry = self.dvc_item_to_entry(item)
 
         if entry is self.root_entry:
-            attr.SetColour("blue")
+            attr.SetColour(wx.BLUE)
             attr.SetBold(True)
             return True
 
@@ -280,7 +282,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
     def __init__(
         self,
         parent,
-        construct: cs.Construct,
+        construct: cs.Construct[t.Any, t.Any],
     ):
         wx.Panel.__init__(self, parent)
         self._init_gui()
@@ -664,7 +666,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             wx.TheClipboard.SetData(wx.TextDataObject(txt))
             wx.TheClipboard.Close()
 
-    def _get_from_clipboard(self):
+    def _get_from_clipboard(self) -> str | None:
         """
         Get text from the clipboard.
         """

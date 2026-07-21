@@ -4,6 +4,8 @@ TCP/IP Protocol Stack
 WARNING: before parsing the application layer over a TCP stream, you must first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
 """
 
+import typing as t
+
 from construct import *  # type: ignore
 from construct.lib import *  # type: ignore
 
@@ -613,17 +615,22 @@ udp_header = Struct(
 # Domain Name System (TCP/IP protocol stack)
 #===============================================================================
 
-class DnsStringAdapter(Adapter):
+
+class DnsStringAdapter(Adapter[t.Any, t.Any, t.Any, t.Any]):
     def _decode(self, obj, context, path):
         return u".".join(obj[:-1])  # type: ignore
+
     def _encode(self, obj, context, path):
         return obj.split(u".") + [u""]  # type: ignore
 
-class DnsNamesAdapter(Adapter):
+
+class DnsNamesAdapter(Adapter[t.Any, t.Any, t.Any, t.Any]):
     def _decode(self, obj, context, path):
         return [x.label if x.islabel else x.pointer & 0x3fff for x in obj]  # type: ignore
+
     def _encode(self, obj, context, path):
-        return [dict(ispointer=1,pointer=x|0xc000) if isinstance(x,int) else dict(islabel=1,label=x) for x in obj]  # type: ignore
+        return [dict(ispointer=1, pointer=x | 0xc000) if isinstance(x,int) else dict(islabel=1, label=x) for x in obj]  # type: ignore
+
 
 dns_record_class = Enum(Int16ub,
     RESERVED = 0,

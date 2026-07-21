@@ -7,6 +7,7 @@ import typing as t
 
 import wx
 import wx.grid as Grid
+from wx.grid import GridCellAttr
 
 from construct_editor.core.callbacks import CallbackList
 
@@ -62,15 +63,16 @@ class HexEditorBinaryData:
                     True, f"Overwrite Range (Index: {idx}, Length: {len(byts)})"
                 )
 
-            def Do(self):
+            def Do(self) -> bool:
                 self._range_backup = obj._binary[idx : idx + len(byts)]
-                if obj._binary[idx : idx + len(byts)] == byts:
+                byts_array = bytearray(byts)
+                if obj._binary[idx : idx + len(byts)] == byts_array:
                     return False
-                obj._binary[idx : idx + len(byts)] = byts
+                obj._binary[idx : idx + len(byts)] = byts_array
                 obj.on_binary_changed.fire(obj)
                 return True
 
-            def Undo(self):
+            def Undo(self) -> bool:
                 obj._binary[idx : idx + len(byts)] = self._range_backup
                 obj.on_binary_changed.fire(obj)
                 return True
@@ -474,7 +476,7 @@ class HexCellEditor(Grid.GridCellEditor):
             rect.x - 4, rect.y, rect.width + 8, rect.height + 2, wx.SIZE_ALLOW_MINUS_ONE
         )
 
-    def Show(self, show, attr):
+    def Show(self, show: bool, attr: GridCellAttr | None = None) -> None:
         """
         Show or hide the edit control.  You can use the attr (if not None)
         to set colours or fonts for the control.
@@ -548,32 +550,32 @@ class HexCellEditor(Grid.GridCellEditor):
         self._tc.SetValue(self.startValue)
         self._tc.SetInsertionPointEnd()
 
-    def IsAcceptedKey(self, evt):
+    def IsAcceptedKey(self, event: wx.KeyEvent) -> bool:
         """
         Return True to allow the given key to start editing: the base class
         version only checks that the event has no modifiers.  F2 is special
         and will always start the editor.
         """
-        logger.debug("keycode=%d" % (evt.GetKeyCode()))
+        logger.debug("keycode=%d" % (event.GetKeyCode()))
 
         # We can ask the base class to do it
         # return self.base_IsAcceptedKey(evt)
 
         # or do it ourselves
         return (
-            not (evt.ControlDown() or evt.AltDown())
-            and evt.GetKeyCode() != wx.WXK_SHIFT
+            not (event.ControlDown() or event.AltDown())
+            and event.GetKeyCode() != wx.WXK_SHIFT
         )
 
-    def StartingKey(self, evt):
+    def StartingKey(self, event: wx.KeyEvent) -> None:
         """
         If the editor is enabled by pressing keys on the grid, this will be
         called to let the editor do something about that first key if desired.
         """
-        logger.debug("keycode=%d" % evt.GetKeyCode())
-        key = evt.GetKeyCode()
+        logger.debug("keycode=%d" % event.GetKeyCode())
+        key = event.GetKeyCode()
         if not self._tc.insert_first_key(key):
-            evt.Skip()
+            event.Skip()
 
     def StartingClick(self):
         """
