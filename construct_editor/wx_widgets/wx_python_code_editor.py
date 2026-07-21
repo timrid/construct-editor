@@ -501,7 +501,7 @@ class WxPythonCodeEditor(PythonSTC):
         # Caret color
         self.SetCaretForeground("BLUE")
         # Selection background
-        self.SetSelBackground(1, "#66CCFF")
+        self.SetSelBackground(True, "#66CCFF")
 
         # Attempt to set caret blink rate.
         try:

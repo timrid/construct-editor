@@ -8,6 +8,7 @@ version = "0.2.0"
 description = "GUI (based on wxPython) for 'construct', which is a powerful declarative and symmetrical parser and builder for binary data."
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Tim Riddermann" }]
 requires-python = ">=3.10"
 keywords = [
@@ -63,10 +64,11 @@ construct-editor = "construct_editor.main:main"
 
 [dependency-groups]
 dev = [
-    "poethepoet>=0.46.0",
-    "pyright>=1.1.410",
-    "ruff>=0.15.16",
-    "ty>=0.0.46",
+    "poethepoet>=0.48.0",
+    "mypy>=2.3.0",
+    "pyright>=1.1.411",
+    "ruff>=0.15.21",
+    "ty>=0.0.59",
     "cryptography",  # optional "extra" from construct that the user may or may not have installed
     "cloudpickle",  # optional "extra" from construct that the user may or may not have installed
     "lz4",  # optional "extra" from construct that the user may or may not have installed
@@ -84,6 +86,27 @@ include = [
 
 [tool.setuptools.package-data]
 construct_editor = ["py.typed"]
+
+[tool.mypy]
+strict = true
+# These errors should be activated in the future, but for now we don't want to refactor the entire codebase right now.
+disable_error_code = [
+    "arg-type",
+    "assignment",
+    "attr-defined",
+    "import-untyped",
+    "misc",
+    "no-any-return",
+    "no-untyped-call",
+    "no-untyped-def",
+    "no-redef",
+    "return-value",
+    "str-bytes-safe",
+    "type-arg",
+    "union-attr",
+    "unused-ignore",
+    "var-annotated",
+]
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -103,7 +126,6 @@ exclude = [
 # Valid values: "error", "warning", "information", "none"
 reportArgumentType = "none"
 reportAttributeAccessIssue = "none"
-reportGeneralTypeIssues = "none"
 reportIncompatibleMethodOverride = "none"
 reportInvalidTypeArguments = "none"
 reportMissingParameterType = "none"
@@ -137,6 +159,7 @@ exclude = [
 # These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
 # Valid values: "error", "warn", "ignore"
 [tool.ty.rules]
+invalid-argument-type = "ignore"
 invalid-assignment = "ignore"
 invalid-method-override = "ignore"
 invalid-type-arguments = "ignore"
@@ -167,10 +190,42 @@ ignore = [
     "F841",  # Local variable `...` is assigned to but never used
 ]
 
+[tool.poe.tasks.test]
+# Tests are not yet implemented and will be added with PR #40.
+# cmd = "pytest $POE_EXTRA_ARGS"
+sequence = []
+executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.lint]
+cmd = "ruff check --fix --show-fixes"
+executor = { type = "uv", isolated = true }
+
+[tool.poe.tasks.lint-checkonly]
+cmd = "ruff check"
+executor = { type = "uv", isolated = true }
+
+[tool.poe.tasks.ty]
+cmd = "ty check"
+executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.pyright]
+cmd = "pyright"
+executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.mypy]
+cmd = "mypy construct_editor"
+executor = {type = "uv", isolated = true}
+
 [tool.poe.tasks.typecheck]
 sequence = [
-    { cmd = "ruff check --fix --show-fixes" },
-    { cmd = "ty check" },
-    { cmd = "pyright" },
+    "ty",
+    "pyright",
+    "mypy"
 ]
-executor = {type = "uv", isolated = true}
+
+[tool.poe.tasks.check-all]
+sequence = [
+    "lint",
+    "typecheck",
+    "test",
+]

@@ -21,6 +21,47 @@ The preferred way to installation is via PyPI:
 pip install construct-editor
 ```
 
+## Tests
+Unittests are in development and will be added by PR #40.
+
+The following static type checkers are fully supported:
+- [mypy](https://github.com/python/mypy)
+- [pyright](https://github.com/microsoft/pyright)
+- [ty](https://github.com/astral-sh/ty) (experimental, since ty itself is still in development)
+
+## Development
+
+This project uses `uv` as a project management tool. To set up your development environment, run the following command:
+
+```bash
+uv sync
+```
+
+To run the unit tests, run:
+
+```bash
+uv run poe test
+```
+Note: Unittests are in development and will be added by PR #40. For now, this command is a placeholder and does nothing.
+
+To run the linter/code formatter (including auto fix), run:
+
+```bash
+uv run poe lint
+```
+
+To run all supported type checkers, run:
+
+```bash
+uv run poe typecheck
+```
+
+To run unit tests, linter/code formatter and type checkers, run:
+
+```bash
+uv run poe check-all
+```
+
 ## Getting started (Standalone)
 To start the standalone version, just execute the following in the command line:
 ```

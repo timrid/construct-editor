@@ -28,13 +28,15 @@ class ChangeValueCmd(Command):
         self.old_value = old_value
         self.new_value = new_value
 
-    def do(self) -> None:
+    def do(self) -> bool:
         self.entry.obj = self.new_value
         self.entry.model.on_value_changed(self.entry)
+        return True
 
-    def undo(self) -> None:
+    def undo(self) -> bool:
         self.entry.obj = self.old_value
         self.entry.model.on_value_changed(self.entry)
+        return True
 
 
 class ConstructEditorModel:
