@@ -80,11 +80,9 @@ class WxObjEditor_Integer(wx.TextCtrl):
 
         try:
             # convert string to integer
-            new_obj = str_to_int(val_str)
+            return str_to_int(val_str)
         except Exception:
-            new_obj = val_str  # this will probably result in a building error
-
-        return new_obj
+            return val_str  # this will probably result in a building error
 
 
 class WxObjEditor_Bytes(wx.TextCtrl):
@@ -105,11 +103,9 @@ class WxObjEditor_Bytes(wx.TextCtrl):
 
         try:
             # convert string to bytes
-            new_obj = str_to_bytes(val_str)
+            return str_to_bytes(val_str)
         except Exception:
-            new_obj = val_str  # this will probably result in a building error
-
-        return new_obj
+            return val_str  # this will probably result in a building error
 
 
 class WxObjEditor_Enum(wx.ComboBox):

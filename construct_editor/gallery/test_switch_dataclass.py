@@ -1,4 +1,5 @@
 import dataclasses
+import typing as t
 
 import construct as cs
 import construct_typed as cst
@@ -42,28 +43,32 @@ class SwitchTest(cst.DataclassMixin):
             return cls(0)
 
     choice: int = cst.csfield(cst.TEnum(cs.Int8ub, Choice))
-    switch: Case1 | Case2 | CaseDefault | None = cst.csfield_noinit(
-        cs.Switch(
-            cs.this.choice,
-            cases={
-                1: cs.Default(cst.DataclassStruct(Case1), Case1.get_default()),
-                2: cs.Default(cst.DataclassStruct(Case2), Case2.get_default()),
-            },
-            default=cs.Default(
-                cst.DataclassStruct(CaseDefault), CaseDefault.get_default()
-            ),
-        )
+    switch: Case1 | Case2 | CaseDefault | None = t.cast(
+        "Case1 | Case2 | CaseDefault | None",
+        cst.csfield_noinit(
+            cs.Switch(
+                cs.this.choice,
+                cases={
+                    1: cs.Default(cst.DataclassStruct(Case1), Case1.get_default()),
+                    2: cs.Default(cst.DataclassStruct(Case2), Case2.get_default()),
+                },
+                default=cs.Default(cst.DataclassStruct(CaseDefault), CaseDefault.get_default()),
+            )
+        ),
     )
 
-    switch_without_default: Case1 | Case2 | None = cst.csfield_noinit(
-        cs.Switch(
-            cs.this.choice,
-            cases={
-                1: cs.Default(cst.DataclassStruct(Case1), Case1.get_default()),
-                2: cs.Default(cst.DataclassStruct(Case2), Case2.get_default()),
-            },
-            default=cs.Default(cs.Pass, None),
-        )
+    switch_without_default: Case1 | Case2 | None = t.cast(
+        "Case1 | Case2 | None",
+        cst.csfield_noinit(
+            cs.Switch(
+                cs.this.choice,
+                cases={
+                    1: cs.Default(cst.DataclassStruct(Case1), Case1.get_default()),
+                    2: cs.Default(cst.DataclassStruct(Case2), Case2.get_default()),
+                },
+                default=cs.Default(cs.Pass, None),
+            )
+        ),
     )
 
 

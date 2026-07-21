@@ -526,7 +526,7 @@ class EntryArray(EntrySubconstruct):
     ):
         super().__init__(model, parent, construct, name, docs)
 
-        self._subentries = []
+        self._subentries: list[EntryConstruct] = []
 
     @property
     def construct(self) -> "cs.Array[Any, Any] | cs.GreedyRange[Any, Any]":
@@ -1672,12 +1672,11 @@ class EntryEnum(EntrySubconstruct):
                 value = str_to_int(s)
 
             if value in self.construct.decmapping:
-                new_obj = self.construct.decmapping[value]
+                return self.construct.decmapping[value]
             else:
-                new_obj = cs.EnumInteger(value)
+                return cs.EnumInteger(value)
         except Exception:
-            new_obj = s  # this will probably result in a binary-build-error
-        return new_obj
+            return s  # this will probably result in a binary-build-error
 
 
 # EntryFlagsEnum ######################################################################################################
@@ -1733,7 +1732,7 @@ class EntryFlagsEnum(EntrySubconstruct):
 
     def conv_flagsenum_items_to_obj(self, items: t.List[FlagsEnumItem]) -> Any:
         """Convert flagsenum items to object"""
-        new_obj = cs.Container()
+        new_obj: cs.Container[t.Any] = cs.Container[t.Any]()
         for item in items:
             if item.checked:
                 new_obj[item.name] = True
@@ -1798,13 +1797,12 @@ class EntryTEnum(EntrySubconstruct):
         enum_type: t.Type[cst.EnumBase] = self.construct.enum_type
         try:
             try:
-                new_obj = enum_type[s]
+                return enum_type[s]
             except KeyError:
                 value = str_to_int(s)
-                new_obj = enum_type(value)
+                return enum_type(value)
         except Exception:
-            new_obj = s  # this will probably result in a binary-build-error
-        return new_obj
+            return s  # this will probably result in a binary-build-error
 
 
 # EntryTFlagsEnum #####################################################################################################

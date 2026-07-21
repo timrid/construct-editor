@@ -1124,11 +1124,12 @@ class HexEditorGrid(Grid.Grid):
             if menu is None:
                 popup_menu.AppendSeparator()
                 continue
+            item: wx.MenuItem
             if menu.toggle_state is not None:  # checkbox boolean state
-                item: wx.MenuItem = popup_menu.AppendCheckItem(menu.wx_id, menu.name)
+                item = popup_menu.AppendCheckItem(menu.wx_id, menu.name)
                 item.Check(menu.toggle_state)
             else:
-                item: wx.MenuItem = popup_menu.Append(menu.wx_id, menu.name)
+                item = popup_menu.Append(menu.wx_id, menu.name)
             self.Bind(wx.EVT_MENU, menu.callback, id=item.Id)
             item.Enable(menu.enabled)
 

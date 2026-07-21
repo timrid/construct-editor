@@ -92,20 +92,14 @@ strict = true
 # These errors should be activated in the future, but for now we don't want to refactor the entire codebase right now.
 disable_error_code = [
     "arg-type",
-    "assignment",
     "attr-defined",
     "import-untyped",
     "misc",
     "no-any-return",
     "no-untyped-call",
     "no-untyped-def",
-    "no-redef",
-    "return-value",
     "str-bytes-safe",
-    "type-arg",
-    "union-attr",
     "unused-ignore",
-    "var-annotated",
 ]
 
 [tool.pyright]
