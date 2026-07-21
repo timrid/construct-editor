@@ -65,6 +65,7 @@ construct-editor = "construct_editor.main:main"
 [dependency-groups]
 dev = [
     "poethepoet>=0.48.0",
+    "mypy>=2.3.0",
     "pyright>=1.1.411",
     "ruff>=0.15.21",
     "ty>=0.0.59",
