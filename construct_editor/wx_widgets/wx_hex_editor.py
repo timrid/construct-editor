@@ -7,6 +7,7 @@ import typing as t
 
 import wx
 import wx.grid as Grid
+from wx.grid import GridCellAttr
 
 from construct_editor.core.callbacks import CallbackList
 
@@ -62,15 +63,16 @@ class HexEditorBinaryData:
                     True, f"Overwrite Range (Index: {idx}, Length: {len(byts)})"
                 )
 
-            def Do(self):
+            def Do(self) -> bool:
                 self._range_backup = obj._binary[idx : idx + len(byts)]
-                if obj._binary[idx : idx + len(byts)] == byts:
+                byts_array = bytearray(byts)
+                if obj._binary[idx : idx + len(byts)] == byts_array:
                     return False
-                obj._binary[idx : idx + len(byts)] = byts
+                obj._binary[idx : idx + len(byts)] = byts_array
                 obj.on_binary_changed.fire(obj)
                 return True
 
-            def Undo(self):
+            def Undo(self) -> bool:
                 obj._binary[idx : idx + len(byts)] = self._range_backup
                 obj.on_binary_changed.fire(obj)
                 return True
@@ -243,8 +245,8 @@ class HexEditorTable(Grid.GridTableBase):
         byte_idx = self.get_byte_idx(row, col)
 
         selected = False
-        for sel in self.selections:
-            if sel[0] <= byte_idx < sel[1]:
+        for sel0, sel1 in self.selections:
+            if sel0 <= byte_idx < sel1:
                 selected = True
                 break
 
@@ -474,7 +476,7 @@ class HexCellEditor(Grid.GridCellEditor):
             rect.x - 4, rect.y, rect.width + 8, rect.height + 2, wx.SIZE_ALLOW_MINUS_ONE
         )
 
-    def Show(self, show, attr):
+    def Show(self, show: bool, attr: GridCellAttr | None = None) -> None:
         """
         Show or hide the edit control.  You can use the attr (if not None)
         to set colours or fonts for the control.
@@ -548,32 +550,32 @@ class HexCellEditor(Grid.GridCellEditor):
         self._tc.SetValue(self.startValue)
         self._tc.SetInsertionPointEnd()
 
-    def IsAcceptedKey(self, evt):
+    def IsAcceptedKey(self, event: wx.KeyEvent) -> bool:
         """
         Return True to allow the given key to start editing: the base class
         version only checks that the event has no modifiers.  F2 is special
         and will always start the editor.
         """
-        logger.debug("keycode=%d" % (evt.GetKeyCode()))
+        logger.debug("keycode=%d" % (event.GetKeyCode()))
 
         # We can ask the base class to do it
         # return self.base_IsAcceptedKey(evt)
 
         # or do it ourselves
         return (
-            not (evt.ControlDown() or evt.AltDown())
-            and evt.GetKeyCode() != wx.WXK_SHIFT
+            not (event.ControlDown() or event.AltDown())
+            and event.GetKeyCode() != wx.WXK_SHIFT
         )
 
-    def StartingKey(self, evt):
+    def StartingKey(self, event: wx.KeyEvent) -> None:
         """
         If the editor is enabled by pressing keys on the grid, this will be
         called to let the editor do something about that first key if desired.
         """
-        logger.debug("keycode=%d" % evt.GetKeyCode())
-        key = evt.GetKeyCode()
+        logger.debug("keycode=%d" % event.GetKeyCode())
+        key = event.GetKeyCode()
         if not self._tc.insert_first_key(key):
-            evt.Skip()
+            event.Skip()
 
     def StartingClick(self):
         """
@@ -606,7 +608,7 @@ class ContextMenuItem:
     # None = option
     # True = toggle selected
     # False = toggle unselected
-    toggle_state: t.Optional[bool]
+    toggle_state: bool | None
 
     enabled: bool
 
@@ -631,7 +633,7 @@ class HexEditorGrid(Grid.Grid):
         self._table = table
         self._binary_data = binary_data
         self.read_only = read_only
-        self.on_selection_changed: "CallbackList[[int, t.Optional[int]]]" = (
+        self.on_selection_changed: "CallbackList[[int, int | None]]" = (
             CallbackList()
         )
 
@@ -665,7 +667,7 @@ class HexEditorGrid(Grid.Grid):
 
         self.refresh()
 
-        self._selection: t.Tuple[t.Optional[int], t.Optional[int]] = (None, None)
+        self._selection: t.Tuple[int | None, int | None] = (None, None)
 
     def refresh(self):
         """
@@ -775,20 +777,20 @@ class HexEditorGrid(Grid.Grid):
 
     def _on_range_selecting_keyboard(self, row_diff: int = 0, col_diff: int = 0):
         """Change selection from the keyboard"""
-        sel = self._selection
-        if sel[0] is None:
+        sel0, sel1 = self._selection
+        if sel0 is None:
             return  # nothing is currently selected
 
         cursor_row, cursor_col = self.GetGridCursorCoords()
         cursor_idx = self._table.get_byte_idx(cursor_row, cursor_col)
 
-        if sel[1] is None:
+        if sel1 is None:
             other_idx = cursor_idx
         else:
-            if sel[0] == cursor_idx:
-                other_idx = sel[1]
+            if sel0 == cursor_idx:
+                other_idx = sel1
             else:
-                other_idx = sel[0]
+                other_idx = sel0
 
         cursor_row += row_diff
         if cursor_row < 0:
@@ -865,17 +867,16 @@ class HexEditorGrid(Grid.Grid):
         if self.read_only is True:
             return False
 
-        sel = self._selection
-        if sel[0] is None:
+        sel0, sel1 = self._selection
+        if sel0 is None:
             return False
 
-        if sel[1] == None:
+        if sel1 is None:
             length = 1
         else:
-            length = sel[1] - sel[0] + 1
+            length = sel1 - sel0 + 1
 
-        byts = self._binary_data.remove_range(sel[0], length)
-
+        self._binary_data.remove_range(sel0, length)
         self.ClearSelection()
         self._selection = (None, None)
 
@@ -899,11 +900,11 @@ class HexEditorGrid(Grid.Grid):
         if self.read_only is True:
             return False
 
-        sel = self._selection
-        if sel[0] is None:
+        sel0, _ = self._selection
+        if sel0 is None:
             return False
 
-        self._binary_data.insert_range(sel[0], b"\x00")
+        self._binary_data.insert_range(sel0, b"\x00")
         self._on_range_selecting_keyboard()
         return True
 
@@ -915,16 +916,16 @@ class HexEditorGrid(Grid.Grid):
          - true if copy is okay
          - false if an error occured
         """
-        sel = self._selection
-        if sel[0] is None:
+        sel0, sel1 = self._selection
+        if sel0 is None:
             return False
 
-        if sel[1] == None:
+        if sel1 is None:
             length = 1
         else:
-            length = sel[1] - sel[0] + 1
+            length = sel1 - sel0 + 1
 
-        byts = self._binary_data.get_range(sel[0], length)
+        byts = self._binary_data.get_range(sel0, length)
 
         if wx.TheClipboard.Open():
             byts_str = byts.hex(" ")
@@ -1108,11 +1109,11 @@ class HexEditorGrid(Grid.Grid):
         """Show context menu"""
         # Check if the click is inside the current selection.
         # If not, select the current cell
-        sel = self._selection
+        sel0, sel1 = self._selection
         select_cell = True
-        if sel[0] is not None and sel[1] is not None:
+        if sel0 is not None and sel1 is not None:
             idx = self._table.get_byte_idx(event.GetRow(), event.GetCol())
-            if sel[0] <= idx <= sel[1]:
+            if sel0 <= idx <= sel1:
                 select_cell = False
 
         if select_cell:
@@ -1123,11 +1124,12 @@ class HexEditorGrid(Grid.Grid):
             if menu is None:
                 popup_menu.AppendSeparator()
                 continue
-            if menu.toggle_state != None:  # checkbox boolean state
-                item: wx.MenuItem = popup_menu.AppendCheckItem(menu.wx_id, menu.name)
+            item: wx.MenuItem
+            if menu.toggle_state is not None:  # checkbox boolean state
+                item = popup_menu.AppendCheckItem(menu.wx_id, menu.name)
                 item.Check(menu.toggle_state)
             else:
-                item: wx.MenuItem = popup_menu.Append(menu.wx_id, menu.name)
+                item = popup_menu.Append(menu.wx_id, menu.name)
             self.Bind(wx.EVT_MENU, menu.callback, id=item.Id)
             item.Enable(menu.enabled)
 
@@ -1136,7 +1138,7 @@ class HexEditorGrid(Grid.Grid):
 
     def build_context_menu(
         self,
-    ) -> t.List[t.Optional[ContextMenuItem]]:
+    ) -> t.List[ContextMenuItem | None]:
         """Build the context menu. Can be overridden."""
 
         return [
@@ -1198,7 +1200,7 @@ class WxHexEditor(wx.Panel):
         self,
         parent,
         binary: bytes = b"",
-        format: t.Optional[HexEditorFormat] = None,
+        format: HexEditorFormat | None = None,
         read_only: bool = False,
         bitwiese: bool = False,
     ):
@@ -1246,7 +1248,7 @@ class WxHexEditor(wx.Panel):
         self._status_bar.SetStatusText(msg, 0)
         self.refresh()
 
-    def _on_selection_changed(self, idx1: int, idx2: t.Optional[int]):
+    def _on_selection_changed(self, idx1: int, idx2: int | None):
         if idx2 is None:
             msg = f"Selection: {idx1:n}"
         else:
@@ -1305,7 +1307,7 @@ class WxHexEditor(wx.Panel):
 
     # Property: on_binary_changed #############################################
     @property
-    def on_selection_changed(self) -> "CallbackList[[int, t.Optional[int]]]":
+    def on_selection_changed(self) -> "CallbackList[[int, int | None]]":
         return self._grid.on_selection_changed
 
 
@@ -1320,7 +1322,7 @@ if __name__ == "__main__":
             # Create an instance of our model...
             self.hex_editor = WxHexEditor(self)
 
-            self.hex_editor.binary = bytearray(500)
+            self.hex_editor.binary = bytes(500)
 
             self.Show(True)
 

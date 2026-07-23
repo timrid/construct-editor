@@ -50,7 +50,7 @@ classifiers = [
 dependencies = [
     "arrow>=1.0.0",
     "construct>=2.10.68",
-    "construct-typing==0.8.*",
+    "construct-typing>=0.8.1,<0.9.0",
     "typing-extensions>=4.12.0",
     "wrapt>=1.14.0",
     "wxPython>=4.2.2",
@@ -92,20 +92,14 @@ strict = true
 # These errors should be activated in the future, but for now we don't want to refactor the entire codebase right now.
 disable_error_code = [
     "arg-type",
-    "assignment",
     "attr-defined",
     "import-untyped",
     "misc",
     "no-any-return",
     "no-untyped-call",
     "no-untyped-def",
-    "no-redef",
-    "return-value",
     "str-bytes-safe",
-    "type-arg",
-    "union-attr",
     "unused-ignore",
-    "var-annotated",
 ]
 
 [tool.pyright]
@@ -124,21 +118,14 @@ exclude = [
 
 # These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
 # Valid values: "error", "warning", "information", "none"
-reportArgumentType = "none"
-reportAttributeAccessIssue = "none"
-reportIncompatibleMethodOverride = "none"
-reportInvalidTypeArguments = "none"
-reportMissingParameterType = "none"
-reportMissingTypeArgument = "none"
-reportMissingTypeStubs = "none"
-reportOptionalMemberAccess = "none"
-reportUnknownArgumentType = "none"
-reportUnknownLambdaType = "none"
-reportUnknownMemberType = "none"
-reportUnknownParameterType = "none"
-reportUnknownVariableType = "none"
-reportUnnecessaryComparison = "none"
-reportUnusedVariable = "none"
+reportArgumentType = "none"  # 6 errors
+reportAttributeAccessIssue = "none"  # 8 errors
+reportMissingParameterType = "none"  # 130 errors
+reportMissingTypeStubs = "none"  # 11 errors
+reportUnknownArgumentType = "none"  # 132 errors
+reportUnknownMemberType = "none"  # 242 errors
+reportUnknownParameterType = "none"  # 64 errors
+reportUnknownVariableType = "none"  # 61 errors
 # These "unnecessary isinstance" checks often enhance readability or increase the future-proofness of the code,
 # since you can then explicitly "raise" for other types. So we don't want to complain about them.
 reportUnnecessaryIsInstance = "none"
@@ -160,9 +147,6 @@ exclude = [
 # Valid values: "error", "warn", "ignore"
 [tool.ty.rules]
 invalid-argument-type = "ignore"
-invalid-assignment = "ignore"
-invalid-method-override = "ignore"
-invalid-type-arguments = "ignore"
 unresolved-attribute = "ignore"
 unused-type-ignore-comment = "ignore"
 
@@ -177,17 +161,17 @@ output-format = "concise"  # "full" | "concise" | "grouped" | "json" | "junit" |
 
 [tool.ruff.lint]
 allowed-confusables = ["×", "–", "‘", "’"]
-
-# select = [] Use Default ruleset, cp. https://docs.astral.sh/ruff/rules/
+select = [
+    "F",
+    "I",
+    "UP007",
+    "UP045",
+]
 
 # These warnings should be activated as "error" in the future, but for now we don't want to refactor the entire codebase right now.
 ignore = [
-    "E402",  # Module level import not at top of file
-    "E711",  # Comparison to `None` should be `cond is None`
-    "E712",  # Avoid equality comparisons to `True`
     "F403",  # `from ... import *` used; unable to detect undefined names
     "F405",  # `...` may be undefined, or defined from star imports
-    "F841",  # Local variable `...` is assigned to but never used
 ]
 
 [tool.poe.tasks.test]

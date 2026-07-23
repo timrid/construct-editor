@@ -1,7 +1,9 @@
-import construct as cs
-import construct_typed as cst
 import dataclasses
 import typing as t
+
+import construct as cs
+import construct_typed as cst
+
 from . import GalleryItem
 
 
@@ -9,14 +11,14 @@ class DefaultSizedError(cs.ConstructError):
     pass
 
 
-class DefaultSized(cs.Subconstruct):
+class DefaultSized(cst.Subconstruct[t.Any, t.Any, t.Any, t.Any]):
     r"""
     Returns a size when calling sizeof of GreedyBytes. Parsing and building is not changed.
 
     :param subcon: Construct instance
     :param default_size: size that should be returned
 
-    :raises DefaultSizedError: anouter GreedyBytes than GreedyBytes is passed
+    :raises DefaultSizedError: another GreedyBytes than GreedyBytes is passed
 
     Example::
 
@@ -63,11 +65,7 @@ resp_data_formats: t.Dict[CmdCode, cst.Construct[t.Any, t.Any]] = {
     CmdCode.Command2: cst.DataclassStruct(RespData_Command2),
 }
 
-RespDataType = t.Union[
-    bytes,
-    RespData_Command1,
-    RespData_Command2,
-]
+RespDataType = bytes | RespData_Command1 | RespData_Command2
 
 
 class StatusCode(cst.EnumBase):
@@ -129,7 +127,6 @@ gallery_item = GalleryItem(
 # ######################################################################################
 # ################## Adding new constructs to construct-editor #########################
 # ######################################################################################
-import construct_editor.core.custom as custom
-
+import construct_editor.core.custom as custom  # noqa: E402
 
 custom.add_custom_transparent_subconstruct(DefaultSized)

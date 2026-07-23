@@ -10,12 +10,12 @@ import wx
 class ExceptionInfo:
     etype: t.Type[BaseException]
     value: BaseException
-    trace: t.Optional[TracebackType]
+    trace: TracebackType | None
 
 
 class WxExceptionDialog(wx.Dialog):
     def __init__(
-        self, parent, title: str, exception: t.Union[ExceptionInfo, BaseException]
+        self, parent, title: str, exception: ExceptionInfo | BaseException
     ):
         wx.Dialog.__init__(
             self,

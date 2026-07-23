@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import abc
 import typing as t
 
@@ -11,7 +13,7 @@ from construct_editor.core.preprocessor import include_metadata
 
 
 class ConstructEditor:
-    def __init__(self, construct: cs.Construct, model: ConstructEditorModel):
+    def __init__(self, construct: cs.Construct[t.Any, t.Any], model: ConstructEditorModel):
         self._model = model
 
         self.change_construct(construct)
@@ -30,7 +32,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def show_parse_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_parse_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an parse error message to the user.
 
@@ -38,7 +40,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def show_build_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_build_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an build error message to the user.
 
@@ -78,7 +80,7 @@ class ConstructEditor:
         """
 
     @abc.abstractmethod
-    def _get_from_clipboard(self):
+    def _get_from_clipboard(self) -> str | None:
         """
         Get text from the clipboard.
 
@@ -113,7 +115,7 @@ class ConstructEditor:
         # self.model.set_value(txt, entry, ConstructEditorColumn.Value)
         # self.on_root_obj_changed.fire(self.root_obj)
 
-    def change_construct(self, constr: cs.Construct) -> None:
+    def change_construct(self, constr: cs.Construct[t.Any, t.Any]) -> None:
         """
         Change the construct format, that is used for building/parsing.
         """
@@ -309,14 +311,14 @@ class ConstructEditor:
         return False
 
     @property
-    def construct(self) -> cs.Construct:
+    def construct(self) -> cs.Construct[t.Any, t.Any]:
         """
         Construct that is used for displaying.
         """
         return self._construct
 
     @construct.setter
-    def construct(self, constr: cs.Construct):
+    def construct(self, constr: cs.Construct[t.Any, t.Any]):
         self.change_construct(constr)
 
     @property
@@ -379,7 +381,7 @@ class ConstructEditor:
             column_names.append(entries.create_path_str(column_path))
         return column_names
 
-    def _refresh_status_bar(self, entry: t.Optional["entries.EntryConstruct"]) -> None:
+    def _refresh_status_bar(self, entry: "entries.EntryConstruct | None") -> None:
         if entry is None:
             self.show_status("", "")
             return

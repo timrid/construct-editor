@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import keyword
-
 import sys
+
 import wx
 import wx.stc as stc
 
@@ -218,7 +218,7 @@ class PythonSTC(stc.StyledTextCtrl):
         # fold and unfold as needed
         if evt.GetMargin() == 2:
             if evt.GetShift() and evt.GetControl():
-                self.FoldAll()
+                self.FoldAll(stc.STC_FOLDACTION_TOGGLE)
             else:
                 lineClicked = self.LineFromPosition(evt.GetPosition())
 
@@ -236,7 +236,7 @@ class PythonSTC(stc.StyledTextCtrl):
                     else:
                         self.ToggleFold(lineClicked)
 
-    def FoldAll(self):
+    def FoldAll(self, action: int):
         lineCount = self.GetLineCount()
         expanding = True
 
@@ -349,8 +349,8 @@ class WxPythonCodeEditor(PythonSTC):
         self.SetSavePoint()
         self.SetReadOnly(val)
 
-    def SetEditable(self, val):
-        self.SetReadOnly(not val)
+    def SetEditable(self, editable: bool) -> None:
+        self.SetReadOnly(not editable)
 
     def IsModified(self):
         return self.GetModify()
@@ -373,15 +373,15 @@ class WxPythonCodeEditor(PythonSTC):
     def GetPositionFromLine(self, line):
         return self.PositionFromLine(line)
 
-    def GetRange(self, start, end):
-        return self.GetTextRange(start, end)
+    def GetRange(self, from_: int, to_: int) -> str:
+        return self.GetTextRange(from_, to_)
 
     def GetSelection(self):
         return self.GetAnchor(), self.GetCurrentPos()
 
-    def SetSelection(self, start, end):
-        self.SetSelectionStart(start)
-        self.SetSelectionEnd(end)
+    def SetSelection(self, from_: int, to_: int):
+        self.SetSelectionStart(from_)
+        self.SetSelectionEnd(to_)
 
     def SelectLine(self, line):
         start = self.PositionFromLine(line)

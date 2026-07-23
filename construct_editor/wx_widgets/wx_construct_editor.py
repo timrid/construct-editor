@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import dataclasses
 import textwrap
 import typing as t
@@ -6,18 +8,19 @@ import typing as t
 import construct as cs
 import wx
 import wx.dataview as dv
+from wx.dataview import DataViewItem
 
 from construct_editor.core.construct_editor import ConstructEditor
 from construct_editor.core.entries import EntryConstruct
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
 from construct_editor.wx_widgets.wx_context_menu import WxContextMenu
+from construct_editor.wx_widgets.wx_exception_dialog import WxExceptionDialog
 from construct_editor.wx_widgets.wx_obj_view import (
     WxObjEditor,
     WxObjRendererHelper,
     create_obj_editor,
     create_obj_renderer_helper,
 )
-from construct_editor.wx_widgets.wx_exception_dialog import WxExceptionDialog
 
 
 @dataclasses.dataclass
@@ -34,8 +37,8 @@ class ValueFromEditorCtrl:
 class ObjectRenderer(dv.DataViewCustomRenderer):
     def __init__(self):
         super().__init__(varianttype="PyObject")
-        self.entry: t.Optional[EntryConstruct] = None
-        self.entry_renderer_helper: t.Optional[WxObjRendererHelper] = None
+        self.entry: EntryConstruct | None = None
+        self.entry_renderer_helper: WxObjRendererHelper | None = None
         self.EnableEllipsize(wx.ELLIPSIZE_END)
 
     def SetValue(self, value: EntryConstruct):
@@ -53,10 +56,10 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
             raise ValueError("`entry_renderer_helper` not set")
         return self.entry_renderer_helper.get_size(self)
 
-    def Render(self, rect: wx.Rect, dc: wx.DC, state):
+    def Render(self, cell: wx.Rect, dc: wx.DC, state: int) -> bool:
         if self.entry_renderer_helper is None:
             raise ValueError("`entry_renderer_helper` not set")
-        return self.entry_renderer_helper.render(self, rect, dc, state)
+        return self.entry_renderer_helper.render(self, cell, dc, state)
 
     def GetMode(self) -> int:
         """
@@ -101,16 +104,16 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
 
     def ActivateCell(
         self,
-        rect: wx.Rect,
+        cell: wx.Rect,
         model: dv.DataViewModel,
         item: dv.DataViewItem,
         col: int,
-        mouseEvent: t.Optional[wx.MouseEvent],
-    ):
+        mouseEvent: wx.MouseEvent,
+    ) -> bool:
         if self.entry_renderer_helper is None:
             raise ValueError("`entry_renderer_helper` not set")
         return self.entry_renderer_helper.activate_cell(
-            self, rect, model, item, col, mouseEvent
+            self, cell, model, item, col, mouseEvent
         )
 
     # The HasEditorCtrl, CreateEditorCtrl and GetValueFromEditorCtrl
@@ -130,7 +133,8 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         editor.SetSize(labelRect.GetSize())
         return editor
 
-    def GetValueFromEditorCtrl(self, editor: WxObjEditor):
+    def GetValueFromEditorCtrl(self, editor: wx.Window) -> ValueFromEditorCtrl:
+        editor = t.cast("WxObjEditor", editor)
         new_obj = editor.get_new_obj()
         return ValueFromEditorCtrl(new_obj)
 
@@ -191,7 +195,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
     # #################################################################################################################
     # dv.PyDataViewModel Interface ####################################################################################
     # #################################################################################################################
-    def GetChildren(self, parent, children):
+    def GetChildren(self, item: dv.DataViewItem, children: t.List[dv.DataViewItem]) -> int:
         # The view calls this method to find the children of any node in the
         # control. There is an implicit hidden root node, and the top level
         # item(s) should be reported as children of this node. A List view
@@ -206,11 +210,11 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         if self.root_entry is None:
             return 0
 
-        if not parent:
+        if not item:
             # hidden root
             entry = None
         else:
-            entry = self.dvc_item_to_entry(parent)
+            entry = self.dvc_item_to_entry(item)
 
         childs = self.get_children(entry)
         for child in childs:
@@ -256,12 +260,12 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
 
         return self.get_value(entry, col)
 
-    def SetValue(self, value: ValueFromEditorCtrl, item: dv.DataViewItem, col: int):
-        if not isinstance(value, ValueFromEditorCtrl):
-            raise ValueError(f"value has the wrong type ({value})")
+    def SetValue(self, variant: ValueFromEditorCtrl, item: DataViewItem, col: int) -> bool:
+        if not isinstance(variant, ValueFromEditorCtrl):
+            raise ValueError(f"value has the wrong type ({variant})")
 
         entry = self.dvc_item_to_entry(item)
-        self.set_value(value.new_obj, entry, col)
+        self.set_value(variant.new_obj, entry, col)
 
         return True
 
@@ -269,7 +273,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
         entry = self.dvc_item_to_entry(item)
 
         if entry is self.root_entry:
-            attr.SetColour("blue")
+            attr.SetColour(wx.BLUE)
             attr.SetBold(True)
             return True
 
@@ -277,11 +281,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
 
 
 class WxConstructEditor(wx.Panel, ConstructEditor):
-    def __init__(
-        self,
-        parent,
-        construct: cs.Construct,
-    ):
+    def __init__(self, parent, construct: cs.Construct[t.Any, t.Any]):
         wx.Panel.__init__(self, parent)
         self._init_gui()
 
@@ -312,7 +312,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._parse_error_info_bar.Bind(
             wx.EVT_BUTTON, self._parse_error_info_bar_btn_clicked, id=btn_id
         )
-        self._parse_error_ex: t.Optional[Exception] = None
+        self._parse_error_ex: Exception | None = None
         vsizer.Add(self._parse_error_info_bar, 0, wx.EXPAND)
 
         self._build_error_info_bar = wx.InfoBar(self)
@@ -321,7 +321,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._build_error_info_bar.Bind(
             wx.EVT_BUTTON, self._build_error_info_bar_btn_clicked, id=btn_id
         )
-        self._build_error_ex: t.Optional[Exception] = None
+        self._build_error_ex: Exception | None = None
         vsizer.Add(self._build_error_info_bar, 0, wx.EXPAND)
 
         # create status bar
@@ -354,9 +354,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
         self._dvc_main_window.Bind(wx.EVT_KEY_DOWN, self._on_dvc_key_down)
         self._dvc_main_window.Bind(wx.EVT_CHAR, self._on_dvc_char)
-        self._last_tooltip: t.Optional[
-            t.Tuple[EntryConstruct, ConstructEditorColumn]
-        ] = None
+        self._last_tooltip: t.Tuple[EntryConstruct, ConstructEditorColumn] | None = None
 
     def reload(self):
         """
@@ -386,7 +384,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         finally:
             self.Thaw()
 
-    def show_parse_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_parse_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an message to the user.
         """
@@ -396,7 +394,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             self._parse_error_ex = ex
             self._parse_error_info_bar.ShowMessage(msg, wx.ICON_WARNING)
 
-    def show_build_error_message(self, msg: t.Optional[str], ex: t.Optional[Exception]):
+    def show_build_error_message(self, msg: str | None, ex: Exception | None):
         """
         Show an build error message to the user.
         """
@@ -413,7 +411,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._status_bar.SetStatusText(path_info, 0)
         self._status_bar.SetStatusText(bytes_info, 1)
 
-    def get_selected_entry(self) -> t.Optional[EntryConstruct]:
+    def get_selected_entry(self) -> EntryConstruct | None:
         """
         Get the currently selected entry (or None if nothing is selected).
         """
@@ -581,7 +579,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         Then a context menu is created
         """
         item = event.GetItem()
-        entry: t.Optional["EntryConstruct"]
+        entry: "EntryConstruct | None"
         if item.ID is not None:
             entry = self._model.dvc_item_to_entry(item)
         else:
@@ -666,7 +664,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             wx.TheClipboard.SetData(wx.TextDataObject(txt))
             wx.TheClipboard.Close()
 
-    def _get_from_clipboard(self):
+    def _get_from_clipboard(self) -> str | None:
         """
         Get text from the clipboard.
         """

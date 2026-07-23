@@ -18,9 +18,9 @@ import construct_editor.gallery.test_checksum
 import construct_editor.gallery.test_compressed
 import construct_editor.gallery.test_computed
 import construct_editor.gallery.test_const
-import construct_editor.gallery.test_default
 import construct_editor.gallery.test_dataclass_bit_struct
 import construct_editor.gallery.test_dataclass_struct
+import construct_editor.gallery.test_default
 import construct_editor.gallery.test_enum
 import construct_editor.gallery.test_fixedsized
 import construct_editor.gallery.test_flag
@@ -68,13 +68,13 @@ class ConstructGalleryFrame(wx.Frame):
         self.status_bar: wx.StatusBar = self.CreateStatusBar()
 
 
-def on_uncaught_exception(etype: t.Type[BaseException], value: BaseException, trace: TracebackType | None):
+def on_uncaught_exception(etype: t.Type[BaseException], value: BaseException, trace: TracebackType | None) -> None:
     """
     Handler for all unhandled exceptions.
 
     :param etype: the exception type (`SyntaxError`, `ZeroDivisionError`, etc...);
     :param value: the exception error message;
-    :param trace: the traceback header, if any (otherwise, it prints the standard Python header: ``Traceback (most recent call last)``.
+    :param trace: the traceback header, if any (otherwise, it prints the standard Python header: ``Traceback (most recent call last)``).
     """
     with WxExceptionDialog(None, "Uncaught Exception...", ExceptionInfo(etype, value, trace)) as dial:
         dial.ShowModal()
@@ -181,6 +181,7 @@ class ConstructGallery(wx.Panel):
         self.gallery_selection = 1
         default_gallery = list(self.construct_gallery.keys())[self.gallery_selection]
         default_gallery_item = self.construct_gallery[default_gallery]
+        assert default_gallery_item is not None
 
         # Define GUI elements #############################################
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -296,7 +297,7 @@ class ConstructGallery(wx.Panel):
             )
 
             example = self.example_selector_lbx.GetStringSelection()
-            example_binary = self.construct_gallery[selection].example_binarys[example]
+            example_binary = gallery_item.example_binarys[example]
         else:
             example_binary = bytes(0)
 
@@ -315,11 +316,12 @@ class ConstructGallery(wx.Panel):
     def on_example_selection_changed(self, event):
         selection = self.gallery_selector_lbx.GetStringSelection()
         example = self.example_selector_lbx.GetStringSelection()
-        example_binary = self.construct_gallery[selection].example_binarys[example]
-
-        # Set example binary
-        self.construct_hex_editor.binary = example_binary
-        self.construct_hex_editor.construct_editor.expand_all()
+        gallery_item = self.construct_gallery[selection]
+        if gallery_item is not None:
+            # Set example binary
+            example_binary = gallery_item.example_binarys[example]
+            self.construct_hex_editor.binary = example_binary
+            self.construct_hex_editor.construct_editor.expand_all()
 
     def on_load_binary_file_clicked(self, event):
         with wx.FileDialog(
@@ -403,7 +405,7 @@ def main():
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
     inspect = False
-    if inspect is True:
+    if inspect is True:  # type: ignore[reportUnnecessaryComparison]
         import wx.lib.mixins.inspection as wit
 
         app = wit.InspectableApp()

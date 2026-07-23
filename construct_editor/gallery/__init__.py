@@ -1,6 +1,7 @@
 import dataclasses
-import construct as cs
 import typing as t
+
+import construct as cs
 
 
 @dataclasses.dataclass

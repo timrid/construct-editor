@@ -3,7 +3,6 @@ import construct as cs
 from doc.screenshot_scripts._helper import ScreenshotFrame
 
 
-
 class Frame(ScreenshotFrame):
     screenshot_name = "bitwise"
 

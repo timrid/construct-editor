@@ -1,6 +1,6 @@
 import construct as cs
-from . import GalleryItem
 
+from . import GalleryItem
 
 constr = cs.Struct(
     "null_terminated" / cs.NullTerminated(cs.Int16ul, term=b"\x00"),

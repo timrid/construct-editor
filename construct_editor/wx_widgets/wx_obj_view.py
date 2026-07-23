@@ -80,11 +80,9 @@ class WxObjEditor_Integer(wx.TextCtrl):
 
         try:
             # convert string to integer
-            new_obj = str_to_int(val_str)
+            return str_to_int(val_str)
         except Exception:
-            new_obj = val_str  # this will probably result in a building error
-
-        return new_obj
+            return val_str  # this will probably result in a building error
 
 
 class WxObjEditor_Bytes(wx.TextCtrl):
@@ -105,11 +103,9 @@ class WxObjEditor_Bytes(wx.TextCtrl):
 
         try:
             # convert string to bytes
-            new_obj = str_to_bytes(val_str)
+            return str_to_bytes(val_str)
         except Exception:
-            new_obj = val_str  # this will probably result in a building error
-
-        return new_obj
+            return val_str  # this will probably result in a building error
 
 
 class WxObjEditor_Enum(wx.ComboBox):
@@ -326,15 +322,15 @@ class WxObjEditor_Timestamp(wx.Panel):
         evt_handler.ProcessEvent(event)
 
 
-WxObjEditor = t.Union[
-    WxObjEditor_Default,
-    WxObjEditor_String,
-    WxObjEditor_Integer,
-    WxObjEditor_Bytes,
-    WxObjEditor_Enum,
-    WxObjEditor_FlagsEnum,
-    WxObjEditor_Timestamp,
-]
+WxObjEditor = (
+    WxObjEditor_Default
+    | WxObjEditor_String
+    | WxObjEditor_Integer
+    | WxObjEditor_Bytes
+    | WxObjEditor_Enum
+    | WxObjEditor_FlagsEnum
+    | WxObjEditor_Timestamp
+)
 
 
 # #####################################################################################################################
@@ -391,7 +387,7 @@ class WxObjRendererHelper_Default:
         renderer.RenderText(obj_str, 0, rect, dc, state)
         return True
 
-    def get_mode(self):
+    def get_mode(self) -> int:
         return dv.DATAVIEW_CELL_EDITABLE
 
     def activate_cell(
@@ -401,8 +397,8 @@ class WxObjRendererHelper_Default:
         model: dv.DataViewModel,
         item: dv.DataViewItem,
         col: int,
-        mouse_event: t.Optional[wx.MouseEvent],
-    ):
+        mouse_event: wx.MouseEvent | None,
+    ) -> bool:
         return False
 
 
@@ -436,7 +432,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
         native_renderer.DrawCheckBox(win, dc, rect, flags)
         return True
 
-    def get_mode(self):
+    def get_mode(self) -> int:
         return dv.DATAVIEW_CELL_ACTIVATABLE
 
     def activate_cell(
@@ -446,8 +442,8 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
         model: dv.DataViewModel,
         item: dv.DataViewItem,
         col: int,
-        mouse_event: t.Optional[wx.MouseEvent],
-    ):
+        mouse_event: wx.MouseEvent | None,
+    ) -> bool:
         # see wxWidgets: wxDataViewToggleRenderer::WXActivateCell
 
         if mouse_event is not None:
@@ -469,10 +465,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
         return True
 
 
-WxObjRendererHelper = t.Union[
-    WxObjRendererHelper_Default,
-    WxObjRendererHelper_Flag,
-]
+WxObjRendererHelper = WxObjRendererHelper_Default | WxObjRendererHelper_Flag
 
 
 def create_obj_renderer_helper(settings: ObjViewSettings) -> WxObjRendererHelper:

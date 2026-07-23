@@ -1,7 +1,8 @@
+import dataclasses
+
 import construct as cs
 import construct_typed as cst
-import dataclasses
-import typing as t
+
 from . import GalleryItem
 
 
@@ -20,7 +21,7 @@ class IfThenElse(cst.DataclassMixin):
         else_4: int = cst.csfield(cs.Int8sb)
 
     choice: int = cst.csfield(cs.Int8ub)
-    if_then_else: t.Union[Then, Else] = cst.csfield(
+    if_then_else: Then | Else = cst.csfield(
         cs.IfThenElse(
             cs.this.choice == 0, cst.DataclassStruct(Then), cst.DataclassStruct(Else)
         )

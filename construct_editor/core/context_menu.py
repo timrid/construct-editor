@@ -5,7 +5,10 @@ import typing as t
 
 import construct_editor.core.construct_editor as construct_editor
 import construct_editor.core.entries as entries
-from construct_editor.core.model import ConstructEditorModel, IntegerFormat
+from construct_editor.core.model import (
+    ConstructEditorModel,
+    IntegerFormat,
+)
 
 COPY_LABEL = "Copy"
 PASTE_LABEL = "Paste"
@@ -14,6 +17,7 @@ REDO_LABEL = "Redo"
 
 INTFORMAT_DEC_LABEL = "Dec"
 INTFORMAT_HEX_LABEL = "Hex"
+
 
 # #####################################################################################################################
 # Context Menu ########################################################################################################
@@ -26,7 +30,7 @@ class SeparatorMenuItem:
 @dataclasses.dataclass
 class ButtonMenuItem:
     label: str
-    shortcut: t.Optional[str]
+    shortcut: str | None
     enabled: bool
     callback: t.Callable[[], None]
 
@@ -34,7 +38,7 @@ class ButtonMenuItem:
 @dataclasses.dataclass
 class CheckboxMenuItem:
     label: str
-    shortcut: t.Optional[str]
+    shortcut: str | None
     enabled: bool
     checked: bool
     callback: t.Callable[[bool], None]
@@ -53,13 +57,7 @@ class SubmenuItem:
     subitems: t.List["MenuItem"]
 
 
-MenuItem = t.Union[
-    ButtonMenuItem,
-    SeparatorMenuItem,
-    CheckboxMenuItem,
-    RadioGroupMenuItems,
-    SubmenuItem,
-]
+MenuItem = ButtonMenuItem | SeparatorMenuItem | CheckboxMenuItem | RadioGroupMenuItems | SubmenuItem
 
 
 class ContextMenu:
@@ -161,7 +159,6 @@ class ContextMenu:
     def _init_list_viewed_entries(self):
         submenu = SubmenuItem("List Viewed Items", [])
         for e in self.model.list_viewed_entries:
-
             def on_remove_list_viewed_item(checked: bool):
                 self.parent.disable_list_view(e)
 

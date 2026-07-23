@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import typing as t
 
 import construct as cs
@@ -50,7 +52,7 @@ class HexEditorPanel(wx.SplitterWindow):
 
         self.Initialize(panel)
 
-        self.sub_panel: t.Optional["HexEditorPanel"] = None
+        self.sub_panel: "HexEditorPanel | None" = None
 
     def clear_sub_panels(self):
         """Clears all sub-panels recursivly"""
@@ -62,11 +64,10 @@ class HexEditorPanel(wx.SplitterWindow):
     def create_sub_panel(self, name: str, bitwise: bool) -> "HexEditorPanel":
         """Create a new sub-panel"""
         if self.sub_panel is None:
-            self.sub_panel = HexEditorPanel(
-                self, name, read_only=True, bitwiese=bitwise
-            )
-            self.SplitHorizontally(self.GetWindow1(), self.sub_panel)
-            return self.sub_panel
+            new_panel = HexEditorPanel(self, name, read_only=True, bitwiese=bitwise)
+            self.sub_panel = new_panel
+            self.SplitHorizontally(self.GetWindow1(), new_panel)
+            return new_panel
         else:
             raise RuntimeError("sub-panel already created")
 
@@ -75,13 +76,13 @@ class WxConstructHexEditor(wx.Panel):
     def __init__(
         self,
         parent,
-        construct: cs.Construct,
-        contextkw: dict = {},
+        construct: cs.Construct[t.Any, t.Any],
+        contextkw: dict[t.Any, t.Any] | None = None,
         binary: bytes = b"",
     ):
         super().__init__(parent)
 
-        self._contextkw = contextkw
+        self._contextkw = contextkw or {}
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self._init_gui_hex_editor_splitter(hsizer, binary)
@@ -113,11 +114,9 @@ class WxConstructHexEditor(wx.Panel):
             self, wx.ID_ANY, "«", size=wx.Size(12, -1)
         )
         hsizer.Add(self.toggle_hex_visibility_btn, 0, wx.EXPAND | wx.ALL, 0)
-        self.toggle_hex_visibility_btn.Bind(
-            wx.EVT_BUTTON, lambda evt: self.toggle_hex_visibility()
-        )
+        self.toggle_hex_visibility_btn.Bind(wx.EVT_BUTTON, self.toggle_hex_visibility)
 
-    def _init_gui_construct_editor(self, hsizer: wx.BoxSizer, construct: cs.Construct):
+    def _init_gui_construct_editor(self, hsizer: wx.BoxSizer, construct: cs.Construct[t.Any, t.Any]):
         self.construct_editor: WxConstructEditor = WxConstructEditor(
             self,
             construct,
@@ -150,13 +149,13 @@ class WxConstructHexEditor(wx.Panel):
         self.Refresh()
         self.Thaw()
 
-    def change_construct(self, constr: cs.Construct) -> None:
+    def change_construct(self, constr: cs.Construct[t.Any, t.Any]) -> None:
         """
         Change the construct format, that is used for building/parsing.
         """
         self.construct_editor.change_construct(constr)
 
-    def change_contextkw(self, contextkw: dict):
+    def change_contextkw(self, contextkw: dict[t.Any, t.Any]) -> None:
         """
         Change the contextkw used for building/parsing.
         """
@@ -170,25 +169,25 @@ class WxConstructHexEditor(wx.Panel):
         self.hex_panel.hex_editor.binary = binary
 
     @property
-    def construct(self) -> cs.Construct:
+    def construct(self) -> cs.Construct[t.Any, t.Any]:
         """
         Construct that is used for displaying.
         """
         return self.construct_editor.construct
 
     @construct.setter
-    def construct(self, constr: cs.Construct):
+    def construct(self, constr: cs.Construct[t.Any, t.Any]):
         self.construct_editor.construct = constr
 
     @property
-    def contextkw(self) -> dict:
+    def contextkw(self) -> dict[t.Any, t.Any]:
         """
         Context used for building/parsing.
         """
         return self._contextkw
 
     @contextkw.setter
-    def contextkw(self, contextkw: dict):
+    def contextkw(self, contextkw: dict[t.Any, t.Any]):
         self.change_contextkw(contextkw)
 
     @property
@@ -257,7 +256,7 @@ class WxConstructHexEditor(wx.Panel):
             self.Thaw()
             self._converting = False
 
-    def _on_entry_selected(self, entry: t.Optional[EntryConstruct]):
+    def _on_entry_selected(self, entry: EntryConstruct | None):
         try:
             self.Freeze()
             self.hex_panel.clear_sub_panels()

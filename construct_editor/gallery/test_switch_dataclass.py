@@ -1,6 +1,8 @@
+import dataclasses
+
 import construct as cs
 import construct_typed as cst
-import dataclasses
+
 from . import GalleryItem
 
 
@@ -17,7 +19,7 @@ class SwitchTest(cst.DataclassMixin):
         case1_2: int = cst.csfield(cs.Int16sb)
 
         @classmethod
-        def get_default(cls):
+        def get_default(cls) -> "SwitchTest.Case1":
             return cls(0, 0)
 
     @dataclasses.dataclass
@@ -28,7 +30,7 @@ class SwitchTest(cst.DataclassMixin):
         case2_4: int = cst.csfield(cs.Int8sb)
 
         @classmethod
-        def get_default(cls):
+        def get_default(cls) -> "SwitchTest.Case2":
             return cls(0, 0, 0, 0)
 
     @dataclasses.dataclass
@@ -36,7 +38,7 @@ class SwitchTest(cst.DataclassMixin):
         case_default_1: int = cst.csfield(cs.Int32sb)
 
         @classmethod
-        def get_default(cls):
+        def get_default(cls) -> "SwitchTest.CaseDefault":
             return cls(0)
 
     choice: int = cst.csfield(cst.TEnum(cs.Int8ub, Choice))
@@ -47,9 +49,7 @@ class SwitchTest(cst.DataclassMixin):
                 1: cs.Default(cst.DataclassStruct(Case1), Case1.get_default()),
                 2: cs.Default(cst.DataclassStruct(Case2), Case2.get_default()),
             },
-            default=cs.Default(
-                cst.DataclassStruct(CaseDefault), CaseDefault.get_default()
-            ),
+            default=cs.Default(cst.DataclassStruct(CaseDefault), CaseDefault.get_default()),
         )
     )
 

@@ -1,6 +1,6 @@
 import construct as cs
-from . import GalleryItem
 
+from . import GalleryItem
 
 constr = cs.Struct(
     "permissions" / cs.FlagsEnum(cs.Int8ul, R=4, W=2, X=1),

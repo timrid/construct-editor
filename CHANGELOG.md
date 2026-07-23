@@ -1,10 +1,11 @@
 # Changelog
 
 ## [UNRELEASED]
-- Updated construct-typing dependency to v0.8.* and updated the DataClass definitions to reflect the breaking changes.
+- Updated construct-typing dependency to v0.8.1+ and updated the DataClass definitions to reflect the breaking changes.
 - Bumped minimum required Python version to 3.10 (previously: 3.8 which has reached end-of-life).
 - Updated `typing_extensions` dependency to >=4.12.0 for Python 3.13 compatibility.
 - Removed `version.py`, use `importlib.metadata` instead to get the version number.
+- Fixed a bug where multiple instances of `WxConstructHexEditor` might share the same default dict, leading to potentially unexpected behavior.
 
 -------------------------------------------------------------------------------
 

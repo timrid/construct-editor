@@ -1,6 +1,6 @@
 import construct as cs
-from . import GalleryItem
 
+from . import GalleryItem
 
 constr = cs.Struct(
     "brand" / cs.Enum(cs.Int8ul, Porsche=0, Audi=4, VW=7),

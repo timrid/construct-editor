@@ -9,7 +9,7 @@ import construct_editor.core.preprocessor as preprocessor
 
 
 def add_custom_transparent_subconstruct(
-    subconstruct: t.Type["cs.Subconstruct[t.Any,t.Any,t.Any, t.Any]"],
+    subconstruct: t.Type["cs.Subconstruct[t.Any, t.Any, t.Any, t.Any]"],
 ):
     """
     Add compatibility of an custom `cs.Subconstruct` to the construct-editor.
