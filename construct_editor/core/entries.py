@@ -1732,7 +1732,7 @@ class EntryFlagsEnum(EntrySubconstruct):
 
     def conv_flagsenum_items_to_obj(self, items: t.List[FlagsEnumItem]) -> Any:
         """Convert flagsenum items to object"""
-        new_obj: cs.Container[t.Any] = cs.Container[t.Any]()
+        new_obj = cs.Container[t.Any]()
         for item in items:
             if item.checked:
                 new_obj[item.name] = True

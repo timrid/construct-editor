@@ -381,7 +381,7 @@ class ConstructEditor:
             column_names.append(entries.create_path_str(column_path))
         return column_names
 
-    def _refresh_status_bar(self, entry: t.Optional["entries.EntryConstruct"]) -> None:
+    def _refresh_status_bar(self, entry: "entries.EntryConstruct | None") -> None:
         if entry is None:
             self.show_status("", "")
             return

@@ -92,7 +92,7 @@ def add_gui_metadata(obj: t.Any, gui_metadata: GuiMetaData) -> t.Any:
     return obj
 
 
-class IncludeGuiMetaData(cs.Subconstruct):  # type: ignore[type-arg]
+class IncludeGuiMetaData(cst.Subconstruct[t.Any, t.Any, t.Any, t.Any]):
     """Include GUI metadata to the parsed object"""
 
     def __init__(self, subcon, bitwise: bool):
@@ -302,4 +302,4 @@ def include_metadata(
     raise ValueError(f"construct of type '{constr}' is not supported")
 
 
-custom_subconstructs: t.List[t.Type[cs.Subconstruct]] = []  # type: ignore[type-arg]
+custom_subconstructs: t.List[t.Type[cst.Subconstruct[t.Any, t.Any, t.Any, t.Any]]] = []

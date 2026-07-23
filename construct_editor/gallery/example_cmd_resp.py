@@ -11,7 +11,7 @@ class DefaultSizedError(cs.ConstructError):
     pass
 
 
-class DefaultSized(cs.Subconstruct):  # type: ignore[type-arg]
+class DefaultSized(cst.Subconstruct[t.Any, t.Any, t.Any, t.Any]):
     r"""
     Returns a size when calling sizeof of GreedyBytes. Parsing and building is not changed.
 

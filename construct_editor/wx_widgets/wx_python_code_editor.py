@@ -218,7 +218,7 @@ class PythonSTC(stc.StyledTextCtrl):
         # fold and unfold as needed
         if evt.GetMargin() == 2:
             if evt.GetShift() and evt.GetControl():
-                self.FoldAll(1)
+                self.FoldAll(stc.STC_FOLDACTION_TOGGLE)
             else:
                 lineClicked = self.LineFromPosition(evt.GetPosition())
 
