@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import dataclasses
 import textwrap
 import typing as t
@@ -279,11 +281,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
 
 
 class WxConstructEditor(wx.Panel, ConstructEditor):
-    def __init__(
-        self,
-        parent,
-        construct: cs.Construct[t.Any, t.Any],
-    ):
+    def __init__(self, parent, construct: cs.Construct[t.Any, t.Any]):
         wx.Panel.__init__(self, parent)
         self._init_gui()
 
