@@ -14,8 +14,30 @@ import typing as t
 import pytest
 import wx
 
-from tests.wx_integration.input_warning_banner import show_input_warning_banner
 from tests.wx_integration.wx_test_helpers import WxAppAndUiSim
+
+_BANNER_TEXT = (
+    "wx UI test in progress\n"
+    "Simulated mouse/keyboard input is running for the test session.\n"
+    "Avoid touching the mouse/keyboard until it finishes."
+)
+
+
+def show_input_warning_banner() -> wx.Frame:
+    banner = wx.Frame(
+        None,
+        title="wx UI test in progress",
+        style=wx.STAY_ON_TOP | wx.CAPTION | wx.FRAME_NO_TASKBAR,
+    )
+    text = wx.StaticText(banner, label=_BANNER_TEXT, style=wx.ALIGN_CENTER)
+    text.SetForegroundColour(wx.Colour(200, 0, 0))
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(text, flag=wx.ALL, border=12)
+    banner.SetSizerAndFit(sizer)
+    banner.CentreOnScreen()
+    banner.Show(True)
+    banner.Raise()
+    return banner
 
 
 @pytest.fixture(scope="session")
