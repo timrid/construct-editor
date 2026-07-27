@@ -50,7 +50,7 @@ def test_str_to_int_parse_hex_lower() -> None:
 
 
 def test_str_to_int_invalid_string_raises() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="invalid literal for int"):
         str_to_int("not_a_number")
 
 
@@ -65,7 +65,7 @@ def test_str_to_bytes_parse_empty_string() -> None:
 
 
 def test_str_to_bytes_invalid_hex_raises() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="non-hexadecimal number found"):
         str_to_bytes("zz")
 
 
