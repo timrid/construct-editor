@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 from typing import Callable, Generic, TypeVar
 
 from typing_extensions import ParamSpec

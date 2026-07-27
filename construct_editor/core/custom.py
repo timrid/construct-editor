@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 import typing as t
 
@@ -9,7 +11,7 @@ import construct_editor.core.preprocessor as preprocessor
 
 
 def add_custom_transparent_subconstruct(
-    subconstruct: t.Type["cs.Subconstruct[t.Any, t.Any, t.Any, t.Any]"],
+    subconstruct: t.Type[cs.Subconstruct[t.Any, t.Any, t.Any, t.Any]],
 ):
     """
     Add compatibility of an custom `cs.Subconstruct` to the construct-editor.
@@ -19,7 +21,7 @@ def add_custom_transparent_subconstruct(
 
 
 def add_custom_tunnel(
-    tunnel: t.Type["cs.Tunnel[t.Any, t.Any]"],
+    tunnel: t.Type[cs.Tunnel[t.Any, t.Any]],
     type_str: str,
 ):
     """
@@ -29,9 +31,9 @@ def add_custom_tunnel(
     class EntryTunnel(entries.EntrySubconstruct):
         def __init__(
             self,
-            model: "model.ConstructEditorModel",
-            parent: t.Optional["entries.EntryConstruct"],
-            construct: "cs.Compressed[t.Any, t.Any]",
+            model: model.ConstructEditorModel,
+            parent: entries.EntryConstruct | None,
+            construct: cs.Compressed[t.Any, t.Any],
             name: entries.NameType,
             docs: str,
         ):
@@ -51,10 +53,7 @@ class AdapterObjEditorType(enum.Enum):
 
 
 def add_custom_adapter(
-    adapter: t.Union[
-        t.Type["cs.Adapter[t.Any,t.Any,t.Any, t.Any]"],  # for cs.Adapter
-        "cs.Adapter[t.Any,t.Any,t.Any, t.Any]",  # for cs.ExprAdapter
-    ],
+    adapter: t.Type[cs.Adapter[t.Any, t.Any, t.Any, t.Any]] | cs.Adapter[t.Any, t.Any, t.Any, t.Any],
     type_str: str,
     obj_editor_type: AdapterObjEditorType,
 ):
@@ -65,9 +64,9 @@ def add_custom_adapter(
     class EntryAdapter(entries.EntryConstruct):
         def __init__(
             self,
-            model: "model.ConstructEditorModel",
-            parent: t.Optional["entries.EntryConstruct"],
-            construct: "cs.Subconstruct[t.Any, t.Any, t.Any, t.Any]",
+            model: model.ConstructEditorModel,
+            parent: entries.EntryConstruct | None,
+            construct: cs.Subconstruct[t.Any, t.Any, t.Any, t.Any],
             name: entries.NameType,
             docs: str,
         ):

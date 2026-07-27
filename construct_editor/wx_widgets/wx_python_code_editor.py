@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+from __future__ import annotations
 
 import keyword
 import sys

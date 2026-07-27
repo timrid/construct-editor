@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import typing as t
+from __future__ import annotations
 
 import wx
 
@@ -31,9 +30,9 @@ LABEL_TO_ID_MAPPING = {
 class WxContextMenu(wx.Menu, ContextMenu):
     def __init__(
         self,
-        parent: "construct_editor.ConstructEditor",
-        model: "ConstructEditorModel",
-        entry: t.Optional["entries.EntryConstruct"],
+        parent: construct_editor.ConstructEditor,
+        model: ConstructEditorModel,
+        entry: entries.EntryConstruct | None,
     ):
         wx.Menu.__init__(self)
         ContextMenu.__init__(self, parent, model, entry)

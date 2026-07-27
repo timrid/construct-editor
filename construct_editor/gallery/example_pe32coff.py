@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from construct import *  # type: ignore
 
 from . import GalleryItem

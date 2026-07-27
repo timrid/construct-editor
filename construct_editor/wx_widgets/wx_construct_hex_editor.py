@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import typing as t
@@ -52,7 +51,7 @@ class HexEditorPanel(wx.SplitterWindow):
 
         self.Initialize(panel)
 
-        self.sub_panel: "HexEditorPanel | None" = None
+        self.sub_panel: HexEditorPanel | None = None
 
     def clear_sub_panels(self):
         """Clears all sub-panels recursivly"""
@@ -61,7 +60,7 @@ class HexEditorPanel(wx.SplitterWindow):
             self.sub_panel.Destroy()
             self.sub_panel = None
 
-    def create_sub_panel(self, name: str, bitwise: bool) -> "HexEditorPanel":
+    def create_sub_panel(self, name: str, bitwise: bool) -> HexEditorPanel:
         """Create a new sub-panel"""
         if self.sub_panel is None:
             new_panel = HexEditorPanel(self, name, read_only=True, bitwiese=bitwise)

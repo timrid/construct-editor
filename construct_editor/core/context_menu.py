@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import abc
 import dataclasses
 import typing as t
@@ -54,7 +55,7 @@ class RadioGroupMenuItems:
 @dataclasses.dataclass
 class SubmenuItem:
     label: str
-    subitems: t.List["MenuItem"]
+    subitems: t.List[MenuItem]
 
 
 MenuItem = ButtonMenuItem | SeparatorMenuItem | CheckboxMenuItem | RadioGroupMenuItems | SubmenuItem
@@ -63,9 +64,9 @@ MenuItem = ButtonMenuItem | SeparatorMenuItem | CheckboxMenuItem | RadioGroupMen
 class ContextMenu:
     def __init__(
         self,
-        parent: "construct_editor.ConstructEditor",
-        model: "ConstructEditorModel",
-        entry: t.Optional["entries.EntryConstruct"],
+        parent: construct_editor.ConstructEditor,
+        model: ConstructEditorModel,
+        entry: entries.EntryConstruct | None,
     ):
         self.parent = parent
         self.model = model

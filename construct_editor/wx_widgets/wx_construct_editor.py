@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import dataclasses
@@ -86,7 +85,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
         # we need to get the mode for this item. (Fingers crossed that
         # this always works.)
 
-        dvc: "dv.DataViewCtrl" = self.GetView()
+        dvc: dv.DataViewCtrl = self.GetView()
         editor = t.cast("WxConstructEditor", dvc.GetParent())
         selected_entry = editor.get_selected_entry()
         if selected_entry is None:
@@ -188,7 +187,7 @@ class WxConstructEditorModel(dv.PyDataViewModel, ConstructEditorModel):
     # #################################################################################################################
     # ConstructEditorModel Interface ##################################################################################
     # #################################################################################################################
-    def on_value_changed(self, entry: "EntryConstruct"):
+    def on_value_changed(self, entry: EntryConstruct):
         dvc_item = self.entry_to_dvc_item(entry)
         self.ItemChanged(dvc_item)
 
@@ -579,7 +578,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         Then a context menu is created
         """
         item = event.GetItem()
-        entry: "EntryConstruct | None"
+        entry: EntryConstruct | None
         if item.ID is not None:
             entry = self._model.dvc_item_to_entry(item)
         else:
