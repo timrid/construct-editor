@@ -66,5 +66,5 @@ def test_fire_empty_list_does_not_raise() -> None:
 def test_remove_non_existing_raises() -> None:
     """Removing a callback that was never appended should raise ValueError."""
     cb = CallbackList()
-    with pytest.raises((ValueError, Exception)):
+    with pytest.raises(ValueError, match="not in list"):
         cb.remove(lambda: None)
