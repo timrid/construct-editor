@@ -3,6 +3,8 @@ TCP/IP Protocol Stack
 
 WARNING: before parsing the application layer over a TCP stream, you must first combine all the TCP frames into a stream. See utils.tcpip for some solutions.
 """
+from __future__ import annotations
+
 import typing as t
 
 import construct_typed as cst

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 
 import construct as cs
@@ -19,7 +21,7 @@ class SwitchTest(cst.DataclassMixin):
         case1_2: int = cst.csfield(cs.Int16sb)
 
         @classmethod
-        def get_default(cls) -> "SwitchTest.Case1":
+        def get_default(cls) -> SwitchTest.Case1:
             return cls(0, 0)
 
     @dataclasses.dataclass
@@ -30,7 +32,7 @@ class SwitchTest(cst.DataclassMixin):
         case2_4: int = cst.csfield(cs.Int8sb)
 
         @classmethod
-        def get_default(cls) -> "SwitchTest.Case2":
+        def get_default(cls) -> SwitchTest.Case2:
             return cls(0, 0, 0, 0)
 
     @dataclasses.dataclass
@@ -38,7 +40,7 @@ class SwitchTest(cst.DataclassMixin):
         case_default_1: int = cst.csfield(cs.Int32sb)
 
         @classmethod
-        def get_default(cls) -> "SwitchTest.CaseDefault":
+        def get_default(cls) -> SwitchTest.CaseDefault:
             return cls(0)
 
     choice: int = cst.csfield(cst.TEnum(cs.Int8ub, Choice))

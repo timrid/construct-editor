@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import construct as cs
 
 from . import GalleryItem

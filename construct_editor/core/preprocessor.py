@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import copy
 import enum
 import io
@@ -14,7 +15,7 @@ class GuiMetaData(t.TypedDict):
     construct: cst.Construct[t.Any, t.Any]
     context: cst.Context
     stream: io.BytesIO
-    child_gui_metadata: t.Optional["GuiMetaData"]
+    child_gui_metadata: GuiMetaData | None
 
 
 class IntWithGuiMetadata(int):
@@ -131,8 +132,8 @@ class IncludeGuiMetaData(cst.Subconstruct[t.Any, t.Any, t.Any, t.Any]):
 
 # #############################################################################
 def include_metadata(
-    constr: "cs.Construct[t.Any, t.Any]", bitwise: bool = False
-) -> "cs.Construct[t.Any, t.Any]":
+    constr: cs.Construct[t.Any, t.Any], bitwise: bool = False
+) -> cs.Construct[t.Any, t.Any]:
     """
     Surrond all named entries of a construct with offsets, so that
     we know the offset in the byte-stream and the length

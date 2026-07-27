@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 
 import arrow
@@ -145,7 +147,7 @@ class FlagsEnumComboPopup(wx.ComboPopup):
     def __init__(
         self,
         combo_ctrl: wx.ComboCtrl,
-        entry: t.Union["EntryTFlagsEnum", "EntryFlagsEnum"],
+        entry: EntryTFlagsEnum | EntryFlagsEnum,
     ):
         super().__init__()
         self.combo_ctrl = combo_ctrl
@@ -194,7 +196,7 @@ class FlagsEnumComboPopup(wx.ComboPopup):
         prefHeight = min(row_height * row_count + 4, prefHeight)
         return wx.ComboPopup.GetAdjustedSize(self, minWidth, prefHeight, maxHeight)
 
-    def get_flagsenum_items(self) -> t.List["FlagsEnumItem"]:
+    def get_flagsenum_items(self) -> t.List[FlagsEnumItem]:
         # read all flagsenum items and modify checked status
         flagsenum_items: t.List[FlagsEnumItem] = []
         for item in range(self.clbx.GetCount()):
@@ -362,7 +364,7 @@ class WxObjRendererHelper_Default:
 
     def get_size(
         self,
-        renderer: "wx_construct_editor.ObjectRenderer",
+        renderer: wx_construct_editor.ObjectRenderer,
     ) -> wx.Size:
         # Return the size needed to display the value.  The renderer
         # has a helper function we can use for measuring text that is
@@ -375,7 +377,7 @@ class WxObjRendererHelper_Default:
 
     def render(
         self,
-        renderer: "wx_construct_editor.ObjectRenderer",
+        renderer: wx_construct_editor.ObjectRenderer,
         rect: wx.Rect,
         dc: wx.DC,
         state,
@@ -392,7 +394,7 @@ class WxObjRendererHelper_Default:
 
     def activate_cell(
         self,
-        renderer: "wx_construct_editor.ObjectRenderer",
+        renderer: wx_construct_editor.ObjectRenderer,
         rect: wx.Rect,
         model: dv.DataViewModel,
         item: dv.DataViewItem,
@@ -408,7 +410,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
 
     def get_size(
         self,
-        renderer: "wx_construct_editor.ObjectRenderer",
+        renderer: wx_construct_editor.ObjectRenderer,
     ) -> wx.Size:
         native_renderer: wx.RendererNative = wx.RendererNative.Get()
         win: wx.Window = renderer.GetView()
@@ -418,7 +420,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
 
     def render(
         self,
-        renderer: "wx_construct_editor.ObjectRenderer",
+        renderer: wx_construct_editor.ObjectRenderer,
         rect: wx.Rect,
         dc: wx.DC,
         state,
@@ -437,7 +439,7 @@ class WxObjRendererHelper_Flag(WxObjRendererHelper_Default):
 
     def activate_cell(
         self,
-        renderer: "wx_construct_editor.ObjectRenderer",
+        renderer: wx_construct_editor.ObjectRenderer,
         rect: wx.Rect,
         model: dv.DataViewModel,
         item: dv.DataViewItem,
