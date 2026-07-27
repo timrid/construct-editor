@@ -69,9 +69,9 @@ dev = [
     "pyright>=1.1.411",
     "ruff>=0.15.21",
     "ty>=0.0.59",
-    "pytest>=8.0.0",
-    "pytest-mock>=3.14.0",
-    "pytest-cov>=6.0.0",
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
+    "pytest-cov>=7.1.0",
     "cryptography",  # optional "extra" from construct that the user may or may not have installed
     "cloudpickle",  # optional "extra" from construct that the user may or may not have installed
     "lz4",  # optional "extra" from construct that the user may or may not have installed
