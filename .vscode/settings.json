@@ -26,7 +26,6 @@
     //
     // Misc ///////////////////////////////////////////////////////////////////
     "files.exclude": {
-        ".venv/": true,
         "**/__pycache__": true,
         "*.egg-info": true,
         ".pytest_cache": true

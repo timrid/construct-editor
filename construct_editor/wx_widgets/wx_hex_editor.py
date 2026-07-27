@@ -11,6 +11,7 @@ import wx.grid as Grid
 from wx.grid import GridCellAttr
 
 from construct_editor.core.callbacks import CallbackList
+from construct_editor.wx_widgets import wx_clipboard
 
 logger = logging.getLogger("my-logger")
 logger.propagate = False
@@ -109,7 +110,6 @@ class HexEditorBinaryData:
         class Cmd(wx.Command):
             def __init__(self):
                 super().__init__(True, f"Remove Range (Index: {idx}, Length: {length})")
-                super().__init__(True, "Overwrite Range")
 
             def Do(self):
                 self._range_backup = obj._binary[idx : idx + length]
@@ -928,11 +928,7 @@ class HexEditorGrid(Grid.Grid):
 
         byts = self._binary_data.get_range(sel0, length)
 
-        if wx.TheClipboard.Open():
-            byts_str = byts.hex(" ")
-            wx.TheClipboard.SetData(wx.TextDataObject(byts_str))
-            wx.TheClipboard.Close()
-        else:
+        if not wx_clipboard.set_text(byts.hex(" ")):
             wx.MessageBox("Can't open the clipboard", "Warning")
             return False
         return True
@@ -962,13 +958,10 @@ class HexEditorGrid(Grid.Grid):
             return False
 
         # get data from clipboard
-        if not wx.TheClipboard.Open():
+        clipboard_txt = wx_clipboard.get_text()
+        if clipboard_txt is None:
             wx.MessageBox("Can't open the clipboard", "Warning")
             return False
-        clipboard = wx.TextDataObject()
-        wx.TheClipboard.GetData(clipboard)
-        wx.TheClipboard.Close()
-        clipboard_txt: str = clipboard.GetText()
         byts = self.string_to_byts(clipboard_txt)
         if not byts:
             return False
