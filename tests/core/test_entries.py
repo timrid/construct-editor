@@ -25,8 +25,7 @@ def test_int_to_str_decimal_format() -> None:
 
 
 def test_int_to_str_hex_format() -> None:
-    result = int_to_str(IntegerFormat.Hex, 255)
-    assert result.lower() in ("0xff", "ff", "255")  # implementation may vary
+    assert int_to_str(IntegerFormat.Hex, 255) == "0xFF"
 
 
 def test_int_to_str_zero_decimal() -> None:
@@ -64,9 +63,10 @@ def test_str_to_bytes_parse_empty_string() -> None:
     assert result == b""
 
 
-def test_str_to_bytes_invalid_hex_raises() -> None:
-    with pytest.raises(ValueError, match="non-hexadecimal number found"):
-        str_to_bytes("zz")
+@pytest.mark.parametrize("value", ["zz", "0xf", "f"])
+def test_str_to_bytes_invalid_hex_raises(value: str) -> None:
+    with pytest.raises(ValueError):
+        str_to_bytes(value)
 
 
 def test_create_path_str_single_name() -> None:

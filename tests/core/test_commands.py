@@ -57,6 +57,7 @@ def test_can_redo_after_undo() -> None:
     assert not proc.can_redo()
     proc.undo()
     assert proc.can_redo()
+    assert not proc.can_undo()
 
 
 def test_undo_reverses_command() -> None:
