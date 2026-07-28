@@ -4,12 +4,13 @@ import abc
 import dataclasses
 import typing as t
 
-import construct_editor.core.construct_editor as construct_editor
-import construct_editor.core.entries as entries
-from construct_editor.core.model import (
-    ConstructEditorModel,
-    IntegerFormat,
-)
+from construct_editor.core.integer_format import IntegerFormat
+from construct_editor.core.path import create_path_str
+
+if t.TYPE_CHECKING:
+    import construct_editor.core.construct_editor as construct_editor
+    import construct_editor.core.entries as entries
+    from construct_editor.core.model import ConstructEditorModel
 
 COPY_LABEL = "Copy"
 PASTE_LABEL = "Paste"
@@ -163,7 +164,7 @@ class ContextMenu:
             def on_remove_list_viewed_item(checked: bool):
                 self.parent.disable_list_view(e)
 
-            label = entries.create_path_str(e.path)
+            label = create_path_str(e.path)
             submenu.subitems.append(
                 CheckboxMenuItem(
                     label,

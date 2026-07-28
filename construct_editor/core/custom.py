@@ -8,6 +8,7 @@ import construct as cs
 import construct_editor.core.entries as entries
 import construct_editor.core.model as model
 import construct_editor.core.preprocessor as preprocessor
+from construct_editor.core.path import NameType
 
 
 def add_custom_transparent_subconstruct(
@@ -34,7 +35,7 @@ def add_custom_tunnel(
             model: model.ConstructEditorModel,
             parent: entries.EntryConstruct | None,
             construct: cs.Compressed[t.Any, t.Any],
-            name: entries.NameType,
+            name: NameType,
             docs: str,
         ):
             super().__init__(model, parent, construct, name, docs)
@@ -67,7 +68,7 @@ def add_custom_adapter(
             model: model.ConstructEditorModel,
             parent: entries.EntryConstruct | None,
             construct: cs.Subconstruct[t.Any, t.Any, t.Any, t.Any],
-            name: entries.NameType,
+            name: NameType,
             docs: str,
         ):
             super().__init__(model, parent, construct, name, docs)
