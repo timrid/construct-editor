@@ -9,8 +9,8 @@ from typing import Any, Dict, List, Type
 import construct as cs
 import construct_typed as cst
 
-import construct_editor.core.context_menu as context_menu
 import construct_editor.core.model as model
+from construct_editor.core.context_menu import ButtonMenuItem, CheckboxMenuItem, ContextMenu, SeparatorMenuItem
 from construct_editor.core.preprocessor import (
     GuiMetaData,
     IncludeGuiMetaData,
@@ -340,7 +340,7 @@ class EntryConstruct(object):
         return ObjViewSettings_Default(self)
 
     # default "modify_context_menu" ###########################################
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         """This method is called, when the user right clicks an entry and a ContextMenu is created"""
         pass
 
@@ -440,7 +440,7 @@ class EntrySubconstruct(EntryConstruct):
         return self.subentry.obj_view_settings
 
     # pass throught "modify_context_menu" to subentry #########################
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         return self.subentry.modify_context_menu(menu)
 
 
@@ -484,16 +484,16 @@ class EntryStruct(EntryConstruct):
     def obj_view_settings(self) -> ObjViewSettings:
         return ObjViewSettings_Default(self)  # TODO: create panel for cs.Struct
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         def on_expand_children_clicked():
             menu.parent.expand_children(self)
 
         def on_collapse_children_clicked():
             menu.parent.collapse_children(self)
 
-        menu.add_menu_item(context_menu.SeparatorMenuItem())
+        menu.add_menu_item(SeparatorMenuItem())
         menu.add_menu_item(
-            context_menu.ButtonMenuItem(
+            ButtonMenuItem(
                 "Expand Children",
                 None,
                 True,
@@ -501,7 +501,7 @@ class EntryStruct(EntryConstruct):
             )
         )
         menu.add_menu_item(
-            context_menu.ButtonMenuItem(
+            ButtonMenuItem(
                 "Collapse Children",
                 None,
                 True,
@@ -575,16 +575,16 @@ class EntryArray(EntrySubconstruct):
     def obj_view_settings(self) -> ObjViewSettings:
         return ObjViewSettings_Default(self)  # TODO: create panel for cs.Array
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         def on_expand_children_clicked():
             menu.parent.expand_children(self)
 
         def on_collapse_children_clicked():
             menu.parent.collapse_children(self)
 
-        menu.add_menu_item(context_menu.SeparatorMenuItem())
+        menu.add_menu_item(SeparatorMenuItem())
         menu.add_menu_item(
-            context_menu.ButtonMenuItem(
+            ButtonMenuItem(
                 "Expand Children",
                 None,
                 True,
@@ -592,7 +592,7 @@ class EntryArray(EntrySubconstruct):
             )
         )
         menu.add_menu_item(
-            context_menu.ButtonMenuItem(
+            ButtonMenuItem(
                 "Collapse Children",
                 None,
                 True,
@@ -613,9 +613,9 @@ class EntryArray(EntrySubconstruct):
             else:
                 menu.parent.enable_list_view(self)
 
-        menu.add_menu_item(context_menu.SeparatorMenuItem())
+        menu.add_menu_item(SeparatorMenuItem())
         menu.add_menu_item(
-            context_menu.CheckboxMenuItem(
+            CheckboxMenuItem(
                 "Enable List View",
                 None,
                 True,
@@ -712,7 +712,7 @@ class EntryIfThenElse(EntryConstruct):
         else:
             return subentry.obj_view_settings
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
         if subentry is None:
             return
@@ -810,7 +810,7 @@ class EntrySwitch(EntryConstruct):
         else:
             return subentry.obj_view_settings
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
         if subentry is None:
             return
@@ -1071,14 +1071,14 @@ class EntryBytes(EntryConstruct):
     def obj_view_settings(self) -> ObjViewSettings:
         return ObjViewSettings_Bytes(self)
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         def on_ascii_view_clicked(checked: bool):
             self.ascii_view = not self.ascii_view
             menu.parent.reload()
 
-        menu.add_menu_item(context_menu.SeparatorMenuItem())
+        menu.add_menu_item(SeparatorMenuItem())
         menu.add_menu_item(
-            context_menu.CheckboxMenuItem(
+            CheckboxMenuItem(
                 "ASCII View",
                 None,
                 True,
@@ -1204,15 +1204,15 @@ class EntryDefault(EntrySubconstruct):
     ):
         super().__init__(model, parent, construct, name, docs)
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         def on_default_clicked():
             # TODO: This is not working correctly...
             self.obj = None
             menu.parent.reload()
 
-        menu.add_menu_item(context_menu.SeparatorMenuItem())
+        menu.add_menu_item(SeparatorMenuItem())
         menu.add_menu_item(
-            context_menu.ButtonMenuItem(
+            ButtonMenuItem(
                 "Set to default",
                 None,
                 True,
@@ -1307,7 +1307,7 @@ class EntryFocusedSeq(EntryConstruct):
         else:
             return subentry.obj_view_settings
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
         if subentry is None:
             return
@@ -1397,7 +1397,7 @@ class EntrySelect(EntryConstruct):
         else:
             return subentry.obj_view_settings
 
-    def modify_context_menu(self, menu: context_menu.ContextMenu):
+    def modify_context_menu(self, menu: ContextMenu):
         subentry = self._get_subentry()
         if subentry is None:
             return
