@@ -929,7 +929,6 @@ class HexEditorGrid(Grid.Grid):
         byts = self._binary_data.get_range(sel0, length)
 
         if not wx_clipboard.set_text(byts.hex(" ")):
-            wx.MessageBox("Can't open the clipboard", "Warning")
             return False
         return True
 
@@ -957,10 +956,11 @@ class HexEditorGrid(Grid.Grid):
             )
             return False
 
-        # get data from clipboard
+        # get data from clipboard (None = clipboard couldn't be opened, or it
+        # doesn't currently hold text data, e.g. an image - either way there's
+        # nothing to paste)
         clipboard_txt = wx_clipboard.get_text()
         if clipboard_txt is None:
-            wx.MessageBox("Can't open the clipboard", "Warning")
             return False
         byts = self.string_to_byts(clipboard_txt)
         if not byts:
