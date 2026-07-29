@@ -43,9 +43,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
 
     def SetValue(self, value: EntryConstruct):
         self.entry = value
-        self.entry_renderer_helper = create_obj_renderer_helper(
-            self.entry.obj_view_settings
-        )
+        self.entry_renderer_helper = create_obj_renderer_helper(self.entry.obj_view_settings)
         return True
 
     def GetValue(self):
@@ -112,9 +110,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     ) -> bool:
         if self.entry_renderer_helper is None:
             raise ValueError("`entry_renderer_helper` not set")
-        return self.entry_renderer_helper.activate_cell(
-            self, cell, model, item, col, mouseEvent
-        )
+        return self.entry_renderer_helper.activate_cell(self, cell, model, item, col, mouseEvent)
 
     # The HasEditorCtrl, CreateEditorCtrl and GetValueFromEditorCtrl
     # methods need to be implemented if this renderer is going to
@@ -124,9 +120,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     def HasEditorCtrl(self):
         return True
 
-    def CreateEditorCtrl(
-        self, parent, labelRect: wx.Rect, value: EntryConstruct
-    ) -> WxObjEditor:
+    def CreateEditorCtrl(self, parent, labelRect: wx.Rect, value: EntryConstruct) -> WxObjEditor:
         view_settings = value.obj_view_settings
         editor: WxObjEditor = create_obj_editor(parent, view_settings)
         editor.SetPosition(labelRect.GetPosition())
@@ -309,18 +303,14 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._parse_error_info_bar = wx.InfoBar(self)
         btn_id = wx.NewIdRef()
         self._parse_error_info_bar.AddButton(btn_id, "Exception Infos")
-        self._parse_error_info_bar.Bind(
-            wx.EVT_BUTTON, self._parse_error_info_bar_btn_clicked, id=btn_id
-        )
+        self._parse_error_info_bar.Bind(wx.EVT_BUTTON, self._parse_error_info_bar_btn_clicked, id=btn_id)
         self._parse_error_ex: Exception | None = None
         vsizer.Add(self._parse_error_info_bar, 0, wx.EXPAND)
 
         self._build_error_info_bar = wx.InfoBar(self)
         btn_id = wx.NewIdRef()
         self._build_error_info_bar.AddButton(btn_id, "Exception Infos")
-        self._build_error_info_bar.Bind(
-            wx.EVT_BUTTON, self._build_error_info_bar_btn_clicked, id=btn_id
-        )
+        self._build_error_info_bar.Bind(wx.EVT_BUTTON, self._build_error_info_bar_btn_clicked, id=btn_id)
         self._build_error_ex: Exception | None = None
         vsizer.Add(self._build_error_info_bar, 0, wx.EXPAND)
 
@@ -330,9 +320,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             style=wx.STB_SHOW_TIPS | wx.STB_ELLIPSIZE_END | wx.FULL_REPAINT_ON_RESIZE,
         )
         self._status_bar.SetFieldsCount(2)
-        self._status_bar.SetStatusStyles(
-            [wx.SB_NORMAL, wx.SB_FLAT]
-        )  # remove vertical line after the last field
+        self._status_bar.SetStatusStyles([wx.SB_NORMAL, wx.SB_FLAT])  # remove vertical line after the last field
         self._status_bar.SetStatusWidths([-2, -1])
         vsizer.Add(self._status_bar, 0, wx.ALL | wx.EXPAND, 0)
 
@@ -355,9 +343,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._dvc_main_window.Bind(wx.EVT_KEY_DOWN, self._on_dvc_key_down)
         self._dvc_main_window.Bind(wx.EVT_CHAR, self._on_dvc_char)
         self._dvc_main_window.Bind(wx.EVT_SCROLLWIN, self._on_dvc_scroll)
-        self._dvc_main_window.Bind(
-            wx.EVT_MOUSEWHEEL, self._on_dvc_scroll
-        )
+        self._dvc_main_window.Bind(wx.EVT_MOUSEWHEEL, self._on_dvc_scroll)
         self._hover_tooltip = WxHoverToolTip(self._dvc_main_window)
 
     def reload(self):
