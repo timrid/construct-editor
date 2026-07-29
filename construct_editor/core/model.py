@@ -4,14 +4,12 @@ import abc
 import enum
 import typing as t
 
-import construct_editor.core.entries as entries
 from construct_editor.core.commands import Command, CommandProcessor
+from construct_editor.core.integer_format import IntegerFormat
 from construct_editor.core.preprocessor import add_gui_metadata, get_gui_metadata
 
-
-class IntegerFormat(enum.Enum):
-    Dec = enum.auto()
-    Hex = enum.auto()
+if t.TYPE_CHECKING:
+    from construct_editor.core.entries import EntryConstruct
 
 
 class ConstructEditorColumn(enum.IntEnum):
@@ -22,7 +20,7 @@ class ConstructEditorColumn(enum.IntEnum):
 
 class ChangeValueCmd(Command):
     def __init__(
-        self, entry: entries.EntryConstruct, old_value: t.Any, new_value: t.Any
+        self, entry: EntryConstruct, old_value: t.Any, new_value: t.Any
     ) -> None:
         super().__init__(True, f"Value '{entry.path[-1]}' changed")
         self.entry = entry
@@ -50,7 +48,7 @@ class ConstructEditorModel:
     """
 
     def __init__(self):
-        self.root_entry: entries.EntryConstruct | None = None
+        self.root_entry: EntryConstruct | None = None
         self.root_obj: t.Any | None = None
 
         # Modelwide flag, if hidden entries should be shown (hidden means starting with an underscore)
@@ -60,18 +58,18 @@ class ConstructEditorModel:
         self.integer_format = IntegerFormat.Dec
 
         # List with all entries that have the list view enabled
-        self.list_viewed_entries: t.List[entries.EntryConstruct] = []
+        self.list_viewed_entries: t.List[EntryConstruct] = []
 
         self.command_processor = CommandProcessor(max_commands=10)
 
     @abc.abstractmethod
-    def on_value_changed(self, entry: entries.EntryConstruct):
+    def on_value_changed(self, entry: EntryConstruct):
         """Implement this in the derived class"""
         ...
 
     def get_children(
-        self, entry: entries.EntryConstruct | None
-    ) -> t.List[entries.EntryConstruct]:
+        self, entry: EntryConstruct | None
+    ) -> t.List[EntryConstruct]:
         """
         Get all children of an entry
         """
@@ -99,15 +97,15 @@ class ConstructEditorModel:
             subentry.visible_row = True
         return children
 
-    def is_container(self, entry: entries.EntryConstruct) -> bool:
+    def is_container(self, entry: EntryConstruct) -> bool:
         """
         Check if an entry is a container (contains children)
         """
         return entry.subentries is not None
 
     def get_parent(
-        self, entry: entries.EntryConstruct | None
-    ) -> entries.EntryConstruct | None:
+        self, entry: EntryConstruct | None
+    ) -> EntryConstruct | None:
         """
         Get the parent of an entry
         """
@@ -128,7 +126,7 @@ class ConstructEditorModel:
         # get the visible row entry of the parent
         return parent.get_visible_row_entry()
 
-    def get_value(self, entry: entries.EntryConstruct, column: int):
+    def get_value(self, entry: EntryConstruct, column: int):
         """
         Return the value to be displayed for this entry in a specific column.
         """
@@ -145,7 +143,7 @@ class ConstructEditorModel:
 
         # flatten the hierarchical structure to a list
         column = column - len(ConstructEditorColumn)
-        flat_subentry_list: t.List[entries.EntryConstruct] = []
+        flat_subentry_list: t.List[EntryConstruct] = []
         flat_subentry_list = self.create_flat_subentry_list(entry)
         if len(flat_subentry_list) > column:
             return flat_subentry_list[column].obj_str
@@ -153,7 +151,7 @@ class ConstructEditorModel:
             return ""
 
     def set_value(
-        self, new_value: t.Any, entry: entries.EntryConstruct, column: int
+        self, new_value: t.Any, entry: EntryConstruct, column: int
     ) -> None:
         """
         Set the value of an entry.
@@ -173,12 +171,12 @@ class ConstructEditorModel:
         self.command_processor.submit(cmd)
 
     def create_flat_subentry_list(
-        self, entry: entries.EntryConstruct
-    ) -> t.List[entries.EntryConstruct]:
+        self, entry: EntryConstruct
+    ) -> t.List[EntryConstruct]:
         """
         Create a flat list with all subentires, recursively.
         """
-        flat_subentry_list: t.List[entries.EntryConstruct] = []
+        flat_subentry_list: t.List[EntryConstruct] = []
 
         childs = self.get_children(entry)
 

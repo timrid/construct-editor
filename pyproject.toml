@@ -52,7 +52,7 @@ dependencies = [
     "construct>=2.10.68",
     "construct-typing>=0.8.1,<0.9.0",
     "typing-extensions>=4.12.0",
-    "wrapt>=1.14.0",
+    "wrapt>=2.2.2",
     "wxPython>=4.2.2",
 ]
 
@@ -69,6 +69,9 @@ dev = [
     "pyright>=1.1.411",
     "ruff>=0.15.21",
     "ty>=0.0.59",
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
+    "pytest-cov>=7.1.0",
     "cryptography",  # optional "extra" from construct that the user may or may not have installed
     "cloudpickle",  # optional "extra" from construct that the user may or may not have installed
     "lz4",  # optional "extra" from construct that the user may or may not have installed
@@ -86,6 +89,30 @@ include = [
 
 [tool.setuptools.package-data]
 construct_editor = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --cov=construct_editor --cov-report=term-missing --cov-report=html"
+
+# Coverage is measured purely for informational purposes, to see which code
+# still needs tests. There is intentionally no `fail_under` threshold - a low
+# coverage percentage should never fail the build.
+[tool.coverage.run]
+source = ["construct_editor"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "pass",
+    "\\.\\.\\.",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
 
 [tool.mypy]
 strict = true
@@ -176,9 +203,7 @@ ignore = [
 ]
 
 [tool.poe.tasks.test]
-# Tests are not yet implemented and will be added with PR #40.
-# cmd = "pytest $POE_EXTRA_ARGS"
-sequence = []
+cmd = "pytest $POE_EXTRA_ARGS"
 executor = {type = "uv", isolated = true}
 
 [tool.poe.tasks.lint]
