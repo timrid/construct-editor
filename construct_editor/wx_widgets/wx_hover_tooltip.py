@@ -10,18 +10,23 @@ _SHOW_DELAY_MS = 500
 # (still pending, or already shown) is still relevant
 _POLL_INTERVAL_MS = 100
 
-_MAX_TEXT_WIDTH = 450
+_MAX_TEXT_WIDTH_DEFAULT = 450
 # clamps how tall the popup (and its wx.TextCtrl) can grow - text that
 # doesn't fit is reachable via the TextCtrl's own native scrollbar instead
-_MAX_TEXT_HEIGHT = 200
+_MAX_TEXT_HEIGHT_DEFAULT = 200
 _PADDING = 4
 
 
-def _get_text_ctrl_size(dc: wx.DC, text: str) -> tuple[int, int, bool]:
+def _get_text_ctrl_size(
+    dc: wx.DC,
+    text: str,
+    max_text_width: int,
+    max_text_height: int,
+) -> tuple[int, int, bool]:
     """
     Determines the size needed for a `wx.TextCtrl` showing `text`, clamped
-    to `_MAX_TEXT_WIDTH`/`_MAX_TEXT_HEIGHT`. The actual line-wrapping (at
-    `_MAX_TEXT_WIDTH`) is delegated to `wx.lib.wordwrap.wordwrap()`, which
+    to `max_text_width`/`max_text_height`. The actual line-wrapping (at
+    `max_text_width`) is delegated to `wx.lib.wordwrap.wordwrap()`, which
     measures directly via `dc` (no throwaway widget needed) and returns the
     text with hard line breaks inserted at the wrap points. `dc` is then
     used to measure the already-wrapped text in a single call.
@@ -34,16 +39,16 @@ def _get_text_ctrl_size(dc: wx.DC, text: str) -> tuple[int, int, bool]:
     own native soft word-wrap (no `wx.TE_DONTWRAP`/`wx.TE_NO_VSCROLL`-only
     style) to wrap it visually at render time, without altering `GetValue()`.
     """
-    wrapped_text = wx.lib.wordwrap.wordwrap(text, _MAX_TEXT_WIDTH, dc)
+    wrapped_text = wx.lib.wordwrap.wordwrap(text, max_text_width, dc)
 
     content_width, full_content_height = dc.GetMultiLineTextExtent(wrapped_text)
-    # a single word that is on its own wider than `_MAX_TEXT_WIDTH` is
+    # a single word that is on its own wider than `max_text_width` is
     # broken at a character boundary by `wordwrap()`, but the resulting
     # width still needs to be clamped here just in case
-    content_width = min(content_width, _MAX_TEXT_WIDTH)
-    content_height = min(full_content_height, _MAX_TEXT_HEIGHT)
+    content_width = min(content_width, max_text_width)
+    content_height = min(full_content_height, max_text_height)
 
-    needs_vscroll = full_content_height > _MAX_TEXT_HEIGHT
+    needs_vscroll = full_content_height > max_text_height
 
     return content_width, content_height, needs_vscroll
 
@@ -65,6 +70,10 @@ class WxHoverToolTipPopup(wx.PopupWindow):
         parent: wx.Window,
         text: str,
         anchor_screen_rect: wx.Rect,
+        max_text_width: int,
+        max_text_height: int,
+        bg_colour: wx.Colour | None = None,
+        fg_colour: wx.Colour | None = None,
     ):
         # `wx.PU_CONTAINS_CONTROLS` is required (MSW-only) for a child
         # control such as our `wx.TextCtrl` to be able to take focus at
@@ -81,13 +90,15 @@ class WxHoverToolTipPopup(wx.PopupWindow):
         # A light gray background (`#F9F9F9`, matching the standard Windows
         # tooltip colour - no `wx.SYS_COLOUR_*` constant matches it exactly),
         # instead of the yellowish `wx.SYS_COLOUR_INFOBK`.
-        bg_colour = wx.Colour(0xF9, 0xF9, 0xF9)
-        fg_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        if bg_colour is None:
+            bg_colour = wx.Colour(0xF9, 0xF9, 0xF9)
+        if fg_colour is None:
+            fg_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
         self.SetBackgroundColour(bg_colour)
 
         dc = wx.ClientDC(self)
         dc.SetFont(self.GetFont())
-        content_width, content_height, needs_vscroll = _get_text_ctrl_size(dc, text)
+        content_width, content_height, needs_vscroll = _get_text_ctrl_size(dc, text, max_text_width, max_text_height)
 
         # `wx.TE_NO_VSCROLL` must be applied at construction time (it has
         # no effect if toggled afterwards), and a multiline `wx.TextCtrl`
@@ -168,10 +179,18 @@ class WxHoverToolTip:
         target: wx.Window,
         show_delay_ms: int = _SHOW_DELAY_MS,
         poll_interval_ms: int = _POLL_INTERVAL_MS,
+        max_text_width: int = _MAX_TEXT_WIDTH_DEFAULT,
+        max_text_height: int = _MAX_TEXT_HEIGHT_DEFAULT,
+        bg_colour: wx.Colour | None = None,
+        fg_colour: wx.Colour | None = None,
     ):
         self._target = target
         self._show_delay_ms = show_delay_ms
         self._poll_interval_ms = poll_interval_ms
+        self._max_text_width = max_text_width
+        self._max_text_height = max_text_height
+        self._bg_colour = bg_colour
+        self._fg_colour = fg_colour
 
         self._popup: WxHoverToolTipPopup | None = None
         self._current_text: str | None = None
@@ -293,7 +312,15 @@ class WxHoverToolTip:
         # shown tooltip rather than being reused.
         self._destroy_popup()
         try:
-            self._popup = WxHoverToolTipPopup(self._target, text, rect)
+            self._popup = WxHoverToolTipPopup(
+                self._target,
+                text,
+                rect,
+                max_text_width=self._max_text_width,
+                max_text_height=self._max_text_height,
+                bg_colour=self._bg_colour,
+                fg_colour=self._fg_colour,
+            )
         except RuntimeError:
             # the target was destroyed in the meantime
             self._popup = None
