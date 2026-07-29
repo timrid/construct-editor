@@ -113,7 +113,7 @@ class WxConstructHexEditor(wx.Panel):
             self, wx.ID_ANY, "«", size=wx.Size(12, -1)
         )
         hsizer.Add(self.toggle_hex_visibility_btn, 0, wx.EXPAND | wx.ALL, 0)
-        self.toggle_hex_visibility_btn.Bind(wx.EVT_BUTTON, self.toggle_hex_visibility)
+        self.toggle_hex_visibility_btn.Bind(wx.EVT_BUTTON, self._on_toggle_hex_visibility_btn)
 
     def _init_gui_construct_editor(self, hsizer: wx.BoxSizer, construct: cs.Construct[t.Any, t.Any]):
         self.construct_editor: WxConstructEditor = WxConstructEditor(
@@ -132,6 +132,9 @@ class WxConstructHexEditor(wx.Panel):
         self.hex_panel.hex_editor.refresh()
         self._convert_binary_to_struct()
         self.Thaw()
+
+    def _on_toggle_hex_visibility_btn(self, event: wx.CommandEvent):
+        self.toggle_hex_visibility()
 
     def toggle_hex_visibility(self):
         """Toggle the visibility of the HexEditor"""
