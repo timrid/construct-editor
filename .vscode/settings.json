@@ -29,5 +29,13 @@
         "**/__pycache__": true,
         "*.egg-info": true,
         ".pytest_cache": true
+    },
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "explicit",
+          "source.organizeImports": "explicit"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff"
     }
 }
