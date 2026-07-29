@@ -13,6 +13,11 @@ import typing as t
 import wx
 import wx.grid as Grid
 
+from construct_editor.core.entries import EntryConstruct
+from construct_editor.core.model import ConstructEditorColumn
+from construct_editor.wx_widgets.wx_construct_editor import (
+    WxConstructEditor,
+)
 from construct_editor.wx_widgets.wx_hex_editor import (
     HexEditorBinaryData,
     HexEditorGrid,
@@ -46,9 +51,7 @@ class WxTestHarness:
 
     @classmethod
     @contextlib.contextmanager
-    def create(
-        cls, app: wx.App, ui_simulator: wx.UIActionSimulator
-    ) -> t.Generator[WxTestHarness, None, None]:
+    def create(cls, app: wx.App, ui_simulator: wx.UIActionSimulator) -> t.Generator[WxTestHarness, None, None]:
         """Create a fresh top-level frame for a test, wrap it with `app` and
         `ui_simulator`, and tear it down again once the `with` block exits.
 
@@ -71,6 +74,38 @@ class WxTestHarness:
         """Move the simulated mouse cursor to an absolute screen point."""
         sim = self.ui_simulator
         self._run_steps([lambda: sim.MouseMove(point.x, point.y)], delay_ms)
+
+    def move_mouse_linear(
+        self,
+        point: wx.Point,
+        duration_ms: int = 150,
+        step_delay_ms: int = 10,
+    ) -> None:
+        """Move the simulated mouse cursor from its current position to
+        `point` in a straight line over `duration_ms`, in several
+        intermediate steps, instead of jumping there directly.
+
+        The number of steps is derived from `duration_ms` and
+        `step_delay_ms` (i.e. how many `step_delay_ms`-sized slices fit into
+        `duration_ms`), rather than being specified directly.
+
+        This more closely mimics how a real user moves the mouse, which
+        matters for widgets that react to mouse-move events along the way
+        (e.g. hover tooltips that should only appear once the cursor has
+        settled, or drag handling that tracks intermediate positions).
+        """
+        sim = self.ui_simulator
+        start = wx.GetMousePosition()
+        steps = max(duration_ms // step_delay_ms, 1)
+
+        def _make_step(step_index: int) -> t.Callable[[], t.Any]:
+            fraction = step_index / steps
+            x = round(start.x + (point.x - start.x) * fraction)
+            y = round(start.y + (point.y - start.y) * fraction)
+            return lambda: sim.MouseMove(x, y)
+
+        move_steps = [_make_step(step_index) for step_index in range(1, steps + 1)]
+        self._run_steps(move_steps, step_delay_ms)
 
     def click(self, delay_ms: int = 150) -> None:
         """Simulate a left mouse click at the current cursor position."""
@@ -96,12 +131,7 @@ class WxTestHarness:
         """
         sim = self.ui_simulator
         steps: list[t.Callable[[], t.Any]] = [
-            (
-                lambda ch=ch: sim.Char(
-                    ord(ch.upper()), wx.MOD_SHIFT if ch.isupper() else wx.MOD_NONE
-                )
-            )
-            for ch in text
+            (lambda ch=ch: sim.Char(ord(ch.upper()), wx.MOD_SHIFT if ch.isupper() else wx.MOD_NONE)) for ch in text
         ]
         self._run_steps(steps, delay_ms)
 
@@ -138,6 +168,18 @@ class WxTestHarness:
 
         wx.CallLater(delay_ms, _run_next_step)
         app.MainLoop()
+
+    def wait_ms(self, ms: int) -> None:
+        """Run the wx.MainLoop for approximately `ms` milliseconds, then
+        return control to the test.
+
+        Unlike wx.Yield()/ProcessPendingEvents(), this reliably lets pending
+        wx.CallLater/wx.Timer callbacks (e.g. the ones driving
+        WxHoverToolTip's show/hide delays) actually fire, since a real
+        MainLoop is running while waiting.
+        """
+        wx.CallLater(ms, self.app.ExitMainLoop)
+        self.app.MainLoop()
 
 
 def grid_cell_screen_point(grid: Grid.Grid, row: int, col: int) -> wx.Point:
@@ -208,9 +250,7 @@ def insert_byte_at_selection(grid: HexEditorGrid) -> bool:
     return grid._insert_byte_at_selection()  # pyright: ignore[reportPrivateUsage]
 
 
-def paste_at_selection(
-    grid: HexEditorGrid, overwrite: bool = False, insert: bool = False
-) -> bool:
+def paste_at_selection(grid: HexEditorGrid, overwrite: bool = False, insert: bool = False) -> bool:
     """Call HexEditorGrid's private `_paste(...)`."""
     return grid._paste(overwrite=overwrite, insert=insert)  # pyright: ignore[reportPrivateUsage]
 
@@ -225,11 +265,25 @@ def trigger_select_cell(grid: HexEditorGrid, event: Grid.GridEvent) -> None:
     grid._on_select_cell(event)  # pyright: ignore[reportPrivateUsage]
 
 
-def trigger_range_selecting_keyboard(
-    grid: HexEditorGrid, row_diff: int = 0, col_diff: int = 0
-) -> None:
+def trigger_range_selecting_keyboard(grid: HexEditorGrid, row_diff: int = 0, col_diff: int = 0) -> None:
     """Call HexEditorGrid's private `_on_range_selecting_keyboard(...)`."""
     grid._on_range_selecting_keyboard(  # pyright: ignore[reportPrivateUsage]
         row_diff=row_diff, col_diff=col_diff
     )
 
+
+def construct_editor_cell_screen_rect(editor: WxConstructEditor, entry: EntryConstruct, column: ConstructEditorColumn) -> wx.Rect:
+    """Compute the on-screen rect of `entry`'s cell in `column`.
+
+    Uses the exact same coordinate-space conversion as
+    WxConstructEditor._on_dvc_motion (via `self._dvc`, not
+    `self._dvc_main_window` - a previously fixed bug double-counted the
+    dvc header offset when the wrong window was used for this conversion,
+    shifting the tooltip down by roughly one row).
+    """
+    dvc = editor._dvc  # pyright: ignore[reportPrivateUsage]
+    model = editor._model  # pyright: ignore[reportPrivateUsage]
+    item = model.entry_to_dvc_item(entry)
+    col = dvc.GetColumn(column)
+    cell_rect: wx.Rect = dvc.GetItemRect(item, col)
+    return wx.Rect(dvc.ClientToScreen(cell_rect.GetPosition()), cell_rect.GetSize())
