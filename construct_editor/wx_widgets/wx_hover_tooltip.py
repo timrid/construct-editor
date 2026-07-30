@@ -127,10 +127,6 @@ class WxHoverToolTipPopup(wx.PopupWindow):
         self._position_at(anchor_screen_rect)
 
         self.Show()
-        # Give the text control real focus so drag-selection/copy works,
-        # since `wx.PopupWindow` itself never becomes the active window and
-        # thus never grants focus to its children on its own.
-        self._text_ctrl.SetFocus()
         self._text_ctrl.HideNativeCaret()
 
     def _position_at(self, anchor_screen_rect: wx.Rect):
@@ -197,6 +193,10 @@ class WxHoverToolTip:
         self._current_rect = wx.Rect()
         self._pending_text: str | None = None
         self._pending_rect = wx.Rect()
+        # the window that held keyboard focus right before the popup first
+        # stole it (see `_on_show_timer`) during the current hover session -
+        # `None` whenever no popup has stolen focus yet
+        self._prior_focus_owner: wx.Window | None = None
 
         self._show_timer: wx.CallLater[[], None] | None = None
         self._poll_timer = wx.Timer()
@@ -230,7 +230,42 @@ class WxHoverToolTip:
         self._stop_poll_timer()
         self._current_text = None
         self._pending_text = None
+        self._restore_prior_focus_owner()
         self._destroy_popup()
+
+    def _restore_prior_focus_owner(self):
+        """
+        Restores keyboard focus to the window captured (in `_on_show_timer`)
+        as having had focus right before the popup stole it - but only if
+        focus is still on the popup (or its `TextCtrl`) at this point, so a
+        deliberate focus change elsewhere by the user while the popup
+        happened to still be open is never overridden.
+        """
+        owner = self._prior_focus_owner
+        self._prior_focus_owner = None
+        if owner is None:
+            return
+
+        popup = self._popup
+        if popup is None:
+            return
+        # `wx.Window.FindFocus()`'s stub claims a non-optional return, but
+        # it can genuinely return `None` at runtime (nothing focused) - the
+        # `try` guards against that mismatch as well as a since-destroyed
+        # `focused` window.
+        try:
+            focused = wx.Window.FindFocus()
+            focus_is_on_popup = focused is popup or focused.GetParent() is popup
+        except (AttributeError, RuntimeError):
+            focus_is_on_popup = False
+        if not focus_is_on_popup:
+            return
+
+        try:
+            owner.SetFocus()
+        except RuntimeError:
+            # the prior focus owner was destroyed in the meantime
+            pass
 
     def _destroy_popup(self):
         if self._popup is None:
@@ -311,6 +346,14 @@ class WxHoverToolTip:
         # one - a fresh popup is always created from scratch for each
         # shown tooltip rather than being reused.
         self._destroy_popup()
+        # Only capture once per hover session (ie. only while no prior
+        # focus owner is already tracked) - switching directly between
+        # tooltip-triggering cells destroys+recreates the popup without a
+        # visible hide gap, and re-capturing on every such switch would
+        # just capture the popup's own (already-stolen) focus instead of
+        # the window that had focus before the FIRST popup in this chain.
+        if self._prior_focus_owner is None:
+            self._prior_focus_owner = wx.Window.FindFocus()
         try:
             self._popup = WxHoverToolTipPopup(
                 self._target,
