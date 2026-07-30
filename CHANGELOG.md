@@ -1,11 +1,27 @@
 # Changelog
 
 ## [UNRELEASED]
-- Updated construct-typing dependency to v0.8.1+ and updated the DataClass definitions to reflect the breaking changes.
-- Bumped minimum required Python version to 3.10 (previously: 3.8 which has reached end-of-life).
-- Updated `typing_extensions` dependency to >=4.12.0 for Python 3.13 compatibility.
-- Removed `version.py`, use `importlib.metadata` instead to get the version number.
-- Fixed a bug where multiple instances of `WxConstructHexEditor` might share the same default dict, leading to potentially unexpected behavior.
+**Breaking changes:**
+- Updated construct-typing dependency to v0.8.1+ and updated the DataClass definitions to reflect the breaking changes. ([#43](https://github.com/timrid/construct-editor/pull/43), [#42](https://github.com/timrid/construct-editor/pull/42))
+- Bumped minimum required Python version to 3.10 (previously: 3.8 which has reached end-of-life). ([#39](https://github.com/timrid/construct-editor/pull/39))
+- Removed `version.py`, use `importlib.metadata` instead to get the version number. ([#39](https://github.com/timrid/construct-editor/pull/39))
+
+**Changes:**
+- Updated `wxPython` dependency to >=4.2.2. ([#39](https://github.com/timrid/construct-editor/pull/39))
+- Updated `typing_extensions` dependency to >=4.12.0 for Python 3.13 compatibility. ([#39](https://github.com/timrid/construct-editor/pull/39))
+- Updated `wrapt` dependency to >=2.2.2 for better typing support. ([#40](https://github.com/timrid/construct-editor/pull/40))
+- Fix many typing related issues. ([#42](https://github.com/timrid/construct-editor/pull/42), [#44](https://github.com/timrid/construct-editor/pull/44))
+
+**Bugfixes:**
+- Fixed a bug where multiple instances of `WxConstructHexEditor` might share the same default dict, leading to potentially unexpected behavior. ([#42](https://github.com/timrid/construct-editor/pull/42))
+
+**Organizational changes:**
+- Switch from `setup.py` to `pyproject.toml`. ([#39](https://github.com/timrid/construct-editor/pull/39))
+- Use `uv` as a project management tool and `poe` as a task runner. ([#39](https://github.com/timrid/construct-editor/pull/39))
+- Add `pyright`, `ty` and `mypy` for static type checking. ([#39](https://github.com/timrid/construct-editor/pull/39), [#41](https://github.com/timrid/construct-editor/pull/41))
+- Add `ruff` for linting. ([#39](https://github.com/timrid/construct-editor/pull/39))
+- Add basic unit and integration tests with `pytest`. ([#40](https://github.com/timrid/construct-editor/pull/40))
+- Add a CI Pipeline to perform linting, static type checking and unit/integration testing. ([#40](https://github.com/timrid/construct-editor/pull/40))
 
 -------------------------------------------------------------------------------
 
