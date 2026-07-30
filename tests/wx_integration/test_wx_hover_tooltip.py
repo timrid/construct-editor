@@ -276,3 +276,31 @@ def test_popup_is_clamped_within_its_display(wx_harness: WxTestHarness):
     assert popup is not None
     assert popup.GetRect().GetRight() <= display_rect.GetRight()
     assert popup.GetRect().GetBottom() <= display_rect.GetBottom()
+
+
+def test_popup_closes_when_frame_is_closed(wx_harness: WxTestHarness):
+    tooltip = WxHoverToolTip(
+        wx_harness.frame,
+        show_delay_ms=_SHOW_DELAY_MS,
+    )
+
+    # Position the mouse over a small anchor rect
+    anchor = _anchor_rect(wx_harness, 10, 10, 50, 20)
+    wx_harness.move_mouse_to(anchor.GetPosition(), delay_ms=0)
+
+    # Show the tooltip
+    tooltip.notify_hover("hello world", anchor)
+    wx_harness.wait_ms(_SHOW_DELAY_MS + _MARGIN_MS)
+
+    # Check that the tooltip is actually showing
+    popup = tooltip._popup
+    assert popup is not None
+    assert popup.IsShown()
+
+    # Close the frame, which should also close the tooltip popup after the next poll tick
+    wx_harness.frame.Close()
+    wx_harness.wait_ms(_POLL_INTERVAL_MS + _MARGIN_MS)
+
+    # Check that the tooltip popup is no longer showing after the frame is closed
+    popup = tooltip._popup
+    assert popup is None

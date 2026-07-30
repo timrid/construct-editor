@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import dataclasses
+
 import wx
 import wx.lib.wordwrap
 
@@ -157,6 +159,12 @@ class WxHoverToolTipPopup(wx.PopupWindow):
         self.SetPosition(popup_pos)
 
 
+@dataclasses.dataclass(frozen=True)
+class _HoverState:
+    text: str
+    anchor_screen_rect: wx.Rect
+
+
 class WxHoverToolTip:
     """
     Shows a persistent, text-selectable tooltip anchored to a target window.
@@ -189,10 +197,10 @@ class WxHoverToolTip:
         self._fg_colour = fg_colour
 
         self._popup: WxHoverToolTipPopup | None = None
-        self._current_text: str | None = None
-        self._current_rect = wx.Rect()
-        self._pending_text: str | None = None
-        self._pending_rect = wx.Rect()
+
+        self._current_state: _HoverState | None = None
+        self._pending_state: _HoverState | None = None
+
         # the window that held keyboard focus right before the popup first
         # stole it (see `_on_show_timer`) during the current hover session -
         # `None` whenever no popup has stolen focus yet
@@ -209,18 +217,17 @@ class WxHoverToolTip:
         `text` at the same `anchor_screen_rect` (ie. the currently-shown or
         still-pending content) is a no-op.
         """
-        if text == self._current_text and anchor_screen_rect == self._current_rect:
-            return
-        if text == self._pending_text and anchor_screen_rect == self._pending_rect:
+        new_state = _HoverState(text, wx.Rect(anchor_screen_rect))
+
+        # If the new state is identical to either the current or pending state,
+        # don't reset the show timer (which would restart the delay) or
+        # change the pending state.
+        if self._current_state == new_state or self._pending_state == new_state:
             return
 
+        # If the new state is different, cancel any pending show and start a new show timer.
         self._stop_show_timer()
-        self._pending_text = text
-        # Copy the caller's rect: `check_still_relevant()` may call
-        # `wx.Rect.Union()` on the rect derived from this, which mutates
-        # its receiver in place - the tooltip must never mutate a rect
-        # object owned by its caller.
-        self._pending_rect = wx.Rect(anchor_screen_rect)
+        self._pending_state = new_state
         self._show_timer = wx.CallLater(self._show_delay_ms, self._on_show_timer)
         self._start_poll_timer()
 
@@ -228,8 +235,8 @@ class WxHoverToolTip:
         """Hides the tooltip immediately, cancelling any pending timers."""
         self._stop_show_timer()
         self._stop_poll_timer()
-        self._current_text = None
-        self._pending_text = None
+        self._current_state = None
+        self._pending_state = None
         self._restore_prior_focus_owner()
         self._destroy_popup()
 
@@ -287,34 +294,32 @@ class WxHoverToolTip:
         """
         mouse_pos = wx.GetMousePosition()
 
-        if self._pending_text is not None and not self._pending_rect.Contains(mouse_pos):
+        # If the mouse has moved outside the pending hover target, cancel the pending show (if any)
+        if self._pending_state is not None and not self._pending_state.anchor_screen_rect.Contains(mouse_pos):
             self._stop_show_timer()
-            self._pending_text = None
+            self._pending_state = None
 
         # Don't hide the currently-shown popup while a *different* hover
         # target is already pending - this lets the mouse move directly
         # from one hoverable cell to another without a hide-then-show
         # flicker; the popup is simply repositioned/updated in place once
         # the new pending target's show delay elapses.
-        if self._pending_text is None and self._current_text is not None:
-            # `wx.Rect.Union()` modifies the rect it is called on in place
-            # (in addition to returning it), so work on a copy here -
-            # `self._current_rect` must never be mutated directly.
-            relevant_rect = wx.Rect(self._current_rect)
+        if self._pending_state is None and self._current_state is not None:
+            # Create a new `wx.Rect`, because `wx.Rect.Union()` will mutate the rect
+            relevant_rect = wx.Rect(self._current_state.anchor_screen_rect)
             try:
-                popup_is_shown = self._popup is not None and self._popup.IsShown()
+                if self._popup is not None and self._popup.IsShown():
+                    relevant_rect = relevant_rect.Union(self._popup.GetScreenRect())
             except RuntimeError:
-                # The popup's underlying C++ object has already been
-                # destroyed (e.g. its parent window went away) - treat it
-                # as not shown.
-                popup_is_shown = False
-            if popup_is_shown:
-                assert self._popup is not None
-                relevant_rect = relevant_rect.Union(self._popup.GetScreenRect())
+                # The popup's underlying C++ object has already been destroyed (e.g. its parent window went away).
+                # Clear state immediately so we don't keep polling forever with stale current data.
+                self.hide()
+                return
+
             if not relevant_rect.Contains(mouse_pos):
                 self.hide()
 
-        if self._pending_text is None and self._current_text is None:
+        if self._pending_state is None and self._current_state is None:
             self._stop_poll_timer()
 
     def _start_poll_timer(self):
@@ -335,13 +340,12 @@ class WxHoverToolTip:
 
     def _on_show_timer(self):
         self._show_timer = None
-        text = self._pending_text
-        if text is None:
+        if self._pending_state is None:
             return
-        rect = self._pending_rect
-        self._current_text = text
-        self._current_rect = rect
-        self._pending_text = None
+        text = self._pending_state.text
+        rect = self._pending_state.anchor_screen_rect
+        self._current_state = self._pending_state
+        self._pending_state = None
         # Any previous popup is fully destroyed before creating the new
         # one - a fresh popup is always created from scratch for each
         # shown tooltip rather than being reused.
