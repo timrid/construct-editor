@@ -6,6 +6,9 @@
 - Bumped minimum required Python version to 3.10 (previously: 3.8 which has reached end-of-life). ([#39](https://github.com/timrid/construct-editor/pull/39))
 - Removed `version.py`, use `importlib.metadata` instead to get the version number. ([#39](https://github.com/timrid/construct-editor/pull/39))
 
+**New features:**
+- Optimized Tooltip handling when hovering over a construct in the ConstructEditor. The text is now selectable in the hover tooltip and the tooltip does not automatically disappear after 5s on Windows. ([#46](https://github.com/timrid/construct-editor/pull/46))
+
 **Changes:**
 - Updated `wxPython` dependency to >=4.2.2. ([#39](https://github.com/timrid/construct-editor/pull/39))
 - Updated `typing_extensions` dependency to >=4.12.0 for Python 3.13 compatibility. ([#39](https://github.com/timrid/construct-editor/pull/39))
