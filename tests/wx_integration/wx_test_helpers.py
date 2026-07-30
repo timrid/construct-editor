@@ -80,6 +80,12 @@ class WxTestHarness:
         sim = self.ui_simulator
         self._run_steps([lambda: sim.MouseMove(point.x, point.y)], delay_ms)
 
+    def move_mouse_direct(self, point: wx.Point) -> None:
+        """Move the simulated mouse cursor to an absolute screen point
+        immediately, without any delay or intermediate steps.
+        """
+        self.ui_simulator.MouseMove(point.x, point.y)
+
     def move_mouse_linear(
         self,
         point: wx.Point,
