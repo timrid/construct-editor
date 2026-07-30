@@ -185,8 +185,9 @@ def test_switching_to_different_hoverable_content_does_not_flicker_hide_the_old_
     # hover is pending, so the still-shown old popup must not flicker-hide
     # while waiting for the new content's own show delay to elapse.
     anchor_b = wx.Rect(anchor_a.x, anchor_a.y - 20, 10, 10)
-    wx_harness.move_mouse_to(anchor_b.GetPosition(), delay_ms=0)
+    wx_harness.move_mouse_direct(anchor_b.GetPosition())
     tooltip.notify_hover("content-b", anchor_b)
+    wx_harness.wait_ms(_SHOW_DELAY_MS // 2)
 
     # Check that the tooltip is still showing the old content
     popup = tooltip._popup
