@@ -67,8 +67,13 @@ class WxTestHarness:
         try:
             yield cls(app=app, frame=frame, ui_simulator=ui_simulator)
         finally:
-            frame.Destroy()
-            app.ProcessPendingEvents()
+            try:
+                frame.Destroy()
+                app.ProcessPendingEvents()
+            except RuntimeError:
+                # When the test already destroyed the frame (e.g. via `frame.Close()`), wx will raise
+                # a RuntimeError when we try to destroy it again. Ignore that, since the frame is already gone.
+                pass
 
     def move_mouse_to(self, point: wx.Point, delay_ms: int = 150) -> None:
         """Move the simulated mouse cursor to an absolute screen point."""
