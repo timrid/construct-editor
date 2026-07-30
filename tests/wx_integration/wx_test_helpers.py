@@ -96,6 +96,9 @@ class WxTestHarness:
         """
         sim = self.ui_simulator
         start = wx.GetMousePosition()
+
+        if step_delay_ms <= 0:
+            raise ValueError("step_delay_ms must be > 0")
         steps = max(duration_ms // step_delay_ms, 1)
 
         def _make_step(step_index: int) -> t.Callable[[], t.Any]:
