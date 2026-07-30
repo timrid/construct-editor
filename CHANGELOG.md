@@ -1,6 +1,6 @@
 # Changelog
 
-## [UNRELEASED]
+## [0.2.0] - 2026-07-30
 **Breaking changes:**
 - Updated construct-typing dependency to v0.8.1+ and updated the DataClass definitions to reflect the breaking changes. ([#43](https://github.com/timrid/construct-editor/pull/43), [#42](https://github.com/timrid/construct-editor/pull/42))
 - Bumped minimum required Python version to 3.10 (previously: 3.8 which has reached end-of-life). ([#39](https://github.com/timrid/construct-editor/pull/39))
