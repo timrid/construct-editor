@@ -14,6 +14,7 @@ from construct_editor.core.entries import EntryConstruct
 from construct_editor.core.model import ConstructEditorColumn, ConstructEditorModel
 from construct_editor.wx_widgets.wx_context_menu import WxContextMenu
 from construct_editor.wx_widgets.wx_exception_dialog import WxExceptionDialog
+from construct_editor.wx_widgets.wx_hover_tooltip import WxHoverToolTip
 from construct_editor.wx_widgets.wx_obj_view import (
     WxObjEditor,
     WxObjRendererHelper,
@@ -42,9 +43,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
 
     def SetValue(self, value: EntryConstruct):
         self.entry = value
-        self.entry_renderer_helper = create_obj_renderer_helper(
-            self.entry.obj_view_settings
-        )
+        self.entry_renderer_helper = create_obj_renderer_helper(self.entry.obj_view_settings)
         return True
 
     def GetValue(self):
@@ -111,9 +110,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     ) -> bool:
         if self.entry_renderer_helper is None:
             raise ValueError("`entry_renderer_helper` not set")
-        return self.entry_renderer_helper.activate_cell(
-            self, cell, model, item, col, mouseEvent
-        )
+        return self.entry_renderer_helper.activate_cell(self, cell, model, item, col, mouseEvent)
 
     # The HasEditorCtrl, CreateEditorCtrl and GetValueFromEditorCtrl
     # methods need to be implemented if this renderer is going to
@@ -123,9 +120,7 @@ class ObjectRenderer(dv.DataViewCustomRenderer):
     def HasEditorCtrl(self):
         return True
 
-    def CreateEditorCtrl(
-        self, parent, labelRect: wx.Rect, value: EntryConstruct
-    ) -> WxObjEditor:
+    def CreateEditorCtrl(self, parent, labelRect: wx.Rect, value: EntryConstruct) -> WxObjEditor:
         view_settings = value.obj_view_settings
         editor: WxObjEditor = create_obj_editor(parent, view_settings)
         editor.SetPosition(labelRect.GetPosition())
@@ -308,18 +303,14 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._parse_error_info_bar = wx.InfoBar(self)
         btn_id = wx.NewIdRef()
         self._parse_error_info_bar.AddButton(btn_id, "Exception Infos")
-        self._parse_error_info_bar.Bind(
-            wx.EVT_BUTTON, self._parse_error_info_bar_btn_clicked, id=btn_id
-        )
+        self._parse_error_info_bar.Bind(wx.EVT_BUTTON, self._parse_error_info_bar_btn_clicked, id=btn_id)
         self._parse_error_ex: Exception | None = None
         vsizer.Add(self._parse_error_info_bar, 0, wx.EXPAND)
 
         self._build_error_info_bar = wx.InfoBar(self)
         btn_id = wx.NewIdRef()
         self._build_error_info_bar.AddButton(btn_id, "Exception Infos")
-        self._build_error_info_bar.Bind(
-            wx.EVT_BUTTON, self._build_error_info_bar_btn_clicked, id=btn_id
-        )
+        self._build_error_info_bar.Bind(wx.EVT_BUTTON, self._build_error_info_bar_btn_clicked, id=btn_id)
         self._build_error_ex: Exception | None = None
         vsizer.Add(self._build_error_info_bar, 0, wx.EXPAND)
 
@@ -329,9 +320,7 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
             style=wx.STB_SHOW_TIPS | wx.STB_ELLIPSIZE_END | wx.FULL_REPAINT_ON_RESIZE,
         )
         self._status_bar.SetFieldsCount(2)
-        self._status_bar.SetStatusStyles(
-            [wx.SB_NORMAL, wx.SB_FLAT]
-        )  # remove vertical line after the last field
+        self._status_bar.SetStatusStyles([wx.SB_NORMAL, wx.SB_FLAT])  # remove vertical line after the last field
         self._status_bar.SetStatusWidths([-2, -1])
         vsizer.Add(self._status_bar, 0, wx.ALL | wx.EXPAND, 0)
 
@@ -353,7 +342,9 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         self._dvc_main_window.Bind(wx.EVT_MOTION, self._on_dvc_motion)
         self._dvc_main_window.Bind(wx.EVT_KEY_DOWN, self._on_dvc_key_down)
         self._dvc_main_window.Bind(wx.EVT_CHAR, self._on_dvc_char)
-        self._last_tooltip: t.Tuple[EntryConstruct, ConstructEditorColumn] | None = None
+        self._dvc_main_window.Bind(wx.EVT_SCROLLWIN, self._on_dvc_scroll)
+        self._dvc_main_window.Bind(wx.EVT_MOUSEWHEEL, self._on_dvc_scroll)
+        self._hover_tooltip = WxHoverToolTip(self._dvc_main_window)
 
     def reload(self):
         """
@@ -361,6 +352,8 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         """
         try:
             self.Freeze()
+
+            self._hover_tooltip.hide()
 
             # reload dvc columns
             self._reload_dvc_columns()
@@ -522,6 +515,8 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
 
         Then the infos of the new selected entry is shown.
         """
+        self._hover_tooltip.hide()
+
         item = self._dvc.GetSelection()
         if item.ID is not None:
             entry = self._model.dvc_item_to_entry(item)
@@ -551,25 +546,34 @@ class WxConstructEditor(wx.Panel, ConstructEditor):
         pos += self._dvc_main_window.GetPosition()  # correct the dvc header
         item, col = self._dvc.HitTest(pos)
         if item.GetID() is None:
-            self._dvc_main_window.SetToolTip("")
             return
         entry = self._model.dvc_item_to_entry(item)
 
         if col.ModelColumn == ConstructEditorColumn.Name:
-            # only set tooltip if the obj changed. this prevents flickering
-            if self._last_tooltip != (entry, ConstructEditorColumn.Name):
-                self._dvc_main_window.SetToolTip(
-                    textwrap.dedent(entry.docs or entry.name).strip()
-                )
-            self._last_tooltip = (entry, ConstructEditorColumn.Name)
+            text = textwrap.dedent(entry.docs or entry.name).strip()
         elif col.ModelColumn == ConstructEditorColumn.Type:
-            # only set tooltip if the obj changed. this prevents flickering
-            if self._last_tooltip != (entry, ConstructEditorColumn.Type):
-                self._dvc_main_window.SetToolTip(str(entry.construct))
-            self._last_tooltip = (entry, ConstructEditorColumn.Type)
+            text = str(entry.construct)
         else:
-            self._dvc_main_window.SetToolTip("")
-            self._last_tooltip = None
+            return
+
+        if not text:
+            return
+
+        cell_rect: wx.Rect = self._dvc.GetItemRect(item, col)
+        # `GetItemRect` returns a rect in the same coordinate space as
+        # `HitTest` above (relative to the whole dvc control, including the
+        # header) - so convert via `self._dvc`, not `self._dvc_main_window`
+        # (which would double-count the header offset and shift the
+        # tooltip down by roughly one row).
+        anchor_screen_rect = wx.Rect(
+            self._dvc.ClientToScreen(cell_rect.GetPosition()),
+            cell_rect.GetSize(),
+        )
+        self._hover_tooltip.notify_hover(text, anchor_screen_rect)
+
+    def _on_dvc_scroll(self, event):
+        self._hover_tooltip.hide()
+        event.Skip()
 
     def _on_dvc_right_clicked(self, event: dv.DataViewEvent):
         """
