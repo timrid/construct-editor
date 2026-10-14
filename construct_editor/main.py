@@ -13,6 +13,7 @@ import construct_editor.gallery.example_ipstack
 import construct_editor.gallery.example_pe32coff
 import construct_editor.gallery.test_aligned
 import construct_editor.gallery.test_array
+import construct_editor.gallery.test_array_with_bit_struct
 import construct_editor.gallery.test_bits_swapped_bitwise
 import construct_editor.gallery.test_bitwise
 import construct_editor.gallery.test_bytes_greedybytes
@@ -119,6 +120,7 @@ class ConstructGallery(wx.Panel):
             "## arrays ranges and repeaters ######": None,
             "Test: Array": construct_editor.gallery.test_array.gallery_item,
             "Test: GreedyRange": construct_editor.gallery.test_greedyrange.gallery_item,
+            "Test: Array with BitStruct": construct_editor.gallery.test_array_with_bit_struct.gallery_item,
             # "Test: RepeatUntil (TODO)": None,
             "## specials ##########################": None,
             "Test: Renamed": construct_editor.gallery.test_renamed.gallery_item,
@@ -203,18 +205,14 @@ class ConstructGallery(wx.Panel):
         vsizer.Add(self.gallery_selector_lbx, 1, wx.ALL, 1)
 
         # reload btn
-        self.reload_btn = wx.Button(
-            self, wx.ID_ANY, "Reload", wx.DefaultPosition, wx.DefaultSize, 0
-        )
+        self.reload_btn = wx.Button(self, wx.ID_ANY, "Reload", wx.DefaultPosition, wx.DefaultSize, 0)
         vsizer.Add(self.reload_btn, 0, wx.ALL | wx.EXPAND, 1)
 
         # line
         vsizer.Add(wx.StaticLine(self), 0, wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
 
         # clear binary
-        self.clear_binary_btn = wx.Button(
-            self, wx.ID_ANY, "Clear Binary", wx.DefaultPosition, wx.DefaultSize, 0
-        )
+        self.clear_binary_btn = wx.Button(self, wx.ID_ANY, "Clear Binary", wx.DefaultPosition, wx.DefaultSize, 0)
         vsizer.Add(self.clear_binary_btn, 0, wx.ALL | wx.EXPAND, 1)
 
         # example selctor
@@ -228,9 +226,7 @@ class ConstructGallery(wx.Panel):
             name="gallery_selector",
         )
         if len(default_gallery_item.example_binarys) > 0:
-            self.example_selector_lbx.SetStringSelection(
-                list(default_gallery_item.example_binarys.keys())[0]
-            )
+            self.example_selector_lbx.SetStringSelection(list(default_gallery_item.example_binarys.keys())[0])
         vsizer.Add(self.example_selector_lbx, 0, wx.ALL | wx.EXPAND, 1)
 
         # load binary from file
@@ -265,14 +261,10 @@ class ConstructGallery(wx.Panel):
         self.SetSizer(self.sizer)
 
         # Connect Events ##################################################
-        self.gallery_selector_lbx.Bind(
-            wx.EVT_LISTBOX, self.on_gallery_selection_changed
-        )
+        self.gallery_selector_lbx.Bind(wx.EVT_LISTBOX, self.on_gallery_selection_changed)
         self.reload_btn.Bind(wx.EVT_BUTTON, self.on_gallery_selection_changed)
         self.clear_binary_btn.Bind(wx.EVT_BUTTON, self.on_clear_binary_clicked)
-        self.example_selector_lbx.Bind(
-            wx.EVT_LISTBOX, self.on_example_selection_changed
-        )
+        self.example_selector_lbx.Bind(wx.EVT_LISTBOX, self.on_example_selection_changed)
 
         self.load_binary_file_btn.Bind(wx.EVT_BUTTON, self.on_load_binary_file_clicked)
 
@@ -291,12 +283,8 @@ class ConstructGallery(wx.Panel):
 
         self.example_selector_lbx.Clear()
         if len(gallery_item.example_binarys) > 0:
-            self.example_selector_lbx.InsertItems(
-                list(gallery_item.example_binarys.keys()), 0
-            )
-            self.example_selector_lbx.SetStringSelection(
-                list(gallery_item.example_binarys.keys())[0]
-            )
+            self.example_selector_lbx.InsertItems(list(gallery_item.example_binarys.keys()), 0)
+            self.example_selector_lbx.SetStringSelection(list(gallery_item.example_binarys.keys())[0])
 
             example = self.example_selector_lbx.GetStringSelection()
             example_binary = gallery_item.example_binarys[example]
