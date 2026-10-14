@@ -17,9 +17,7 @@ class ConstructEditor:
 
         self.change_construct(construct)
 
-        self.on_entry_selected: CallbackList[
-            [entries.EntryConstruct]
-        ] = CallbackList()
+        self.on_entry_selected: CallbackList[[entries.EntryConstruct]] = CallbackList()
         self.on_root_obj_changed: CallbackList[[t.Any]] = CallbackList()
 
     @abc.abstractmethod
@@ -130,9 +128,7 @@ class ConstructEditor:
         self._construct = include_metadata(constr)
 
         # create entry from the construct
-        self._model.root_entry = entries.create_entry_from_construct(
-            self._model, None, self._construct, None, ""
-        )
+        self._model.root_entry = entries.create_entry_from_construct(self._model, None, self._construct, None, "")
 
         self._model.list_viewed_entries.clear()
 
@@ -152,9 +148,7 @@ class ConstructEditor:
             self._model.root_obj = self._construct.parse(binary, **contextkw)
             self.show_parse_error_message(None, None)
         except Exception as e:
-            self.show_parse_error_message(
-                f"Error while parsing binary data: {type(e).__name__}\n{str(e)}", e
-            )
+            self.show_parse_error_message(f"Error while parsing binary data: {type(e).__name__}\n{str(e)}", e)
             self._model.root_obj = None
 
         # clear all commands, when new data is set from external
@@ -169,9 +163,7 @@ class ConstructEditor:
             binary = self._construct.build(self._model.root_obj, **contextkw)
             self.show_build_error_message(None, None)
         except Exception as e:
-            self.show_build_error_message(
-                f"Error while building binary data: {type(e).__name__}\n{str(e)}", e
-            )
+            self.show_build_error_message(f"Error while building binary data: {type(e).__name__}\n{str(e)}", e)
             raise e
 
         # Parse the build binary, so that constructs that parses from nothing
@@ -264,17 +256,15 @@ class ConstructEditor:
         if visible_entry is None:
             return
 
-        if visible_entry.row_expanded is True:
+        row_expanded = visible_entry.row_expanded
+        subentries = self._model.get_children(entry)
+        for subentry in subentries:
+            self.restore_expansion_from_model(subentry)
+
+        if row_expanded is True:
             self.expand_entry(visible_entry)
         else:
             self.collapse_entry(visible_entry)
-
-        subentries = self._model.get_children(entry)
-        if len(subentries) == 0:
-            return
-
-        for subentry in subentries:
-            self.restore_expansion_from_model(subentry)
 
     def enable_list_view(self, entry: entries.EntryConstruct):
         """
@@ -360,9 +350,7 @@ class ConstructEditor:
                 column_count = max(column_count, len(flat_list))
         return column_count
 
-    def _get_list_viewed_column_names(
-        self, selected_entry: entries.EntryConstruct
-    ) -> t.List[str]:
+    def _get_list_viewed_column_names(self, selected_entry: entries.EntryConstruct) -> t.List[str]:
         """
         Get the names of all list viewed columns.
 
@@ -374,9 +362,7 @@ class ConstructEditor:
         flat_list = self._model.create_flat_subentry_list(selected_entry)
         for entry in flat_list:
             column_path = entry.path
-            column_path = column_path[
-                len(selected_entry.path) :
-            ]  # remove the path from the selected_entry
+            column_path = column_path[len(selected_entry.path) :]  # remove the path from the selected_entry
             column_names.append(entries.create_path_str(column_path))
         return column_names
 
